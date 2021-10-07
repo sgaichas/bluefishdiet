@@ -1,0 +1,19 @@
+---
+title: "Bluefish Diet Summaries for 2022 Research Track"
+author: "Sarah Gaichas"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    code_fold: hide
+link-citations: yes
+csl: plos.csl
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Initial Summaries from NEFSC Bottom Trawl Survey
+
+For the 13 October 2021 Bluefish WG meeting, we pulled summary diet information from the [NEFSC Diet Data shiny app, Fish Trophic Ecology of the Northeast U.S. Continental Shelf, by Smith B.E. & Rowe S., dated 9/20/2021](https://fwdp.shinyapps.io/tm2020/). These data were pulled 7 October 2021 and were saved in the `datfromshiny` folder in this repository.
+
