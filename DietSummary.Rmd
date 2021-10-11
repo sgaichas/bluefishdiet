@@ -18,6 +18,9 @@ library(tidyverse)
 library(here)
 library(DT)
 library(pdftools)
+library(patchwork)
+library(ggiraph)
+
 
 ```
 
@@ -58,12 +61,19 @@ bluefishpredsNEAMAP <- pdf_text(here("datfromVIMS","bluefishaspreyVIMS.pdf")) %>
   stringr::str_split('\n', simplify = T) %>%
   matrix(ncol = 1)
 
+# tab_start <- stringr::str_which(bluefishpredsNEAMAP, "                                         bluefish")
+# tab_end <- stringr::str_which(bluefishpredsNEAMAP, "                       striped bass                     8.8          352         195" )
+# tab <- bluefishpredsNEAMAP[(tab_start+1):(tab_end-1), 1] %>%
+#   str_replace_all('\\s{2,}', '\t')
+# text_conn <- textConnection(tab)
+# df <- read.csv(text_conn, sep = '\t', skip = 1)
+
 #wont work but placeholder
-datatable(bluefishpredsNEAMAP)
+bluefishpredsNEAMAP
 ```
 
 
-You can see the full striped bass NEAMAP diet data in another attached pdf. I'm having trouble understanding the full diet data for sandbar sharks in either numbers or weight (both attached); they don't seem to add up to the number of predators in the bluefish as prey pdf so I will ask the VIMS folks about this.
+Full striped bass NEAMAP diet data as well as full diet data for sandbar sharks in either numbers or weight are available in the `datfromVIMS` folder; they don't seem to add up to the number of predators in the bluefish as prey pdf so need to double check with Jim Gartland/VIMS.
 
 ### Literature search (to be expanded)  
 
@@ -73,6 +83,104 @@ I found one paper looking at [bluefish cannibalism on juveniles](https://onlinel
 
 ## Bluefish as predators
 
+### NEFSC bottom trawl survey diet summaries
+
+Bluefish diet in aggregate (all years, regions, and bluefish sizes), 1973-2020:   
+```{r}
+bluefishaggdiet <- read_csv(here("datfromshiny","DC.Bluefish (Pomatomus saltatrix).All.2021-10-07.csv"))
+
+datatable(bluefishaggdiet[,-c(1:2, 10)], rownames = FALSE,
+          caption = 'Table 3: Bluefish prey from all samples combined.')
+
+```
+
+
+Bluefish diet by decade (all regions and bluefish sizes):  
+```{r}
+diet70 <- read_csv(here("datfromshiny","DC.Bluefish (Pomatomus saltatrix).1970s.2021-10-07.csv")) %>%
+  mutate(Decade = 1970)
+diet80 <- read_csv(here("datfromshiny","DC.Bluefish (Pomatomus saltatrix).1980s.2021-10-07.csv"))%>%
+  mutate(Decade = 1980)
+diet90 <- read_csv(here("datfromshiny","DC.Bluefish (Pomatomus saltatrix).1990s.2021-10-07.csv"))%>%
+  mutate(Decade = 1990)
+diet00 <- read_csv(here("datfromshiny","DC.Bluefish (Pomatomus saltatrix).2000s.2021-10-07.csv"))%>%
+  mutate(Decade = 2000)
+diet10 <- read_csv(here("datfromshiny","DC.Bluefish (Pomatomus saltatrix).2010s.2021-10-07.csv"))%>%
+  mutate(Decade = 2010)
+
+bluefishdecadediet <- bind_rows(diet70, diet80, diet90, diet00, diet10)
+
+
+```
+
+We will define the colors used for the prey categories and use them consistently throughout the analyses. These can be changed here and carried through all subsequent plots:
+
+```{r}
+#from http://medialab.github.io/iwanthue/ using 35 categories, colorblind friendly
+# again from http://medialab.github.io/iwanthue/ All colors colorspace, colorblind friendly, hard
+preycol <- c("#00495d",
+"#3ac100",
+"#a646f7",
+"#72ff75",
+"#8d00a6",
+"#c6ff90",
+"#0268f1",
+"#ff8d23",
+"#0144a6",
+"#01a249",
+"#e1009e",
+"#abffe1",
+"#7e0082",
+"#fffdd4",
+"#24001c",
+"#bbf6ff",
+"#a60029",
+"#0176c8",
+"#8a4700",
+"#a083ff",
+"#454400",
+"#ff7fff",
+"#005d35",
+"#c9005e",
+"#00483e",
+"#ff96e4",
+"#291d00",
+"#d5a5ff",
+"#2e0400",
+"#ffc5d6",
+"#00285f",
+"#ffbb88",
+"#4a002e",
+"#ff8092",
+"#68001a")
+names(preycol) <- as.factor(unique(bluefishdecadediet$Prey))
+
+```
+
+```{r}
+p <- ggplot(bluefishdecadediet, aes(x=as.factor(Decade), y=Pct.m, fill=Prey)) +
+  geom_bar_interactive(width = 0.95, stat = "identity", show.legend = FALSE,
+                       aes(tooltip = Prey, data_id = Prey))+
+  scale_fill_manual(values=preycol) +         #custom colors
+  #facet_grid(epu~season)+
+  # facet_grid(fct_relevel(epu, "SS", "GOM", "GB", "MAB")~
+  #            fct_relevel(season, "SPRING", "FALL"),                 #separate by epu, season
+  #            labeller = labeller(.multi_line = FALSE)) +
+  ggthemes::theme_tufte()
+ggiraph(code=print(p))
+```
+
+
+Bluefish diet by region (all years and bluefish sizes):  
+```{r}
+#bluefishregiondiet
+```
+
+
+Bluefish diet by bluefish size (all years and regions):  
+```{r}
+#bluefishsizediet
+```
 
 
 
