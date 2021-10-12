@@ -1,5 +1,5 @@
 ---
-title: "Bluefish Diet Summaries for 2022 Research Track"
+title: "Bluefish Diet Summaries for 2022 RTA"
 author: "Sarah Gaichas"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output:
@@ -73,7 +73,7 @@ bluefishpredsNEAMAP
 ```
 
 
-Full striped bass NEAMAP diet data as well as full diet data for sandbar sharks in either numbers or weight are available in the `datfromVIMS` folder; they don't seem to add up to the number of predators in the bluefish as prey pdf so need to double check with Jim Gartland/VIMS.
+Full striped bass NEAMAP diet data as well as full diet data for sandbar sharks in either numbers or weight are available in the `datfromVIMS` folder. Jim Gartland is showing a much better summary for NEAMAP and ChesMMAP data.
 
 ### Literature search (to be expanded)  
 
@@ -85,18 +85,11 @@ I found one paper looking at [bluefish cannibalism on juveniles](https://onlinel
 
 ### NEFSC bottom trawl survey diet summaries
 
-Bluefish diet in aggregate (all years, regions, and bluefish sizes), 1973-2020:   
-```{r}
+Diet summaries from the shiny app use different prey categories depending on the summary. We'll read them all in here to get a list of unique prey across all summaries. 
+```{r, readdiets}
 bluefishaggdiet <- read_csv(here("datfromshiny","DC.Bluefish (Pomatomus saltatrix).All.2021-10-07.csv"))
 
-datatable(bluefishaggdiet[,-c(1:2, 10)], rownames = FALSE,
-          caption = 'Table 3: Bluefish prey from all samples combined.')
-
-```
-
-
-Bluefish diet by decade (all regions and bluefish sizes):  
-```{r}
+# decadal diet
 diet70 <- read_csv(here("datfromshiny","DC.Bluefish (Pomatomus saltatrix).1970s.2021-10-07.csv")) %>%
   mutate(Decade = 1970)
 diet80 <- read_csv(here("datfromshiny","DC.Bluefish (Pomatomus saltatrix).1980s.2021-10-07.csv"))%>%
@@ -110,10 +103,39 @@ diet10 <- read_csv(here("datfromshiny","DC.Bluefish (Pomatomus saltatrix).2010s.
 
 bluefishdecadediet <- bind_rows(diet70, diet80, diet90, diet00, diet10)
 
+# seasonal diet
+dietspring <- read_csv(here("datfromshiny","DC.Bluefish (Pomatomus saltatrix).SPRING.2021-10-07.csv"))%>%
+  mutate(Season = "Spring")
+dietfall <- read_csv(here("datfromshiny","DC.Bluefish (Pomatomus saltatrix).FALL.2021-10-07.csv"))%>%
+  mutate(Season = "Fall")
+
+bluefishseasondiet <- bind_rows(dietspring, dietfall)
+
+# regional diet
+dietMAB <- read_csv(here("datfromshiny","DC.Bluefish (Pomatomus saltatrix).MID-ATLANTIC BIGHT.2021-10-07.csv")) %>%
+  mutate(Region = "MAB")
+dietSNE <- read_csv(here("datfromshiny","DC.Bluefish (Pomatomus saltatrix).SOUTHERN NEW ENGLAND.2021-10-07.csv"))%>%
+  mutate(Region = "SNE")
+dietGB <- read_csv(here("datfromshiny","DC.Bluefish (Pomatomus saltatrix).GEORGES BANK.2021-10-07.csv"))%>%
+  mutate(Region = "GB")
+
+bluefishregiondiet <- bind_rows(dietMAB, dietSNE, dietGB)
+
+# bluefish size diet
+dietSM <- read_csv(here("datfromshiny","DC.Bluefish (Pomatomus saltatrix).S.2021-10-07.csv")) %>%
+  mutate(Size = "Small")
+dietMED <- read_csv(here("datfromshiny","DC.Bluefish (Pomatomus saltatrix).M.2021-10-07.csv"))%>%
+  mutate(Size = "Medium")
+dietLG <- read_csv(here("datfromshiny","DC.Bluefish (Pomatomus saltatrix).L.2021-10-07.csv"))%>%
+  mutate(Size = "Large")
+
+bluefishsizediet <- bind_rows(dietSM, dietMED, dietLG)
+
+preylist <- unique(c(bluefishaggdiet$Prey, bluefishdecadediet$Prey, bluefishregiondiet$Prey, bluefishseasondiet$Prey, bluefishsizediet$Prey))
 
 ```
 
-We will define the colors used for the prey categories and use them consistently throughout the analyses. These can be changed here and carried through all subsequent plots:
+We will define the colors used for the prey categories and use them consistently throughout the analyses. These can be changed here and carried through all subsequent plots. There is no way to really keep track of these in the plots below, so click a bar to get that bar highlighted with a prey name.
 
 ```{r}
 #from http://medialab.github.io/iwanthue/ using 35 categories, colorblind friendly
@@ -153,34 +175,129 @@ preycol <- c("#00495d",
 "#4a002e",
 "#ff8092",
 "#68001a")
-names(preycol) <- as.factor(unique(bluefishdecadediet$Prey))
+names(preycol) <- as.factor(preylist)
 
 ```
 
+```{r}
+dfpreycol <- as.data.frame(preycol) %>%
+  rownames_to_column(var = "preyname")
+
+preycolplot <- ggplot(dfpreycol, aes(x=preyname, weight=1, fill=preycol)) + 
+  geom_bar() +
+  scale_fill_manual(values=preycol) 
+
+library(gridExtra)
+library(grid)
+g_legend<-function(a.gplot){
+  tmp <- ggplot_gtable(ggplot_build(a.gplot))
+  leg <- which(sapply(tmp$grobs, function(x) x$name) == "guide-box")
+  legend <- tmp$grobs[[leg]]
+  return(legend)}
+
+preykey <- g_legend(preycolplot)
+grid.draw(preykey)
+
+```
+
+#### Bluefish diet in aggregate (all years, regions, and bluefish sizes), 1973-2020 {.tabset}
+
+##### Plot
+```{r}
+p <- ggplot(bluefishaggdiet, aes(x=as.factor("Aggregate"), y=Pct.m, fill=Prey)) +
+  geom_bar_interactive(width = 0.95, stat = "identity", show.legend = FALSE,
+                       aes(tooltip = Prey, data_id = Prey))+
+  scale_fill_manual(values=preycol) +         #custom colors
+  ggthemes::theme_tufte()
+ggiraph(code=print(p))
+```
+
+##### Table
+```{r}
+datatable(bluefishaggdiet[,-c(1:2, 10)], rownames = FALSE,
+          caption = 'Table 3: Bluefish prey from all samples combined.')
+```
+
+#### {-}
+
+#### Bluefish diet by season (all years, regions, and bluefish sizes) {.tabset}
+
+##### Plot
+```{r}
+p <- ggplot(bluefishseasondiet, aes(x=as.factor(Season), y=Pct.m, fill=Prey)) +
+  geom_bar_interactive(width = 0.95, stat = "identity", show.legend = FALSE,
+                       aes(tooltip = Prey, data_id = Prey))+
+  scale_fill_manual(values=preycol) +         #custom colors
+  ggthemes::theme_tufte()
+ggiraph(code=print(p))
+```
+
+##### Table
+```{r}
+datatable(bluefishseasondiet[,-c(1:2, 10)], rownames = FALSE,
+          caption = 'Table 4: Bluefish prey by season, 1973-2020.')
+```
+
+#### {-}
+
+#### Bluefish diet by decade (all regions and bluefish sizes) {.tabset} 
+
+##### Plot
 ```{r}
 p <- ggplot(bluefishdecadediet, aes(x=as.factor(Decade), y=Pct.m, fill=Prey)) +
   geom_bar_interactive(width = 0.95, stat = "identity", show.legend = FALSE,
                        aes(tooltip = Prey, data_id = Prey))+
   scale_fill_manual(values=preycol) +         #custom colors
-  #facet_grid(epu~season)+
-  # facet_grid(fct_relevel(epu, "SS", "GOM", "GB", "MAB")~
-  #            fct_relevel(season, "SPRING", "FALL"),                 #separate by epu, season
-  #            labeller = labeller(.multi_line = FALSE)) +
   ggthemes::theme_tufte()
 ggiraph(code=print(p))
 ```
 
-
-Bluefish diet by region (all years and bluefish sizes):  
+##### Table
 ```{r}
-#bluefishregiondiet
+datatable(bluefishdecadediet[,-c(1:2, 10)], rownames = FALSE,
+          caption = 'Table 5: Bluefish prey by decade, 1973-2020.')
 ```
 
+#### {-}
 
-Bluefish diet by bluefish size (all years and regions):  
+#### Bluefish diet by region (all years and bluefish sizes) {.tabset}  
+
+##### Plot
 ```{r}
-#bluefishsizediet
+p <- ggplot(bluefishregiondiet, aes(x=as.factor(Region), y=Pct.m, fill=Prey)) +
+  geom_bar_interactive(width = 0.95, stat = "identity", show.legend = FALSE,
+                       aes(tooltip = Prey, data_id = Prey))+
+  scale_fill_manual(values=preycol) +         #custom colors
+  ggthemes::theme_tufte()
+ggiraph(code=print(p))
 ```
 
+##### Table
+```{r}
+datatable(bluefishregiondiet[,-c(1:2, 10)], rownames = FALSE,
+          caption = 'Table 6: Bluefish prey by region, 1973-2020.')
+```
 
+#### {-}
+
+#### Bluefish diet by bluefish size (all years and regions) {.tabset}
+
+##### Plot
+```{r}
+p <- ggplot(bluefishsizediet, aes(x=as.factor(Size), y=Pct.m, fill=Prey)) +
+  geom_bar_interactive(width = 0.95, stat = "identity", show.legend = FALSE,
+                       aes(tooltip = Prey, data_id = Prey))+
+  scale_fill_manual(values=preycol) +         #custom colors
+  ggthemes::theme_tufte()
+ggiraph(code=print(p))
+
+```
+
+##### Table
+```{r}
+datatable(bluefishsizediet[,-c(1:2, 10)], rownames = FALSE,
+          caption = 'Table 7: Bluefish prey by bluefish size, 1973-2020.')
+```
+
+#### {-}
 
