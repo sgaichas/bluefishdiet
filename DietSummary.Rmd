@@ -187,6 +187,7 @@ preycolplot <- ggplot(dfpreycol, aes(x=preyname, weight=1, fill=preycol)) +
   geom_bar() +
   scale_fill_manual(values=preycol) 
 
+# see https://stackoverflow.com/questions/43366616/ggplot2-legend-only-in-a-plot
 library(gridExtra)
 library(grid)
 g_legend<-function(a.gplot){
@@ -300,4 +301,24 @@ datatable(bluefishsizediet[,-c(1:2, 10)], rownames = FALSE,
 ```
 
 #### {-}
+
+### Bluefish consumption estimates (preliminary based on NEFSC diet only)
+
+Consumption estimates from the shiny app 
+```{r, readcons}
+
+totcons <- read_csv(here("datfromshiny", "C.Bluefish (Pomatomus saltatrix).All prey.2021-10-07.csv"))
+
+preycons <- read_csv(here("datfromshiny", "C.Bluefish (Pomatomus saltatrix).Atlantic herring (Clupea harengus).2021-10-07.csv"))
+
+preycons1 <-read_csv(here("datfromshiny", "C.Bluefish (Pomatomus saltatrix).Atlantic mackerel (Scomber scombrus).2021-10-07.csv"))
+preycons2 <- read_csv(here("datfromshiny", "C.Bluefish (Pomatomus saltatrix).Butterfish (Peprilus triacanthus).2021-10-07.csv"))
+preycons3 <- read_csv(here("datfromshiny", "C.Bluefish (Pomatomus saltatrix).Loligo squid (Loligo sp.).2021-10-07.csv"))
+preycons4 <-  read_csv(here("datfromshiny", "C.Bluefish (Pomatomus saltatrix).Other prey.2021-10-07.csv"))
+preycons5 <-  read_csv(here("datfromshiny", "C.Bluefish (Pomatomus saltatrix).Sand lance (Ammodytes sp.).2021-10-07.csv"))
+preycons6 <- read_csv(here("datfromshiny", "C.Bluefish (Pomatomus saltatrix).Silver hake (Merluccius bilinearis).2021-10-07.csv"))
+
+
+
+```
 
