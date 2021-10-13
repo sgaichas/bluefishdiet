@@ -1,0 +1,11 @@
+---
+title: "Bluefish Diet Analyses for 2022 RTA"
+author: "Sarah Gaichas"
+output: html_document
+---
+
+<!-- ADD LINKS BELOW, note, using the RMD link syntax will open the presentation in the same tab, which is annoying. Use the html with the "_blank" to fix that behavior -->
+ 
+
+<a href="https://ices-eg.github.io/bluefishdiet/DietSummary.html" target="_blank"> Initial Diet summaries for NEFSC data - Oct 13 2021 </a>
+
