@@ -53,6 +53,28 @@ To evaluate whether bluefish prey distribution has changed, we should (at a mini
 
 We will use VAST [@thorson_comparing_2017; @thorson_guidance_2019] to evaluate changes in bluefish prey biomass and distribution over time.  
 
+## Data
+
+### NEFSC bottom trawl diet data
+
+Initial test food habits dataset from [2018 ECSA](https://github.com/NOAA-EDAB/ECSA/blob/master/data/allfhsg.RData) has food habits up through 2016. Will get fuller up to date info from Brian Smith shortly.
+
+```{r}
+
+load(here("fhdat", "allfhsg_2016.RData"))
+
+fh.nefsc <- allfhsg %>%
+  filter(pynam != "EMPTY")
+
+
+```
+
+
+
+### NEAMAP bottom trawl diet data
+
+## VAST model(s)
+
 
 
 # Results
