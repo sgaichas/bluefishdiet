@@ -1,0 +1,64 @@
+---
+title: "Bluefish forage index"
+author: "Sarah Gaichas"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    code_fold: hide
+link-citations: yes
+csl: ices-journal-of-marine-science.csl
+bibliography: FishDiet_EcoIndicators.bib
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      message = FALSE,
+                      warning = FALSE)
+
+library(tidyverse)
+library(here)
+library(DT)
+library(pdftools)
+library(patchwork)
+library(ggiraph)
+
+library(VAST)
+```
+
+# Does prey drive availability of bluefish?
+
+## What are bluefish prey?
+
+Bluefish eat small pelagics that are not well sampled by bottom trawl surveys. Bluefish themselves are not well sampled by bottom trawl surveys. Nevertheless, the diet samples collected for bluefish indicate that anchovies, herrings, squids, butterfish, scup, and small hakes are important prey. 
+
+See [here](https://sgaichas.github.io/bluefishdiet/DietSummary.html) for NEFSC survey and [here](https://docs.google.com/presentation/d/1VlP0OsSLnoaoFHHt7kJbrqNTgBJqI6Ru/edit#slide=id.p1) for NEAMAP survey bluefish diet composition summaries.
+
+## Has the total amount of bluefish prey changed over time?
+
+Because bluefish prey are mainly small pelagic species not well sampled by trawl surveys, direct estimates of prey biomass from trawl surveys are unlikely to be useful to understand changes in prey biomass over time. However, we could still try this in aggregate if we have time.
+
+Multiple predators that are more effectively sampled by trawl surveys also consume bluefish prey. Therefore, using a suite of predators as "samplers" of bluefish prey may more effectively estimate changes in prey over time. This method has been applied to develop an index of Atlantic herring in the Northeast US using the NEFSC bottom trawl survey diet data [@ng_predator_2021]. In our case, we will want to apply the method to multiple prey rather than a single prey species.
+
+It may be useful to track prey categories from predator diets (family level aggregation) rather than species level or fully aggregated "prey". We can evaluate how much data is available at each level of aggregation. 
+
+Hypothesis: we would not expect significant changes over time in an index aggregate prey biomass over bluefish's range; they prey on a wide variety of species. However, we may see fluctuations in prey types that could be informative.
+
+Caveat: the surveys here do not cover bluefish's range (sparse south of Cape Hatteras).
+
+## Has the spatial distribution of bluefish prey changed over time?
+
+To evaluate whether bluefish prey distribution has changed, we should (at a minimum) combine nearshore and offshore surveys in as many seasons as feasible. The NEFSC and NEAMAP bottom trawl surveys both operate in spring and fall, and have been combined to analyze changes in biomass and distribution of summer flounder [@perretti_spatio-temporal_2019]. 
+
+# Methods
+
+We will use VAST [@thorson_comparing_2017; @thorson_guidance_2019] to evaluate changes in bluefish prey biomass and distribution over time.  
+
+
+
+# Results
+
+
+# Discussion
+
+
+# References
