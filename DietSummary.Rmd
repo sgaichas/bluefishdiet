@@ -283,6 +283,8 @@ datatable(bluefishregiondiet[,-c(1:2, 10)], rownames = FALSE,
 
 #### Bluefish diet by bluefish size (all years and regions) {.tabset}
 
+Bluefish size categories: Small = 10-30 cm; Medium = 31-70 cm; Large = >70 cm
+
 ##### Plot
 ```{r}
 p <- ggplot(bluefishsizediet, aes(x=as.factor(Size), y=Pct.m, fill=Prey)) +
