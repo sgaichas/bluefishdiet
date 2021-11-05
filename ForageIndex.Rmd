@@ -54,6 +54,8 @@ To evaluate whether bluefish prey distribution has changed, we should (at a mini
 
 We will use VAST [@thorson_comparing_2017; @thorson_guidance_2019] to evaluate changes in bluefish prey biomass and distribution over time.  
 
+$$\rho_1(i) = \beta_1(c_i, t_i) + \omega_1^*(s_i, c_i) + \varepsilon_1^*(s_i, c_i, t_i) + \eta_1(v_i, c_i) \\ + \nu_1(c_i, t_i) + \zeta_1(i) - \iota(c_i, t_i)$$
+
 ## Decisions
 
 ### Which predators to include?
@@ -61,7 +63,7 @@ We will use VAST [@thorson_comparing_2017; @thorson_guidance_2019] to evaluate c
 Fish feeding guilds based on dietary overlap have been defined for the Northeast US shelf based on NEFSC trawl survey diet data from 1973-1997 [@garrison_dietary_2000]. In this analysis, all size classes of bluefish were classified as piscivores. A reasonable first cut would be to use all predator/size combinations identifed as piscivores in @garrison_dietary_2000. This would include:
 
 ```{r}
-
+# code for piscivore table
 piscivores <- ecodata::species_groupings %>%
   select(COMNAME, SizeCat, Garrison.Link) %>%
   filter(!is.na(Garrison.Link),
@@ -99,7 +101,7 @@ Taxonomic? Size? Habitat? Combination?
 Initial test food habits dataset from [2018 ECSA](https://github.com/NOAA-EDAB/ECSA/blob/master/data/allfhsg.RData) has food habits 1973 - 2016. Will get fuller up to date info from Brian Smith shortly.
 
 ```{r}
-
+# code for joining food habits data to piscivore table
 load(here("fhdat", "allfhsg_2016.RData"))
 
 fh.nefsc.pisc <- allfhsg %>%
@@ -112,8 +114,8 @@ fh.nefsc.pisc <- allfhsg %>%
 
 Here are size distributions of piscivores in my trial NEFSC diet dataset 1973-2016. We don't have weakfish in this dataset anyway:
 
-```{r}
-
+```{r, fig.cap="Length distribution of piscivore predators in dataset."}
+# code for making figure
 fh.nefsc.pisc %>%
   group_by(year, season, station, pdid) %>%
   ggplot(aes(x=pdlen, fill=pdcomnam)) +
