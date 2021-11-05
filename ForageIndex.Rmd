@@ -56,9 +56,15 @@ We will use VAST [@thorson_comparing_2017; @thorson_guidance_2019] to evaluate c
 
 $$\rho_1(i) = \beta_1(c_i, t_i) + \omega_1^*(s_i, c_i) + \varepsilon_1^*(s_i, c_i, t_i) + \eta_1(v_i, c_i) \\ + \nu_1(c_i, t_i) + \zeta_1(i) - \iota(c_i, t_i)$$
 
-## Decisions
+## Decisions (15 major)
 
-### Which predators to include?
+### Spatial domain
+
+Bluefish range is coastwide but these surveys cover only northern half. Could limit domain to Hatteras north to Canada on continental shelf, span of NEFSC and NEAMAP bottom trawl surveys. Therefore we would have a "northeast US bluefish prey index."
+
+### Categories (Species/sizes)
+
+#### Which predators to include?
 
 Fish feeding guilds based on dietary overlap have been defined for the Northeast US shelf based on NEFSC trawl survey diet data from 1973-1997 [@garrison_dietary_2000]. In this analysis, all size classes of bluefish were classified as piscivores. A reasonable first cut would be to use all predator/size combinations identifed as piscivores in @garrison_dietary_2000. This would include:
 
@@ -80,9 +86,9 @@ datatable(piscivores, rownames = FALSE,
 
 ```
 
-### Should predators be aggregated prior to analysis or kept separate?
+#### Should predators be aggregated prior to analysis or kept separate?
 
-Options are each predator and size class in the piscivore guild separate, each predator separate (aggregate size), each piscivore guild separate ("a", "b", and "c"), or all piscivores combined.
+Options are each predator and size class in the piscivore guild separate, each predator separate (aggregate size), each piscivore guild separate ("a", "b", and "c"), or all piscivores combined. A model with only bluefish predators could also be done. 
 
 Should we account for predator size in an aggregation? @garrison_dietary_2000 noted that small bluefish along with weakfish formed a subset of piscivores with predominantly anchovy prey (PiscGuild "b" in the table). Large summer flounder and large sharpnose sharks had the highest similarity to medium and large bluefish, but were not distinguished as a subset of the guild from the remaining piscivores [@garrison_dietary_2000]. Winter skates were a separate piscivore guild "c" so we could keep them or not.
 
@@ -90,15 +96,29 @@ There have been 20+ more years of data collected since this analysis. It seems u
 
 *Is it useful for the assessment to characterize prey of small (up to 30 cm) bluefish separately from 31+ cm bluefish?* If so we could separate these predator guilds. There may be more weakfish diet data in the NEAMAP survey than in the NEFSC survey, so joining the surveys will be important if we want to do this.
 
-### How to aggregate prey?
+#### Which prey to include?
+
+Entire list of bluefish prey? 35 categories from NEFSC summaries. How many in test dataset?
+
+#### How to aggregate prey?
 
 Taxonomic? Size? Habitat? Combination?
+
+Avoid modeling all 35+ identified prey separately! Taxonomic aggregation works well with how species id is done in stomach samples as many are family level or above. 
+
+Bay anchovy separate? All other anchovies, herrings/menhaden separate? squids
+
+### Which variable --> Which model structure
+
+Presence/absence of prey, count of prey, biomass? Prey count is not practical as partial remains are common. Prey biomass based on stomach contents. Delta model. Poisson-link model alternative.
+
+Expected biomass of herring per stomach was estimated with 2 linear predictors, n herring per stomach and av wt of herring in a stomach. So perhaps group prey by general size?
 
 ## Data
 
 ### NEFSC bottom trawl diet data
 
-Initial test food habits dataset from [2018 ECSA](https://github.com/NOAA-EDAB/ECSA/blob/master/data/allfhsg.RData) has food habits 1973 - 2016. Will get fuller up to date info from Brian Smith shortly.
+Initial test food habits dataset from [2018 ECSA](https://github.com/NOAA-EDAB/ECSA/blob/master/data/allfhsg.RData) has food habits 1973 to 2016. Will get fuller up to date info from Brian Smith shortly.
 
 ```{r}
 # code for joining food habits data to piscivore table
@@ -112,7 +132,7 @@ fh.nefsc.pisc <- allfhsg %>%
 
 ```
 
-Here are size distributions of piscivores in my trial NEFSC diet dataset 1973-2016. We don't have weakfish in this dataset anyway:
+Here are size distributions of piscivores in my trial NEFSC diet dataset 1973 to 2016. We don't have weakfish in this dataset anyway:
 
 ```{r, fig.cap="Length distribution of piscivore predators in dataset."}
 # code for making figure
@@ -127,13 +147,25 @@ fh.nefsc.pisc %>%
 
 ```
 
+Prey species composition across this subset of predators?
+
+```{r}
+# code to aggregate preds for diet comp
+# look at ESCA get_diet function
+#fh.nefsc.pisc %>%
+#  group_by(year, season, station, collsci) %>%
+  
+```
 
 
 ### NEAMAP bottom trawl diet data
 
 ## VAST model(s)
 
+### Major VAST decisions
 
+
+#### Species/sizes etc
 
 # Results
 
