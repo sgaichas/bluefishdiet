@@ -149,7 +149,7 @@ fh.nefsc.pisc %>%
 
 ```
 
-Prey species composition across this subset of predators?
+Prey species composition across this subset of predators? This code is predator specific
 
 ```{r}
 # code to aggregate preds for diet comp
@@ -635,6 +635,16 @@ p1 <-   ggplot(final_ply%>%filter(svspp==135), aes(year, relmsw, fill=prey)) +
     geom_bar_interactive(stat = "identity", aes(tooltip = prey, data_id = prey))
 
 ggiraph(code = print(p1), height=14)  
+
+```
+
+What I want is to characterize diet of all piscivores caught at each location and model that over time.
+
+So instead of averaging prey weights in stomachs per species at a station, I should average all over all piscivore stomachs at a station. Then do an index for each prey category from the aggreate piscivores. 
+
+So add a column mapping pynam to blueprey. Then sum that preywt at each station and divide by n preds using the piscivore dataset. Then that is the input? Expected biomass of prey per piscivore stomach?
+
+```{r}
 
 ```
 
