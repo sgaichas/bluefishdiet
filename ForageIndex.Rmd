@@ -642,12 +642,69 @@ What I want is to characterize diet of all piscivores caught at each location an
 
 So instead of averaging prey weights in stomachs per species at a station, I should average all over all piscivore stomachs at a station. Then do an index for each prey category from the aggreate piscivores. 
 
-So add a column mapping pynam to blueprey. Then sum that preywt at each station and divide by n preds using the piscivore dataset. Then that is the input? Expected biomass of prey per piscivore stomach?
+So add a column mapping pynam to blueprey and filter by that. Then sum that preywt at each station and divide by n preds using the piscivore dataset. Then that is the input? average prey biomass per stomach per station to get number per stomach and average weight per stomach, ultimately estimating expected biomass of prey per piscivore stomach?
+
+And what are the covariates? Could be number of predators, species composition of predators, size composition of predators at each location? and could throw in temperature.
 
 ```{r}
+# use same prey list as from shiny summaries
+bluefishaggdiet <- read_csv(here("datfromshiny","DC.Bluefish (Pomatomus saltatrix).All.2021-10-07.csv"))
 
+# decadal diet
+diet70 <- read_csv(here("datfromshiny","DC.Bluefish (Pomatomus saltatrix).1970s.2021-10-07.csv")) %>%
+  mutate(Decade = 1970)
+diet80 <- read_csv(here("datfromshiny","DC.Bluefish (Pomatomus saltatrix).1980s.2021-10-07.csv"))%>%
+  mutate(Decade = 1980)
+diet90 <- read_csv(here("datfromshiny","DC.Bluefish (Pomatomus saltatrix).1990s.2021-10-07.csv"))%>%
+  mutate(Decade = 1990)
+diet00 <- read_csv(here("datfromshiny","DC.Bluefish (Pomatomus saltatrix).2000s.2021-10-07.csv"))%>%
+  mutate(Decade = 2000)
+diet10 <- read_csv(here("datfromshiny","DC.Bluefish (Pomatomus saltatrix).2010s.2021-10-07.csv"))%>%
+  mutate(Decade = 2010)
+
+bluefishdecadediet <- bind_rows(diet70, diet80, diet90, diet00, diet10)
+
+# seasonal diet
+dietspring <- read_csv(here("datfromshiny","DC.Bluefish (Pomatomus saltatrix).SPRING.2021-10-07.csv"))%>%
+  mutate(Season = "Spring")
+dietfall <- read_csv(here("datfromshiny","DC.Bluefish (Pomatomus saltatrix).FALL.2021-10-07.csv"))%>%
+  mutate(Season = "Fall")
+
+bluefishseasondiet <- bind_rows(dietspring, dietfall)
+
+# regional diet
+dietMAB <- read_csv(here("datfromshiny","DC.Bluefish (Pomatomus saltatrix).MID-ATLANTIC BIGHT.2021-10-07.csv")) %>%
+  mutate(Region = "MAB")
+dietSNE <- read_csv(here("datfromshiny","DC.Bluefish (Pomatomus saltatrix).SOUTHERN NEW ENGLAND.2021-10-07.csv"))%>%
+  mutate(Region = "SNE")
+dietGB <- read_csv(here("datfromshiny","DC.Bluefish (Pomatomus saltatrix).GEORGES BANK.2021-10-07.csv"))%>%
+  mutate(Region = "GB")
+
+bluefishregiondiet <- bind_rows(dietMAB, dietSNE, dietGB)
+
+# bluefish size diet
+dietSM <- read_csv(here("datfromshiny","DC.Bluefish (Pomatomus saltatrix).S.2021-10-07.csv")) %>%
+  mutate(Size = "Small")
+dietMED <- read_csv(here("datfromshiny","DC.Bluefish (Pomatomus saltatrix).M.2021-10-07.csv"))%>%
+  mutate(Size = "Medium")
+dietLG <- read_csv(here("datfromshiny","DC.Bluefish (Pomatomus saltatrix).L.2021-10-07.csv"))%>%
+  mutate(Size = "Large")
+
+bluefishsizediet <- bind_rows(dietSM, dietMED, dietLG)
+
+preylist <- unique(c(bluefishaggdiet$Prey, bluefishdecadediet$Prey, bluefishregiondiet$Prey, bluefishseasondiet$Prey, bluefishsizediet$Prey))
+
+fh.nefsc.pisc.bfprey <- fh.nefsc.pisc %>%
+  filter(tolower(pynam) %in% tolower(preylist))
 ```
 
+We can get down to 17 prey categories ("analsci") for the piscivore dataset by filtering using the most common prey identified in the summaries:
+
+*35 species from preylist:* 
+`r preylist`
+
+*17 categories using analsci column*
+`r unique(fh.nefsc.pisc.bfprey$analsci)`
 
 ### NEAMAP bottom trawl diet data
 
