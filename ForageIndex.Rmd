@@ -162,7 +162,7 @@ There have been 20+ more years of data collected since this analysis. It seems u
 
 *Is it useful for the assessment to characterize prey of small (up to 30 cm) bluefish separately from 31+ cm bluefish?* If so we could separate these predator guilds. There may be more weakfish diet data in the NEAMAP survey than in the NEFSC survey, so joining the surveys will be important if we want to do this.
 
-Combine predators by ignoring species or treat each as a "survey" contributing to prey index estimate? Do we need pred biomass (more like [predator-expanded-stomach-contents](https://github.com/James-Thorson-NOAA/VAST/wiki/Stomach-content-and-diet-analysis)) if we treat them as a survey? I don't think so as this is getting at predator diet composition and absolute consumption, while we are interested in prey biomass itself.
+Combine predators by ignoring species or treat each as a "survey" contributing to prey index estimate? Do we need pred biomass (more like [predator-expanded-stomach-contents](https://github.com/James-Thorson-NOAA/VAST/wiki/Stomach-content-and-diet-analysis), [@gruss_spatio-temporal_2020]) if we treat them as a survey? I don't think so as this is getting at predator diet composition and absolute consumption, while we are interested in prey biomass itself.
 
 #### Which prey to include?
 
