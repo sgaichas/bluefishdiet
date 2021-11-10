@@ -316,8 +316,8 @@ piscivores &lt;- ecodata::species_groupings %&gt;%
 datatable(piscivores, rownames = FALSE,
           caption = &quot;Piscivores feeding guild from Garrison and Link 2000&quot;,
           options = list(pageLength = 25))</code></pre>
-<div id="htmlwidget-3f19a30b6d7c930517da" style="width:100%;height:auto;" class="datatables html-widget"></div>
-<script type="application/json" data-for="htmlwidget-3f19a30b6d7c930517da">{"x":{"filter":"none","caption":"<caption>Piscivores feeding guild from Garrison and Link 2000<\/caption>","data":[["ATLANTIC COD","ATLANTIC COD","ATLANTIC SHARPNOSE SHARK","BLUEFISH","BLUEFISH","BLUEFISH","FOURSPOT FLOUNDER","GOOSEFISH","SEA RAVEN","SEA RAVEN","SILVER HAKE","SPINY DOGFISH","SPOTTED HAKE","SUMMER FLOUNDER","SUMMER FLOUNDER","THORNY SKATE","THORNY SKATE","WEAKFISH","WEAKFISH","WHITE HAKE","WINTER SKATE","WINTER SKATE"],["L","XL","L","S","M","L","M","L","S","M","L","L","M","M","L","L","XL","S","M","L","L","XL"],["Piscivores","Piscivores","Piscivores","Piscivores","Piscivores","Piscivores","Piscivores","Piscivores","Piscivores","Piscivores","Piscivores","Piscivores","Piscivores","Piscivores","Piscivores","Piscivores","Piscivores","Piscivores","Piscivores","Piscivores","Piscivores","Piscivores"],["a","a","a","b","a","a","a","a","a","a","a","a","a","a","a","a","a","b","b","a","c","c"]],"container":"<table class=\"display\">\n  <thead>\n    <tr>\n      <th>COMNAME<\/th>\n      <th>SizeCat<\/th>\n      <th>Garrison.Link<\/th>\n      <th>PiscGuild<\/th>\n    <\/tr>\n  <\/thead>\n<\/table>","options":{"pageLength":25,"order":[],"autoWidth":false,"orderClasses":false}},"evals":[],"jsHooks":[]}</script>
+<div id="htmlwidget-7320623228f8d1cbda58" style="width:100%;height:auto;" class="datatables html-widget"></div>
+<script type="application/json" data-for="htmlwidget-7320623228f8d1cbda58">{"x":{"filter":"none","caption":"<caption>Piscivores feeding guild from Garrison and Link 2000<\/caption>","data":[["ATLANTIC COD","ATLANTIC COD","ATLANTIC SHARPNOSE SHARK","BLUEFISH","BLUEFISH","BLUEFISH","FOURSPOT FLOUNDER","GOOSEFISH","SEA RAVEN","SEA RAVEN","SILVER HAKE","SPINY DOGFISH","SPOTTED HAKE","SUMMER FLOUNDER","SUMMER FLOUNDER","THORNY SKATE","THORNY SKATE","WEAKFISH","WEAKFISH","WHITE HAKE","WINTER SKATE","WINTER SKATE"],["L","XL","L","S","M","L","M","L","S","M","L","L","M","M","L","L","XL","S","M","L","L","XL"],["Piscivores","Piscivores","Piscivores","Piscivores","Piscivores","Piscivores","Piscivores","Piscivores","Piscivores","Piscivores","Piscivores","Piscivores","Piscivores","Piscivores","Piscivores","Piscivores","Piscivores","Piscivores","Piscivores","Piscivores","Piscivores","Piscivores"],["a","a","a","b","a","a","a","a","a","a","a","a","a","a","a","a","a","b","b","a","c","c"]],"container":"<table class=\"display\">\n  <thead>\n    <tr>\n      <th>COMNAME<\/th>\n      <th>SizeCat<\/th>\n      <th>Garrison.Link<\/th>\n      <th>PiscGuild<\/th>\n    <\/tr>\n  <\/thead>\n<\/table>","options":{"pageLength":25,"order":[],"autoWidth":false,"orderClasses":false}},"evals":[],"jsHooks":[]}</script>
 </div>
 <div id="should-predators-be-aggregated-prior-to-analysis-or-kept-separate" class="section level4">
 <h4>Should predators be aggregated prior to analysis or kept separate?</h4>
@@ -341,6 +341,17 @@ datatable(piscivores, rownames = FALSE,
 <div id="which-variable-which-model-structure" class="section level3">
 <h3>Which variable –&gt; Which model structure</h3>
 <p>Presence/absence of prey, count of prey, biomass? Prey count is not practical as partial remains are common. Prey biomass based on stomach contents. Delta model. Poisson-link model alternative which has been used in both diet examples.</p>
+<p>Univariate: all prey together, all pisivores together with piscivore attributes (n spp, mean length, spp diversity, one key pred dominant, ???) as factor(s)? Density covariates? Catchability covariates?</p>
+<p>Univariate complex: each prey category modeled, all piscivores together</p>
+<p>Multivariate: all prey categories modeled together, all piscivores together</p>
+<p>(Could try a model with only bluefish as a predator but unsure it would work)</p>
+<p>Seasons (Spring, Fall) separate for each analysis.</p>
+</div>
+<div id="vast-questions" class="section level3">
+<h3>VAST questions</h3>
+<p>Explain factors (relates multivariate responses) vs density covariates (explains spatial and temporal patterns due to habitat) vs catchability covariates (predator attributes seem to fit this for sampling prey, but do we need to account for survey catchability of predators? due to observation process). Can any of these be the same thing?</p>
+<p>Advice for specifying/separating the above</p>
+<p>We are looking maybe at a hierarchical structure: Survey catches predators (model accounts for observation process interacting with ecology of predators) Predators sample prey (model accounts for interacting ecology of predators and prey) We want to reconstruct the prey</p>
 </div>
 </div>
 <div id="data" class="section level2">

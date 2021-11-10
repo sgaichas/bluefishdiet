@@ -180,6 +180,26 @@ Bay anchovy separate? All other anchovies, herrings/menhaden separate? squids
 
 Presence/absence of prey, count of prey, biomass? Prey count is not practical as partial remains are common. Prey biomass based on stomach contents. Delta model. Poisson-link model alternative which has been used in both diet examples.
 
+Univariate: all prey together, all pisivores together with piscivore attributes (n spp, mean length, spp diversity, one key pred dominant, ???) as factor(s)? Density covariates? Catchability covariates?
+
+Univariate complex: each prey category modeled, all piscivores together
+
+Multivariate: all prey categories modeled together, all piscivores together
+
+(Could try a model with only bluefish as a predator but unsure it would work)
+
+Seasons (Spring, Fall) separate for each analysis.
+
+### VAST questions
+
+Explain factors (relates multivariate responses) vs density covariates (explains spatial and temporal patterns due to habitat) vs catchability covariates (predator attributes seem to fit this for sampling prey, but do we need to account for survey catchability of predators? due to observation process). Can any of these be the same thing?
+
+Advice for specifying/separating the above
+
+We are looking maybe at a hierarchical structure:
+Survey catches predators (model accounts for observation process interacting with ecology of predators)
+Predators sample prey (model accounts for  interacting ecology of predators and prey)
+We want to reconstruct the prey
 
 ## Data
 
