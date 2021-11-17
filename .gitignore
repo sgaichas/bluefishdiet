@@ -20,6 +20,9 @@
 # MacOS
 .DS_Store
 
+# non code
+lit/
+
 # RStudio files
 .Rproj.user/
 
