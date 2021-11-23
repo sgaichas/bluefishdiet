@@ -1,0 +1,450 @@
+---
+title: "PiscPESC from Scott"
+author: "Sarah Gaichas"
+date: "11/18/2021"
+output: html_document
+---
+
+This is Scott's code that runs the Predator Expanded Stomach Contents (PESC) VAST model.
+
+```{r setup}
+# remotes::install_github("James-Thorson-NOAA/FishStatsUtils")
+# remotes::install_github("James-Thorson-NOAA/VAST")
+
+library(TMB)
+library(VAST)
+library(FishStatsUtils)
+library(dplyr)
+library(ggplot2)
+
+packageVersion("VAST")
+##3.8.2
+packageVersion("FishStatsUtils")
+##2.10.2
+
+```
+
+Scott's complete code below. Compare the predator guilds here with the ecodata predator guilds--they should be the same!
+
+```{r, eval=FALSE}
+# 1 Prepare data -----------------------------------------------------------
+
+### Fish community diet paper: Garrison and Link 2000 (https://www.int-res.com/articles/meps/202/m202p231.pdf)
+
+# ## NOTE: On my W10 machine, I needed to make sure Rtools is found in the PATH... every time.
+# Sys.setenv(PATH = paste("C:/Rtools/bin", Sys.getenv("PATH"), sep=";"))
+# Sys.setenv(BINPREF = "C:/Rtools/mingw_$(WIN)/bin/")
+
+## 1.1 Download data -----------------------------------------------------------
+load(url("https://github.com/Laurels1/Condition/raw/master/data/allfh.RData"))
+# survdat <- readRDS(url("https://github.com/Laurels1/Condition/raw/master/data/NEFSC_survey_data_02-13-20.rds"))
+## I have no idea where I found this file... check with Sean/Andy to see if there is a better survdatBio source
+#survdat <- readRDS("analysis/data/derived_data/survdatBio.rds")$survdat
+survdat <- readRDS("fhdat/survdatBio.rds")$survdat
+
+## I think this is from Wigley's LW stuff, probably should use survdat (e.g., https://noaa-edab.github.io/survdat/reference/get_length_weight.html)
+lw_dat <- read.csv("https://raw.githubusercontent.com/Laurels1/Condition/master/data/lw_parameters_Condition.csv",
+                   stringsAsFactors = FALSE)
+
+# guild_dat <- read.csv(file = "analysis/data/derived_data/predator_guilds.csv", stringsAsFactors = FALSE)
+# prey_dat <- read.csv(file = "analysis/data/derived_data/prey_categories.csv", stringsAsFactors = FALSE)
+# guild_diet <- read.csv(file = "analysis/data/derived_data/guild_diets.csv", stringsAsFactors = FALSE)
+
+guild_dat <- read.csv("https://raw.githubusercontent.com/NOAA-EDAB/neusvast/master/analysis/data/derived_data/predator_guilds.csv?token=AB6LGDWTW4MZVH63YYUWNPDBS2XPC")
+prey_dat <- read.csv("https://raw.githubusercontent.com/NOAA-EDAB/neusvast/master/analysis/data/derived_data/prey_categories.csv?token=AB6LGDRDO5TWRVDZ7RBE7RLBS2XQ2")
+guild_diet <- read.csv("https://raw.githubusercontent.com/NOAA-EDAB/neusvast/master/analysis/data/derived_data/guild_diets.csv?token=AB6LGDS662FGTPK3VOFR37LBS2XMQ")
+
+## Clean up the input data and reorganize so min and max length per guild are meaningful
+### Note -- I removed the size groupings for each species within a feeding guild (e.g., if S and M cod are in the same guild, the range of S & M is reported)
+guild_clean <- guild_dat %>%
+  mutate(comnam = tolower(comnam),
+         spp = tolower(spp),
+         guild = gsub(" ", "_", guild),
+         guild = gsub("/", "-and-", guild),
+         max_val = ifelse(is.na(max_val) & grepl(pattern = ">", min_val),
+                          Inf,
+                          max_val),
+         max_val = as.numeric(max_val),
+         min_val = as.numeric(gsub(">", "", min_val))) %>%
+  group_by(comnam, guild, spp) %>%
+  summarize(min_val = min(min_val),
+            max_val = max(max_val)) %>%
+  arrange(guild)
+
+## Select all of the predator spp from allfh to add svspp number to guild names
+allfh_spp <- allfh %>%
+  select(pdscinam, pdcomnam, svspp) %>%
+  mutate(pdscinam = tolower(pdscinam),
+         pdcomnam = tolower(pdcomnam)) %>%
+  distinct()
+
+## Look-up for all prey names/categories
+prey_cat <- allfh %>%
+  select(pynam, pycomnam2, gencat, gensci, analcat, analsci, collcat) %>%
+  distinct()
+
+## grab distinct predator spp and join with svspp
+guild_spp <- guild_clean %>%
+  select(spp, comnam) %>%
+  distinct() %>%
+  left_join(allfh_spp, by = c("spp" = "pdscinam", "comnam" = "pdcomnam"))
+
+## add svspp back onto the guild data
+guild_len <- guild_clean %>%
+  left_join(guild_spp)
+
+
+## Here's the spot to start iterating over guilds if one were so inclined
+fish_guild <- c("amphipod-and-shrimp", "benthivore", "crab_eater", "piscivore", "planktivore", "shrimp-and-small_fish")[4]
+
+
+working_dir <- here::here(sprintf("PESC/pesc_%s/", fish_guild))
+plot_dir <- here::here(sprintf("PESC/pesc_%s//", fish_guild))
+
+if(!dir.exists(working_dir)) {
+  dir.create(working_dir)
+}
+
+if(!dir.exists(plot_dir)) {
+  dir.create(plot_dir)
+}
+
+## 1.2 Length-weight parameters--------------------------------------------------
+
+### Clean up LW to get a and b for each svspp
+lw_par <-  lw_dat %>%
+  tidyr::pivot_longer(cols = c(-SPECIES_GROUP_ID, -LW_SVSPP,
+                               -SPECIES, -SEXMF),
+                      names_to = "term",
+                      values_to = "value") %>%
+  mutate(season = case_when(grepl("SEASONLESS", term) ~ "all",
+                            grepl("IND_WEIGHT_TOLERANCE$", term) ~ "all",
+                            grepl("_SPRING$", term) ~ "spring",
+                            grepl("_FALL$", term) ~ "fall",
+                            TRUE ~ NA_character_),
+         term = gsub("SEASONLESS_|_FALL$|_SPRING$", "", term)) %>%
+  dplyr::filter(!term %in% c("IND_WEIGHT_TOLERANCE", "CONTAINER_WEIGHT_TOLERANCE")) %>%
+  tidyr::pivot_wider(names_from = term, values_from = value) %>%
+  mutate(SEXMF = ifelse(SEXMF %in% c("M", "F"),
+                        SEXMF,
+                        NA_character_)) %>%
+  filter(is.na(SEXMF),
+         season == "all") %>%
+  select(svspp = LW_SVSPP,
+         lw_b = EXPONENT,
+         lw_a = COEFFICIENT)
+
+### add lw parameters for each species
+guild_lw <- guild_spp %>%
+  left_join(lw_par) %>%
+  left_join(guild_len)
+
+
+# 1.3 Survey data ---------------------------------------------
+
+surv_raw <- survdat %>%
+  filter(!is.na(LON),
+         !is.na(LAT),
+         SEASON %in% c("SPRING", "FALL"),
+         YEAR >= 1973,
+         YEAR <= 2018) %>%
+  mutate(YEAR = ifelse(is.na(YEAR),
+                       gsub("\\d{2}$", "", CRUISE6),
+                       YEAR),
+         YEAR = as.numeric(YEAR),
+         id = paste0(CRUISE6, "_", STATION))
+
+## total biomass of functional group per haul, if INDWT is missing, infill from LW relationship
+### Note -- i'm not sure if it's a good idea to add missing weights using lengths. I did it, though.
+pred_raw <- surv_raw %>%
+  left_join(guild_lw, by = c("SVSPP" = "svspp")) %>%
+  filter(LENGTH >= min_val,
+         LENGTH <= max_val) %>%
+  mutate(marker = ifelse(is.na(INDWT),
+                         "LW",
+                         "measured"),
+         Catch_KG = ifelse(!is.na(INDWT),
+                           INDWT,
+                           (exp(lw_a))*LENGTH**lw_b)) %>%
+  select(id,
+         Year = YEAR,
+         Lat = LAT,
+         Lon = LON,
+         guild,
+         Catch_KG) %>%
+  group_by(id, Year, guild) %>%
+  summarize(Catch_KG = sum(Catch_KG))
+
+# 1.4 Functional group diet data -----------------------------------------------
+
+## Filter out only good stomachs for strata and species, add predator functional group LW info, guild diet categories,
+## and if predator weight isn't available use LW relationships
+### Note -- Again, i'm not sure if it's a good idea to add missing weights using lengths. I did it, though.
+prey_raw <- allfh %>%
+  filter(pynam != 'BLOWN',
+         pynam != 'PRESERVED',
+         pynam != ' ',
+         purcode == 10) %>%
+  left_join(guild_lw, by = c("svspp" = "svspp")) %>%
+  filter(pdlen >= min_val,
+         pdlen <= max_val) %>%
+  right_join(guild_diet, by = c("guild", "collcat" = "prey_taxa"))
+
+  ## The Garrison and Link guild diets categories might be too much for VAST, as a proof of concept, I'll simplify
+  ## the piscivores... this is kinda random and should be revisited
+
+prey_group <- prey_raw %>%
+  mutate(collcat = case_when(guild == "piscivore" & grepl("^URO|^MERB", collcat) ~ "hakes",
+                             guild == "piscivore" & grepl("^CLU|^AMMO|^ENG|^PEP|^SCO", collcat) ~ "small_silvers",
+                             guild == "piscivore" & grepl("^LOL|^ILL|^CEPH", collcat) ~ "cephalopods", ## Quite a few missing years for illex and loligo, so I lumped together
+                             # guild == "piscivore" & grepl("^ILL", collcat) ~ "illex",
+                             guild == "piscivore" & grepl("^CAN|^COP|^PAN|^POLY", collcat) ~ "other_inverts",
+                             guild == "piscivore" & grepl("^GAD|^OTH|^PLE|^UNID", collcat) ~ "other_fish",
+                             guild == "piscivore" & grepl("^AR", collcat) ~ "other_unid",
+                             TRUE ~ collcat)) %>%
+  mutate(id = paste0(cruise6, "_", station),
+         year = as.numeric(year),
+         pyamtw = pyamtw/1000,
+         pdwgt = ifelse(pdwgt <= 0,
+                        NA,
+                        pdwgt/1000),
+         pd_kg = ifelse(!is.na(pdwgt),
+                        pdwgt,
+                        (exp(lw_a))*pdlen**lw_b)) %>%
+  select(Year = year,
+         id,
+         guild,
+         spp = collcat,
+         pyamtw,
+         pd_kg)
+
+## calculate prey biomass per predator biomass
+prey_bm <- prey_group %>%
+  group_by(Year, id, spp, guild) %>%
+  summarize(sum_pyamtw = sum(pyamtw),
+         sum_pd_kg = sum(pd_kg),
+         Catch_KG = sum_pyamtw/sum_pd_kg) %>%
+  ungroup() %>%
+  select(id,
+         Year,
+         guild,
+         Catch_KG,
+         spp) %>%
+  distinct(.keep_all = TRUE) %>%
+  filter(!is.na(spp))
+
+## Calculate the mean biomass for each size_class and haul, which becomes the area swept
+prey_swept <- prey_group %>%
+  select(-spp, -pyamtw) %>%
+  group_by(id, Year, guild) %>%
+  mutate(AreaSwept_km2 = mean(pd_kg)) %>%
+  select(-pd_kg) %>%
+  distinct(.keep_all = TRUE)
+
+
+# 1.5 Station data --------------------------------------------------------
+
+## Select all stations and expand to the prey and size groups
+prey_station <- prey_bm %>%
+  select(-Catch_KG, -spp, -guild) %>%
+  distinct(.keep_all = TRUE) %>%
+  group_by(id) %>%
+  rowwise() %>%
+  mutate(guild = list(unique(prey_bm$guild)),
+         spp = list(unique(prey_bm$spp))) %>%
+  tidyr::unnest(guild) %>%
+  tidyr::unnest(spp)
+
+# prey_station <- prey_raw %>%
+#   select(-Catch_KG, -spp, -size_class) %>%
+#   distinct(.keep_all = TRUE) %>%
+#   group_by(id) %>%
+#   rowwise() %>%
+#   mutate(size_class = list(c("small", "medium", "large")),
+#          spp = list(unique(prey_raw$spp))) %>%
+#   tidyr::unnest(size_class) %>%
+#   tidyr::unnest(spp)
+
+## Select all stations and expand to the prey groups of interest
+station_dat <- surv_raw %>%
+  dplyr::select(id,
+                Year = YEAR,
+                Lat = LAT,
+                Lon = LON) %>%
+  distinct(.keep_all = TRUE)
+
+# 1.6 Join data -----------------------------------------------------------
+
+# prey_dat <- station_dat %>%
+#   left_join(prey_raw, by = c("id", "Year", "size_class", "spp")) %>%
+#   mutate(Catch_KG = ifelse(is.na(Catch_KG),
+#                            0,
+#                            Catch_KG))
+# prey_dat <- prey_raw %>%
+#   right_join(prey_station) %>%
+#   right_join(station_dat) %>%
+#   group_by(id, size_class) %>%
+#   filter(!all(is.na(Catch_KG))) %>%  # gets rid of hauls where all size_class are NA
+#   filter(size_class == "medium") %>%
+#   select(-size_class) %>%
+#   mutate(Catch_KG = ifelse(is.na(Catch_KG),
+#                            0,
+#                            Catch_KG))
+
+# head(prey_bm) ## 15107 - catch KG for each spp and size_class
+# head(prey_station) ## 349284
+# head(station_dat) ##39584
+# head(prey_swept) ## 18196 - area swept for each size_class
+
+# prey_dat <- prey_bm %>%
+#   right_join(prey_station) %>%
+#   right_join(station_dat) %>%
+#   right_join(prey_swept) %>%
+#   filter(size_class == "medium") %>%
+#   select(-size_class) %>%
+#   mutate(Catch_KG = ifelse(is.na(Catch_KG),
+#                            0,
+#                            Catch_KG))
+
+prey_station <- station_dat %>% ##1543776
+  # distinct(.keep_all = TRUE) %>%
+  group_by(id) %>%
+  rowwise() %>%
+  mutate(guild = list(unique(prey_bm$guild)),
+         spp = list(unique(prey_bm$spp))) %>%
+  tidyr::unnest(guild) %>%
+  tidyr::unnest(spp)
+
+prey_dat <- prey_station %>%
+  left_join(prey_bm) %>%
+  left_join(prey_swept) %>%
+  # filter(!is.na(AreaSwept_km2)) %>%
+  filter(guild == "piscivore",
+         spp %in% unique(prey_group$spp[prey_group$guild == "piscivore"])) %>%
+  select(-guild) %>%
+  mutate(Catch_KG = ifelse(is.na(Catch_KG),
+                           0,
+                           Catch_KG)) %>%
+  ungroup()
+
+### need to
+missing_c_t <- prey_dat %>%
+  group_by(Year, spp) %>%
+  summarize(zero_cases = sum(Catch_KG != 0)) %>%
+  filter(zero_cases == 0)
+
+ggplot(missing_c_t, aes(x = Year, y = zero_cases))+
+  geom_point() +
+  facet_wrap(~spp)
+
+
+# tb <- prey_dat %>%
+#   group_by(Year, spp) %>%
+#   mutate(new_kg = ifelse(all(Catch_KG == 0),
+#                          NA,
+#                          Catch_KG),
+#          another_try = case_when(is.na(new_kg) ~ NA_real_,
+#                               TRUE ~ Catch_KG))
+#
+#
+# td <- tb %>%
+#   group_by(Year, spp) %>%
+#   summarize(sum2 = sum(is.na(new_kg))/n())
+
+pred_dat <- pred_raw %>%
+  filter(guild == "piscivore") %>%
+  # dplyr::mutate(spp = "piscivore") %>%
+  dplyr::right_join(station_dat) %>%
+  dplyr::mutate(spp = "piscivore",
+    # spp = ifelse(is.na(spp),
+    #                          "piscivore",
+    #                          spp),
+                Catch_KG = ifelse(is.na(Catch_KG),
+                                  0,
+                                  Catch_KG),
+                AreaSwept_km2 = 0.0384) %>%
+  select(-guild) %>%
+  ungroup()
+
+all_dat <- bind_rows(pred_dat,
+                     prey_dat) %>%
+  distinct(.keep_all = TRUE) %>%
+  mutate(spp = factor(spp, levels = c("piscivore", unique(prey_dat$spp)))) %>%
+  group_by(Year, spp) %>%
+  mutate(new_kg = ifelse(all(Catch_KG == 0),
+                  NA,
+                  Catch_KG),
+         Catch_KG = case_when(is.na(new_kg) ~ NA_real_,
+                        TRUE ~ Catch_KG),
+         AreaSwept_km2 = 0.0384) %>%
+  ungroup() %>%
+  select(-id, -new_kg) %>%
+  distinct() %>%
+  data.frame(stringsAsFactors = FALSE)
+
+# ggplot(data = all_dat, aes(x = Lon, y = Lat, color = spp, size = log(Catch_KG + 1)), alpha = 0.2)+
+#   facet_wrap(~Year) +
+#   geom_point()
+
+######## Make settings
+settings = make_settings(n_x = 50,
+                         # bias.correct = FALSE,
+                         Region = "northwest_atlantic",
+                         purpose = "index2",
+                         strata.limits = list('All_areas' = 1:1e5)) #list('Georges_Bank' = strata_limits))
+
+######## Change settings from defaults
+settings$ObsModel = c( 2, 1 ) #make_data()
+settings$Options[2:4] = FALSE
+settings$use_anisotropy = FALSE
+settings$fine_scale = TRUE
+# settings$FieldConfig = c("Omega1"="IID", "Epsilon1"="IID", "Omega2"="IID", "Epsilon2"="IID")
+
+## Expansion_cz should look like this (first row of pred, 0,0, and the prey spp levels should be 1,0 )
+Expansion_cz <- matrix(c(0, 0, rep(c(1,0), nlevels(all_dat$spp) - 1)),
+                       ncol = 2,
+                       byrow = TRUE)
+
+# Expansion_cz = matrix(c(0, 1, 1, 1, 1, 1, 1,
+#                         1, 1, 1, 1, 1, 1, 1,
+#                         0, 0, 0, 0, 0, 0, 0,
+#                         0, 0, 0, 0, 0, 0, 0), nrow = nlevels(all_dat$spp), ncol = 2)
+
+# #       [,1]  [,2]
+# # [1,]    0     0
+# # [2,]    1     0
+# # [3,]    1     0
+# # [4,]    1     0
+# # [5,]    1     0
+# # [6,]    1     0
+# # [7,]    1     0
+# # [8,]    1     0
+
+
+######## Run model
+fit = fit_model( "settings" = settings,
+                 # "Lat_i"=all_dat[,'Y'],
+                 # "Lon_i"=all_dat[,'X'],
+                 "Lat_i" = all_dat[,'Lat'],
+                 "Lon_i" = all_dat[,'Lon'],
+                 "t_i" = all_dat[,'Year'],
+                 "c_i" = as.numeric(all_dat[,"spp"])-1,
+                 "b_i" = as_units(all_dat[,'Catch_KG'], "kg"),
+                 "a_i" = as_units(all_dat[,'AreaSwept_km2'], "km^2"),
+                 "Expansion_cz" = Expansion_cz,
+                 working_dir = paste0(working_dir, "/"),
+                 # "input_grid"=example$input_grid,
+                 "knot_method"="grid", "Npool"=20, "newtonsteps"=1, "getsd"=TRUE, test_fit=FALSE)
+
+saveRDS(fit, file = paste0(working_dir, "/fit.rds"))
+saveRDS(all_dat, file = paste0(working_dir, "/all_dat.rds"))
+```
+
+Started this at 3:20 pm Nov 18 on my (new) laptop. Finished the run at 11:59 pm Nov 18.
+
+Output messages:
+
+Bias correcting 322 derived quantities
+#########################
+The model is likely not converged
+#########################

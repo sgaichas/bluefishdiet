@@ -23,6 +23,9 @@
 # non code
 lit/
 
+# VAST output 
+PESC/
+
 # RStudio files
 .Rproj.user/
 
