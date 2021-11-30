@@ -26,9 +26,22 @@ library(ecodata)
 library(VAST)
 ```
 
-Use food habits data from Laurel's condition repository
+Use food habits data from Laurel's condition repository, object is called `allfh`
 
 ```{r}
 load(url("https://github.com/Laurels1/Condition/raw/master/data/allfh.RData"))
 ```
 
+Range of years in `allfh` :
+
+`r unique(allfh$year)`
+
+Following data prep in @ng_predator_2021. First collapsed to first and second half of year, combining winter and summer surveys with spring and fall to expand datasets. 
+
+Want to compute the average mass of each prey category for combined predators per tow. Predator-specific covariates need to also be averaged by tow (size, Nspecies, evenness?).
+
+First explore, how many predators per tow, how many stomachs each, how many prey in each predator?
+
+
+
+The first aggregation was to season in 
