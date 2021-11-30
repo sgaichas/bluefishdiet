@@ -1,0 +1,34 @@
+---
+title: "Prey data and aggregation"
+author: "Sarah Gaichas"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    code_fold: hide
+link-citations: yes
+csl: ices-journal-of-marine-science.csl
+bibliography: FishDiet_EcoIndicators.bib
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      message = FALSE,
+                      warning = FALSE)
+
+library(tidyverse)
+library(here)
+library(DT)
+library(pdftools)
+library(patchwork)
+library(ggiraph)
+
+library(ecodata)
+library(VAST)
+```
+
+Use food habits data from Laurel's condition repository
+
+```{r}
+load(url("https://github.com/Laurels1/Condition/raw/master/data/allfh.RData"))
+```
+

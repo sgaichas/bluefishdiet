@@ -50,9 +50,9 @@ lw_dat <- read.csv("https://raw.githubusercontent.com/Laurels1/Condition/master/
 # prey_dat <- read.csv(file = "analysis/data/derived_data/prey_categories.csv", stringsAsFactors = FALSE)
 # guild_diet <- read.csv(file = "analysis/data/derived_data/guild_diets.csv", stringsAsFactors = FALSE)
 
-guild_dat <- read.csv("https://raw.githubusercontent.com/NOAA-EDAB/neusvast/master/analysis/data/derived_data/predator_guilds.csv?token=AB6LGDWTW4MZVH63YYUWNPDBS2XPC")
-prey_dat <- read.csv("https://raw.githubusercontent.com/NOAA-EDAB/neusvast/master/analysis/data/derived_data/prey_categories.csv?token=AB6LGDRDO5TWRVDZ7RBE7RLBS2XQ2")
-guild_diet <- read.csv("https://raw.githubusercontent.com/NOAA-EDAB/neusvast/master/analysis/data/derived_data/guild_diets.csv?token=AB6LGDS662FGTPK3VOFR37LBS2XMQ")
+guild_dat <- read.csv("fhdat/predator_guilds.csv", stringsAsFactors = FALSE)
+prey_dat <- read.csv("fhdat/prey_categories.csv", stringsAsFactors = FALSE)
+guild_diet <- read.csv("fhdat/guild_diets.csv", stringsAsFactors = FALSE)
 
 ## Clean up the input data and reorganize so min and max length per guild are meaningful
 ### Note -- I removed the size groupings for each species within a feeding guild (e.g., if S and M cod are in the same guild, the range of S & M is reported)
@@ -388,7 +388,7 @@ all_dat <- bind_rows(pred_dat,
 
 ######## Make settings
 settings = make_settings(n_x = 50,
-                         # bias.correct = FALSE,
+                         bias.correct = FALSE,
                          Region = "northwest_atlantic",
                          purpose = "index2",
                          strata.limits = list('All_areas' = 1:1e5)) #list('Georges_Bank' = strata_limits))
@@ -398,7 +398,7 @@ settings$ObsModel = c( 2, 1 ) #make_data()
 settings$Options[2:4] = FALSE
 settings$use_anisotropy = FALSE
 settings$fine_scale = TRUE
-# settings$FieldConfig = c("Omega1"="IID", "Epsilon1"="IID", "Omega2"="IID", "Epsilon2"="IID")
+settings$FieldConfig = c("Omega1"="IID", "Epsilon1"="IID", "Omega2"="IID", "Epsilon2"="IID")
 
 ## Expansion_cz should look like this (first row of pred, 0,0, and the prey spp levels should be 1,0 )
 Expansion_cz <- matrix(c(0, 0, rep(c(1,0), nlevels(all_dat$spp) - 1)),
