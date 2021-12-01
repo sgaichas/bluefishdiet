@@ -23,7 +23,7 @@ library(patchwork)
 library(ggiraph)
 
 library(ecodata)
-library(VAST)
+#library(VAST)
 ```
 
 Use food habits data from Laurel's condition repository, object is called `allfh`
@@ -40,8 +40,48 @@ Following data prep in @ng_predator_2021. First collapsed to first and second ha
 
 Want to compute the average mass of each prey category for combined predators per tow. Predator-specific covariates need to also be averaged by tow (size, Nspecies, evenness?).
 
-First explore, how many predators per tow, how many stomachs each, how many prey in each predator?
+First explore, how many predators per tow, how many stomachs each, how many prey in each predator? Filter to piscivores first. 
+
+```{r}
+# code for piscivore table
+piscivores <- ecodata::species_groupings %>%
+  select(COMNAME, SizeCat, Garrison.Link) %>%
+  filter(!is.na(Garrison.Link),
+         Garrison.Link == "Piscivores") %>%
+  mutate(PiscGuild = case_when(COMNAME == "WINTER SKATE" ~ "c",
+                               COMNAME == "WEAKFISH" ~ "b", 
+                               COMNAME == "BLUEFISH" & SizeCat == "S" ~ "b",
+                               TRUE ~ "a")) %>%
+  distinct()
+
+# same as Scott's?
+guild_dat <- read.csv("fhdat/predator_guilds.csv", stringsAsFactors = FALSE)
+
+pisc2 <- guild_dat %>%
+  filter(guild %in% "piscivore")
+
+# no, typo in Scott's BSB should not be a piscivore and bluefish S and M missing
+
+rm(pisc2, guild_dat)
+
+# food habits 1973-2020 piscivores only; include empties
+
+fh.nefsc.pisc <- allfh %>%
+  #filter(pynam != "EMPTY") %>%
+  left_join(piscivores, by = c("pdcomnam" = "COMNAME",
+                               "sizecat" = "SizeCat")) %>%
+  filter(!is.na(Garrison.Link))
+
+```
 
 
+Possible prey categories:
++  Inshore fish (menhaden, bay anchovy, sandlance)
++  Offshore fish (Atl herring, mackerel, butterfish, hakes)
++  Inshore squid (Loligo)
++  Offshore squid (Illex)
++  Other (AR, misc, inverts other than squid)
 
-The first aggregation was to season in 
+Do some dynamic mapping if engraulidae mostly with anchoa make inshore? 
+If cephalapods with loligo make inshore; Illex offshore?
+Circular
