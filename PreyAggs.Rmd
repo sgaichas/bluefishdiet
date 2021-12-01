@@ -72,12 +72,27 @@ fh.nefsc.pisc <- allfh %>%
                                "sizecat" = "SizeCat")) %>%
   filter(!is.na(Garrison.Link))
 
+ preycount <- fh.nefsc.pisc %>%
+   #group_by(year, season, pdcomnam, pynam) %>%
+   group_by(pdcomnam, pynam) %>%
+   summarise(count = n()) %>%
+   #arrange(desc(count))
+   pivot_wider(names_from = pdcomnam, values_from = count)
+
+```
+
+How many times in the full dataset was each prey name observed per predator?
+
+```{r}
+datatable(preycount, rownames = FALSE,
+          caption = "Prey observed in piscivores guild (Garrison and Link 2000) 1973-2020",
+          options = list(pageLength = 25))
 ```
 
 
 Possible prey categories:
-+  Inshore fish (menhaden, bay anchovy, sandlance)
-+  Offshore fish (Atl herring, mackerel, butterfish, hakes)
++  Inshore fish (menhaden, bay anchovy, silverside, sandlance, spot?)
++  Offshore fish (Atl herring/clupeidae, Atl mackerel/scomber, butterfish, hakes)
 +  Inshore squid (Loligo)
 +  Offshore squid (Illex)
 +  Other (AR, misc, inverts other than squid)
