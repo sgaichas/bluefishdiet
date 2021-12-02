@@ -85,8 +85,44 @@ How many times in the full dataset was each prey name observed per predator?
 
 ```{r}
 datatable(preycount, rownames = FALSE,
-          caption = "Prey observed in piscivores guild (Garrison and Link 2000) 1973-2020",
-          options = list(pageLength = 25))
+          extensions = c("FixedColumns"),
+          #caption = "Prey observed in piscivores guild (Garrison and Link 2000) 1973-2020",
+          options = list(pageLength = 25,
+                         scrollX = TRUE,
+                         fixedColumns = list(leftColumns = 1)))
+```
+
+Start by aggregating all pelagic nekton prey that have at least 10 observations for bluefish (leaving out empty, fish, osteichthes, AR, blown):
+
+```{r}
+
+gencomlist <- fh.nefsc.pisc %>%
+  select(pynam, gencom2) %>%
+  distinct()
+
+blueprey <- preycount %>%
+  filter(BLUEFISH > 9) %>%
+  filter(!pynam %in% c("EMPTY", "BLOWN",
+                       "FISH", "OSTEICHTHYES",
+                       "ANIMAL REMAINS",
+                       "FISH SCALES")) %>%
+  #filter(!str_detect(pynam, "SHRIMP|CRAB")) %>%
+  left_join(gencomlist) %>%
+  filter(!gencom2 %in% c("ARTHROPODA", "ANNELIDA",
+                         "CNIDARIA", "UROCHORDATA",
+                         "ECHINODERMATA", "WORMS",
+                         "BRACHIOPODA", "COMB JELLIES",
+                         "BRYOZOA", "SPONGES",
+                         "MISCELLANEOUS", "OTHER"))
+```
+
+```{r}
+datatable(blueprey, rownames = FALSE,
+          extensions = c("FixedColumns"),
+          #caption = "Bluefish prey in all piscivores 1973-2020",
+          options = list(pageLength = 25,
+                         scrollX = TRUE,
+                         fixedColumns = list(leftColumns = 1)))
 ```
 
 
