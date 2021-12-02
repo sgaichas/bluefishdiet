@@ -125,14 +125,37 @@ datatable(blueprey, rownames = FALSE,
                          fixedColumns = list(leftColumns = 1)))
 ```
 
+This gives us 20 individual prey names. 
 
-Possible prey categories:
-+  Inshore fish (menhaden, bay anchovy, silverside, sandlance, spot?)
+We should compare this list with NEAMAP bluefish prey to see if any are missing.
+
+Filter dataset to these preynames, then look at summary stats of prey per tow, predators per tow by season each year.
+
+```{r}
+fh.nefsc.pisc.blueprey <- fh.nefsc.pisc %>%
+  mutate(blueprey = case_when(pynam %in% blueprey$pynam ~ "blueprey",
+                              TRUE ~ "othprey"))
+
+preystn <- fh.nefsc.pisc.blueprey %>%
+  group_by(year, season, station) %>%
+  count(blueprey) %>%
+  pivot_wider(names_from = blueprey, values_from = n) %>%
+  group_by(year, season) %>%
+  
+  summarise((!is.na(othprey)),
+            count(!is.na(blueprey)))
+
+```
+
+Possible prey categories:  
+
++  Inshore fish (menhaden, bay anchovy, engraulidae?, sandlance, spot?)
 +  Offshore fish (Atl herring/clupeidae, Atl mackerel/scomber, butterfish, hakes)
 +  Inshore squid (Loligo)
 +  Offshore squid (Illex)
-+  Other (AR, misc, inverts other than squid)
++  Other (AR, misc, inverts other than squid) No, skip this.
 
+Presence of family level categories (Cephalopoda, Engraulidae) makes habitat splitting difficult.
 Do some dynamic mapping if engraulidae mostly with anchoa make inshore? 
 If cephalapods with loligo make inshore; Illex offshore?
-Circular
+Circular though.
