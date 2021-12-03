@@ -187,6 +187,25 @@ summary(coverage$nstation)
 
 So we can aggregate over all these prey in all predator stomachs at a particular station to get mean bluefish prey weight per predator stomach. Calculate variance in prey weight too, n prey species, prey diversity index? The catchability covariates at each station could be number of predators, number of predator species, diversity/evenness of predator species, mean predator length, variance predator length. The habitat covariates at each station could be temperature, bottom depth?
 
+```{r}
+
+bluepyagg_stn <- fh.nefsc.pisc.blueprey %>%
+  #create id linking cruise6_station
+  #create season_ng spring and fall Spring=Jan-May, Fall=June-Dec
+  mutate(id = paste0(cruise6, "_", station),
+         year = as.numeric(year),
+         month = as.numeric(month),
+         season_ng = case_when(month <= 5 ~ "SPRING",
+                               month >= 6 ~ "FALL",
+                               TRUE ~ as.character(NA))
+         )
+  group_by(id) %>%
+  #mean blueprey g per stomach per tow: sum all blueprey g/n stomachs in tow
+
+    #mean pred length per tow
+  
+```
+
 
 
 Then look at summary stats of prey per tow, predators per tow by season each year.
