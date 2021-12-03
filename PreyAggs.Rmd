@@ -177,6 +177,17 @@ datatable(coverage, rownames = FALSE,
           )
 ```
 
+(Note that the fall 2020 surveys were cancelled, and spring 2020 was partial due to pandemic restrictions.)
+
+No year/season combinations have 0 stations with aggregated bluefish prey. Summarizing the number of stations per year/season with bluefish prey, 1973-2020:
+
+```{r}
+summary(coverage$nstation)
+```
+
+So we can aggregate over all these prey in all predator stomachs at a particular station to get mean bluefish prey weight per predator stomach. Calculate variance in prey weight too, n prey species, prey diversity index? The catchability covariates at each station could be number of predators, number of predator species, diversity/evenness of predator species, mean predator length, variance predator length. The habitat covariates at each station could be temperature, bottom depth?
+
+
 
 Then look at summary stats of prey per tow, predators per tow by season each year.
 
