@@ -129,7 +129,7 @@ This gives us 20 individual prey names.
 
 We should compare this list with NEAMAP bluefish prey to see if any are missing.
 
-Filter dataset to these preynames, then look at summary stats of prey per tow, predators per tow by season each year.
+How many tows with piscivore diets had these preynames? 
 
 ```{r}
 fh.nefsc.pisc.blueprey <- fh.nefsc.pisc %>%
@@ -139,15 +139,48 @@ fh.nefsc.pisc.blueprey <- fh.nefsc.pisc %>%
 preystn <- fh.nefsc.pisc.blueprey %>%
   group_by(year, season, station) %>%
   count(blueprey) %>%
-  pivot_wider(names_from = blueprey, values_from = n) %>%
-  group_by(year, season) %>%
-  
-  summarise((!is.na(othprey)),
-            count(!is.na(blueprey)))
+  pivot_wider(names_from = blueprey, values_from = n) 
+
+#dim(preystn)[1]
+
+bluepreystn <- preystn %>% 
+  arrange(desc(blueprey)) %>%
+  filter(!is.na(blueprey))
+
+#dim(bluepreystn)[1]
 
 ```
 
-Possible prey categories:  
+Between 1973 and 2020 we have `r dim(preystn)[1]` individual tows where piscivores were collected and `r dim(bluepreystn)[1]` of those tows had bluefish prey. Therefore, `r dim(bluepreystn)[1]/dim(preystn)[1]*100` percent of piscivore tows will be used to get the aggregate prey index. 
+
+Which years and seasons have bluefish prey observed? How many tows each?
+
+```{r}
+# coverage <- bluepreystn %>%
+#   ungroup() %>%
+#   select(year, season) %>%
+#   distinct() %>%
+#   arrange(year, desc(season))
+
+coverage <- bluepreystn %>%
+  group_by(year, season) %>%
+  count(station) %>%
+  summarize(nstation = sum(n))
+
+datatable(coverage, rownames = FALSE,
+          #extensions = c("FixedColumns"),
+          caption = "Piscivore stations with bluefish prey 1973-2020",
+          options = list(pageLength = 10,
+                         autoWidth = TRUE,
+                         columnDefs = list(list(width = '200px'))
+                         )
+          )
+```
+
+
+Then look at summary stats of prey per tow, predators per tow by season each year.
+
+After the first run with all prey aggregated we can explore possible prey categories:  
 
 +  Inshore fish (menhaden, bay anchovy, engraulidae?, sandlance, spot?)
 +  Offshore fish (Atl herring/clupeidae, Atl mackerel/scomber, butterfish, hakes)
