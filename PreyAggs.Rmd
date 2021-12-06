@@ -189,7 +189,7 @@ So we can aggregate over all these prey in all predator stomachs at a particular
 
 ```{r}
 
-bluepyagg_stn <- fh.nefsc.pisc.blueprey %>%
+bluepyall_stn <- fh.nefsc.pisc.blueprey %>%
   #create id linking cruise6_station
   #create season_ng spring and fall Spring=Jan-May, Fall=June-Dec
   mutate(id = paste0(cruise6, "_", station),
@@ -198,14 +198,68 @@ bluepyagg_stn <- fh.nefsc.pisc.blueprey %>%
          season_ng = case_when(month <= 5 ~ "SPRING",
                                month >= 6 ~ "FALL",
                                TRUE ~ as.character(NA))
-         )
+         ) %>%
+  select(year, season_ng, id, 
+         pynam, pyamtw, pywgti, pyvoli, blueprey, 
+         pdcomnam, pdid, PiscGuild, pdlen, pdsvol, pdswgt, 
+         beglat, beglon, declat, declon, 
+         bottemp, surftemp, setdepth) %>%
   group_by(id) %>%
   #mean blueprey g per stomach per tow: sum all blueprey g/n stomachs in tow
+  mutate(bluepywt = case_when(blueprey == "blueprey" ~ pywgti,
+                               TRUE ~ 0.0),
+         bluepynam = case_when(blueprey == "blueprey" ~ pynam,
+                               TRUE ~ NA_character_)) 
 
-    #mean pred length per tow
+stndat <- bluepyall_stn %>%
+  select(year, season_ng, id, 
+         beglat, beglon, declat, declon, 
+         bottemp, surftemp, setdepth) %>%
+  distinct()
+
+#pisc stomachs in tow count pdid for each pred and sum
+piscstom <- bluepyall_stn %>%
+  group_by(id, pdcomnam) %>%
+  summarise(nstompd = n_distinct(pdid)) %>%
+  group_by(id) %>%
+  summarise(nstomtot = sum(nstompd))
+
+#mean and var pred length per tow
+pisclen <- bluepyall_stn %>%
+  summarise(meanpisclen = mean(pdlen),
+            varpisclen = var(pdlen))
+
+bluepyagg_stn <- bluepyall_stn %>%
+  summarise(sumbluepywt = sum(bluepywt),
+            nbluepysp = n_distinct(bluepynam, na.rm = T),
+            npreysp = n_distinct(pynam),
+            npiscsp = n_distinct(pdcomnam)) %>%
+  left_join(piscstom) %>%
+  mutate(meanbluepywt = sumbluepywt/nstomtot) %>%
+  left_join(pisclen) %>%
+  left_join(stndat)
   
 ```
 
+Some tests to ensure calcs look right, station data and summary:
+
+```{r}
+datatable(bluepyall_stn %>% filter(id=="197303_134"),
+          options= list(pageLength = 25,
+                         scrollX = TRUE))
+
+datatable(bluepyagg_stn %>% filter(id=="197303_134"),
+          options= list(pageLength = 25,
+                         scrollX = TRUE))
+
+datatable(bluepyall_stn %>% filter(id=="197303_140"),
+          options= list(pageLength = 25,
+                         scrollX = TRUE))
+
+datatable(bluepyagg_stn %>% filter(id=="197303_140"),
+          options= list(pageLength = 25,
+                         scrollX = TRUE))
+```
 
 
 Then look at summary stats of prey per tow, predators per tow by season each year.
