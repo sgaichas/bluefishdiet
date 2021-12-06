@@ -264,6 +264,25 @@ datatable(bluepyagg_stn %>% filter(id=="197303_140"),
 
 Then look at summary stats of prey per tow, predators per tow by season each year.
 
+```{r}
+sumstats <- bluepyagg_stn %>%
+  group_by(year, season_ng) %>%
+  summarise(nstn = n(),
+            meanpreyn = mean(npreysp),
+            meanbluepreyn = mean(nbluepysp),
+            meanpiscn = mean(npiscsp),
+            meanstomn = mean(nstomtot))
+
+datatable(sumstats)
+```
+
+Save the input data for the initial aggregated prey index VAST:
+
+```{r}
+
+saveRDS(bluepyagg_stn, here("fhdat/bluepyagg_stn.rds"))
+```
+
 After the first run with all prey aggregated we can explore possible prey categories:  
 
 +  Inshore fish (menhaden, bay anchovy, engraulidae?, sandlance, spot?)
