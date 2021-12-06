@@ -32,6 +32,55 @@ The approach here is to use exactly what @ng_predator_2021 for herring, but comb
 
 In @ng_predator_2021, seasons were modeled separately, so we will start that way as well. They used 100 knots, estimated by k-means clustering of the data, to define the spatial dimensions of each seasonal model. They used a a Poisson-link delta model to estimate expected prey mass per predator stomach.  
 
-Read in data, separate spring and fall, and define knots:
+Read in data, separate spring and fall, and rename columns for VAST:
 
+```{r}
+bluepyagg_stn <- readRDS(here("fhdat/bluepyagg_stn.rds"))
+
+bluepyagg_stn_fall <- bluepyagg_stn %>%
+  ungroup() %>%
+  filter(season_ng == "FALL") %>%
+  mutate(Vessel = "NEFSC",
+         AreaSwept_km2 = 0.0384) %>%
+  select(Catch_KG = meanbluepywt,
+         Year = year,
+         Vessel,
+         AreaSwept_km2,
+         Lat = declat,
+         Lon = declon)
+
+bluepyagg_stn_spring <- bluepyagg_stn %>%
+  filter(season_ng == "SPRING")%>%
+  mutate(Vessel = "NEFSC",
+         AreaSwept_km2 = 0.0384) %>%
+  select(Catch_KG = meanbluepywt,
+         Year = year,
+         Vessel,
+         AreaSwept_km2,
+         Lat = declat,
+         Lon = declon)
+```
+
+Try the simplest possible index standardization model, fall:
+
+```{r, eval=FALSE}
+# modified from https://github.com/James-Thorson-NOAA/VAST/wiki/Index-standardization
+
+# Make settings (turning off bias.correct to save time for example)
+settings = make_settings( n_x = 100, 
+  Region = "northwest_atlantic", 
+  purpose = "index2", 
+  bias.correct = FALSE )
+
+# Run model
+fit = fit_model( settings = settings, 
+  Lat_i = bluepyagg_stn_fall[,'Lat'], 
+  Lon_i = bluepyagg_stn_fall[,'Lon'], 
+  t_i = bluepyagg_stn_fall[,'Year'], 
+  b_i = bluepyagg_stn_fall[,'Catch_KG'], 
+  a_i = bluepyagg_stn_fall[,'AreaSwept_km2'] )
+
+# Plot results
+plot( fit )
+```
 
