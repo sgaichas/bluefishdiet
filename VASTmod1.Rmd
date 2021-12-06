@@ -1,0 +1,37 @@
+---
+title: "VAST take 1"
+author: "Sarah Gaichas"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    code_fold: hide
+link-citations: yes
+csl: ices-journal-of-marine-science.csl
+bibliography: FishDiet_EcoIndicators.bib
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      message = FALSE,
+                      warning = FALSE)
+
+library(tidyverse)
+library(here)
+#library(DT)
+#library(pdftools)
+#library(patchwork)
+#library(ggiraph)
+
+#library(ecodata)
+library(VAST)
+```
+
+Having built an initial dataset of haul-specific mean bluefish prey weight per stomach for piscivores, now we'll try to get a forage biomass index using VAST.
+
+The approach here is to use exactly what @ng_predator_2021 for herring, but combining all bluefish prey (defined [here](https://sgaichas.github.io/bluefishdiet/PreyAggs.html)) as sampled by all piscivore predators at each station.
+
+In @ng_predator_2021, seasons were modeled separately, so we will start that way as well. They used 100 knots, estimated by k-means clustering of the data, to define the spatial dimensions of each seasonal model. They used a a Poisson-link delta model to estimate expected prey mass per predator stomach.  
+
+Read in data, separate spring and fall, and define knots:
+
+
