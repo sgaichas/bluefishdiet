@@ -2,6 +2,8 @@
 # modified from https://github.com/James-Thorson-NOAA/VAST/wiki/Index-standardization
 # and https://github.com/NOAA-EDAB/neusvast/blob/master/analysis/models/pisc_pesc.R
 
+# may need to downgrade TMB to VAST Matrix package version?
+# see https://github.com/James-Thorson-NOAA/VAST/issues/289
 
 # Load packages
 library(here)
