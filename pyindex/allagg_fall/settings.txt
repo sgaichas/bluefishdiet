@@ -2,7 +2,7 @@ $Version
 [1] "VAST_v13_1_0"
 
 $n_x
-[1] 100
+[1] 1000
 
 $Region
 [1] "northwest_atlantic"
@@ -72,10 +72,8 @@ $zone
 [1] NA
 
 $FieldConfig
-        Component_1 Component_2
-Omega   "IID"       "IID"      
-Epsilon "IID"       "IID"      
-Beta    "IID"       "IID"      
+  Omega1 Epsilon1   Omega2 Epsilon2 
+   "IID"    "IID"    "IID"    "IID" 
 
 $RhoConfig
    Beta1    Beta2 Epsilon1 Epsilon2 
@@ -103,7 +101,7 @@ $grid_size_km
 [1] 25
 
 $max_cells
-[1] 2000
+[1] 10000
 
 $knot_method
 [1] "grid"
@@ -112,7 +110,7 @@ $Method
 [1] "Mesh"
 
 $use_anisotropy
-[1] TRUE
+[1] FALSE
 
 $fine_scale
 [1] TRUE

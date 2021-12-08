@@ -51,11 +51,26 @@ if(!dir.exists(working_dir)) {
 
 # Make settings (turning off bias.correct to save time for example)
 # NEFSC strata limits https://github.com/James-Thorson-NOAA/VAST/issues/302
-settings = make_settings( n_x = 100, 
+settings = make_settings( n_x = 1000, 
                           Region = "northwest_atlantic",
                           strata.limits = list('All_areas' = 1:1e5), 
                           purpose = "index2", 
-                          bias.correct = FALSE )
+                          bias.correct = FALSE,
+                          use_anisotropy = FALSE,
+                          #fine_scale = FALSE,
+                          FieldConfig = c(Omega1 = "IID", 
+                                          Epsilon1 = "IID", 
+                                          Omega2 = "IID", 
+                                          Epsilon2 = "IID")
+                          )
+
+ #Aniso=FALSE, #correct ln_H_input at bound
+ #FieldConfig["Epsilon1"]=0, #correct L_epsilon1_z approaching 0  
+ #FieldConfig["Epsilon2"]=0 #correct L_epsilon2_z approaching 0 
+ #increase knots to address bounds for logkappa?
+ # https://github.com/James-Thorson-NOAA/VAST/issues/300
+ # or try finescale=FALSE
+ # then Omegas hit bounds, had to turn then off too
 
 # Run model
 fit = fit_model( settings = settings, 
@@ -67,4 +82,5 @@ fit = fit_model( settings = settings,
                  working_dir = paste0(working_dir, "/"))
 
 # Plot results
-plot( fit )
+plot( fit,
+      working_dir = paste0(working_dir, "/"))
