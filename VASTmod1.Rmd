@@ -68,7 +68,7 @@ Try the simplest possible index standardization model, fall (run from script `VA
 ```{r, code = readLines(here("VASTunivariate_bluefishprey.R")), eval=F}
 ```
 
-R console output of full script (need to fix Matrix warning first?):
+R console output of full script (TMB Warning gone after updating Matrix package to current; no longer advised to update TMB so I'm leaving it alone):
 ```
 Loading required package: TMB
 ###########################################################################################
@@ -78,11 +78,6 @@ For information and examples, please see http://github.com/james-thorson/VAST/
 Loading package `FishStatsUtils` version 2.10.2
 Loading required package: units
 udunits database from /Library/Frameworks/R.framework/Versions/4.0/Resources/library/units/share/udunits/udunits2.xml
-Warning message:
-In checkMatrixPackageVersion() : Package version inconsistency detected.
-TMB was built with Matrix version 1.3.4
-Current Matrix version is 1.3.2
-Please re-install 'TMB' from source using install.packages('TMB', type = 'source') or ask CRAN for a binary version of 'TMB' matching CRAN's 'Matrix' package
 
 [...code in script...]
 

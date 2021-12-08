@@ -240,6 +240,8 @@ bluepyagg_stn_spring &lt;- bluepyagg_stn %&gt;%
 # modified from https://github.com/James-Thorson-NOAA/VAST/wiki/Index-standardization
 # and https://github.com/NOAA-EDAB/neusvast/blob/master/analysis/models/pisc_pesc.R
 
+# may need to downgrade TMB to VAST Matrix package version?
+# see https://github.com/James-Thorson-NOAA/VAST/issues/289
 
 # Load packages
 library(here)
@@ -304,7 +306,7 @@ fit = fit_model( settings = settings,
 
 # Plot results
 plot( fit )</code></pre>
-<p>R console output of full script (need to fix Matrix warning first?):</p>
+<p>R console output of full script (TMB Warning gone after updating Matrix package to current; no longer advised to update TMB so I’m leaving it alone):</p>
 <pre><code>Loading required package: TMB
 ###########################################################################################
 Loading package VAST version 3.8.2
@@ -313,11 +315,6 @@ For information and examples, please see http://github.com/james-thorson/VAST/
 Loading package `FishStatsUtils` version 2.10.2
 Loading required package: units
 udunits database from /Library/Frameworks/R.framework/Versions/4.0/Resources/library/units/share/udunits/udunits2.xml
-Warning message:
-In checkMatrixPackageVersion() : Package version inconsistency detected.
-TMB was built with Matrix version 1.3.4
-Current Matrix version is 1.3.2
-Please re-install &#39;TMB&#39; from source using install.packages(&#39;TMB&#39;, type = &#39;source&#39;) or ask CRAN for a binary version of &#39;TMB&#39; matching CRAN&#39;s &#39;Matrix&#39; package
 
 [...code in script...]
 
