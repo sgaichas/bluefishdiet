@@ -42,7 +42,7 @@ bluepyagg_stn_fall <- bluepyagg_stn %>%
   filter(season_ng == "FALL") %>%
   mutate(Vessel = "NEFSC",
          AreaSwept_km2 = 0.0384) %>%
-  select(Catch_KG = meanbluepywt,
+  select(Catch_g = meanbluepywt,
          Year = year,
          Vessel,
          AreaSwept_km2,
@@ -54,7 +54,7 @@ bluepyagg_stn_spring <- bluepyagg_stn %>%
   filter(season_ng == "SPRING")%>%
   mutate(Vessel = "NEFSC",
          AreaSwept_km2 = 0.0384) %>%
-  select(Catch_KG = meanbluepywt,
+  select(Catch_g = meanbluepywt,
          Year = year,
          Vessel,
          AreaSwept_km2,
@@ -161,6 +161,22 @@ In addition: Warning messages:
   'giveCsparse' has been deprecated; setting 'repr = "T"' for you
 
 ```
+
+Another run corrected units and increased the knots to 1000 but the results are basically the same:
+
+```
+Check bounds for the following parameters:
+        Param starting_value     Lower       MLE     Upper final_gradient
+2  ln_H_input      0.0000000 -5.000000  5.000000  5.000000    -0.06422987
+50  logkappa2     -0.1053605 -6.397277 -6.397277 -1.112772     0.40923276
+
+The following parameters appear to be approaching zero:
+          Param starting_value Lower           MLE Upper final_gradient
+25 L_epsilon1_z              1  -Inf  7.461783e-05   Inf   0.0008391968
+49 L_epsilon2_z              1  -Inf -2.667453e-06   Inf  -0.0002574581
+Please turn off factor-model variance parameters `L_` that are approaching zero and re-run the model
+```
+
 
 Corrections to the initial run included turning off anistopy and epsilon parameters.
 This still resulted in logkappa1 hitting the upper bound. I increased knots several times.
@@ -380,3 +396,64 @@ Crashes with error:
 Error: Please change model structure to avoid problems with parameter estimates and then re-try; see details in `?check_fit`
 
 There is no file output when it stops with parameters at bounds or 0. 
+
+Tried spring data with everything on at first and 1000 knots. Ran more iterations but still unable to finish. Settings:
+
+```
+settings = make_settings( n_x = 1000, 
+                          Region = "northwest_atlantic",
+                          strata.limits = list('All_areas' = 1:1e5), 
+                          purpose = "index2", 
+                          bias.correct = FALSE,
+                          #use_anisotropy = FALSE,
+                          #fine_scale = FALSE,
+                          FieldConfig = c(Omega1 = "IID", 
+                                          Epsilon1 = "IID", 
+                                          Omega2 = "IID", 
+                                          Epsilon2 = "IID")
+```
+and results:
+```
+Check bounds for the following parameters:
+        Param starting_value     Lower       MLE     Upper final_gradient
+2  ln_H_input      0.0000000 -5.000000 -5.000000  5.000000    0.112599280
+20  logkappa1     -0.1053605 -6.397277 -1.112772 -1.112772   -0.003133263
+38  logkappa2     -0.1053605 -6.397277 -6.397277 -1.112772    0.916661889
+
+The following parameters appear to be approaching zero:
+          Param starting_value Lower          MLE Upper final_gradient
+19 L_epsilon1_z              1  -Inf 2.614913e-05   Inf   9.785198e-08
+37 L_epsilon2_z              1  -Inf 2.112385e-08   Inf   1.336896e-06
+Please turn off factor-model variance parameters `L_` that are approaching zero and re-run the model
+
+```
+
+turn off anistropy, spring settings:
+```
+settings = make_settings( n_x = 1000, 
+                          Region = "northwest_atlantic",
+                          strata.limits = list('All_areas' = 1:1e5), 
+                          purpose = "index2", 
+                          bias.correct = FALSE,
+                          use_anisotropy = FALSE,
+                          #fine_scale = FALSE,
+                          FieldConfig = c(Omega1 = "IID", 
+                                          Epsilon1 = "IID", 
+                                          Omega2 = "IID", 
+                                          Epsilon2 = "IID")
+                         )
+                         
+```
+and results:
+
+```
+Check bounds for the following parameters:
+       Param starting_value     Lower       MLE     Upper final_gradient
+18 logkappa1     -0.1053605 -6.397277 -1.112772 -1.112772  -0.0003071745
+36 logkappa2     -0.1053605 -6.397277 -6.397277 -1.112772   0.1456314221
+
+The following parameters appear to be approaching zero:
+          Param starting_value Lower           MLE Upper final_gradient
+35 L_epsilon2_z              1  -Inf -1.438294e-07   Inf  -9.645067e-06
+Please turn off factor-model variance parameters `L_` that are approaching zero and re-run the model
+```

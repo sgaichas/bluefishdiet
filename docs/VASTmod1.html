@@ -200,7 +200,7 @@ pre code {
 
 <h1 class="title toc-ignore">VAST take 1</h1>
 <h4 class="author">Sarah Gaichas</h4>
-<h4 class="date">08 December, 2021</h4>
+<h4 class="date">09 December, 2021</h4>
 
 </div>
 
@@ -216,7 +216,7 @@ bluepyagg_stn_fall &lt;- bluepyagg_stn %&gt;%
   filter(season_ng == &quot;FALL&quot;) %&gt;%
   mutate(Vessel = &quot;NEFSC&quot;,
          AreaSwept_km2 = 0.0384) %&gt;%
-  select(Catch_KG = meanbluepywt,
+  select(Catch_g = meanbluepywt,
          Year = year,
          Vessel,
          AreaSwept_km2,
@@ -228,7 +228,7 @@ bluepyagg_stn_spring &lt;- bluepyagg_stn %&gt;%
   filter(season_ng == &quot;SPRING&quot;)%&gt;%
   mutate(Vessel = &quot;NEFSC&quot;,
          AreaSwept_km2 = 0.0384) %&gt;%
-  select(Catch_KG = meanbluepywt,
+  select(Catch_g = meanbluepywt,
          Year = year,
          Vessel,
          AreaSwept_km2,
@@ -257,7 +257,7 @@ bluepyagg_stn_fall &lt;- bluepyagg_stn %&gt;%
   filter(season_ng == &quot;FALL&quot;) %&gt;%
   mutate(Vessel = &quot;NEFSC&quot;,
          AreaSwept_km2 = 0.0384) %&gt;%
-  select(Catch_KG = meanbluepywt,
+  select(Catch_g = meanbluepywt,
          Year = year,
          Vessel,
          AreaSwept_km2,
@@ -269,7 +269,7 @@ bluepyagg_stn_spring &lt;- bluepyagg_stn %&gt;%
   filter(season_ng == &quot;SPRING&quot;)%&gt;%
   mutate(Vessel = &quot;NEFSC&quot;,
          AreaSwept_km2 = 0.0384) %&gt;%
-  select(Catch_KG = meanbluepywt,
+  select(Catch_g = meanbluepywt,
          Year = year,
          Vessel,
          AreaSwept_km2,
@@ -310,18 +310,54 @@ settings = make_settings( n_x = 1000,
  # or try finescale=FALSE
  # then Omegas hit bounds, had to turn then off too
 
-# Run model
+# Run model fall
 fit = fit_model( settings = settings, 
                  Lat_i = bluepyagg_stn_fall[,&#39;Lat&#39;], 
                  Lon_i = bluepyagg_stn_fall[,&#39;Lon&#39;], 
                  t_i = bluepyagg_stn_fall[,&#39;Year&#39;], 
-                 b_i = bluepyagg_stn_fall[,&#39;Catch_KG&#39;], 
-                 a_i = bluepyagg_stn_fall[,&#39;AreaSwept_km2&#39;], 
+                 b_i = as_units(bluepyagg_stn_fall[,&#39;Catch_g&#39;], &#39;g&#39;), 
+                 a_i = as_units(bluepyagg_stn_fall[,&#39;AreaSwept_km2&#39;], &#39;km^2&#39;),
                  working_dir = paste0(working_dir, &quot;/&quot;))
 
 # Plot results
 plot( fit,
-      working_dir = paste0(working_dir, &quot;/&quot;))</code></pre>
+      working_dir = paste0(working_dir, &quot;/&quot;))
+
+# Run model spring
+
+season &lt;- c(&quot;spring&quot;)
+
+working_dir &lt;- here::here(sprintf(&quot;pyindex/allagg_%s/&quot;, season))
+
+if(!dir.exists(working_dir)) {
+  dir.create(working_dir)
+}
+
+settings = make_settings( n_x = 1000, 
+                          Region = &quot;northwest_atlantic&quot;,
+                          strata.limits = list(&#39;All_areas&#39; = 1:1e5), 
+                          purpose = &quot;index2&quot;, 
+                          bias.correct = FALSE,
+                          use_anisotropy = FALSE,
+                          #fine_scale = FALSE,
+                          FieldConfig = c(Omega1 = &quot;IID&quot;, 
+                                          Epsilon1 = &quot;IID&quot;, 
+                                          Omega2 = &quot;IID&quot;, 
+                                          Epsilon2 = &quot;IID&quot;)
+                         )
+                          
+
+fit = fit_model( settings = settings, 
+                 Lat_i = bluepyagg_stn_spring[,&#39;Lat&#39;], 
+                 Lon_i = bluepyagg_stn_spring[,&#39;Lon&#39;], 
+                 t_i = bluepyagg_stn_spring[,&#39;Year&#39;], 
+                 b_i = as_units(bluepyagg_stn_spring[,&#39;Catch_g&#39;], &#39;g&#39;), 
+                 a_i = as_units(bluepyagg_stn_spring[,&#39;AreaSwept_km2&#39;], &#39;km^2&#39;),
+                 working_dir = paste0(working_dir, &quot;/&quot;))
+
+# Plot results
+plot( fit,
+      working_dir = paste0(working_dir, &quot;/&quot;)) </code></pre>
 <p>R console output of full script (TMB Warning gone after updating Matrix package to current; no longer advised to update TMB so I’m leaving it alone).</p>
 <p>In the initial run, we bomb when parameters hit bounds (clipped output below)</p>
 <pre><code>Loading required package: TMB
@@ -412,6 +448,17 @@ In addition: Warning messages:
 3: In sparseMatrix(i = index.i, j = index.j, x = Aij, dims = c(mesh$n,  :
   &#39;giveCsparse&#39; has been deprecated; setting &#39;repr = &quot;T&quot;&#39; for you
 </code></pre>
+<p>Another run corrected units and increased the knots to 1000 but the results are basically the same:</p>
+<pre><code>Check bounds for the following parameters:
+        Param starting_value     Lower       MLE     Upper final_gradient
+2  ln_H_input      0.0000000 -5.000000  5.000000  5.000000    -0.06422987
+50  logkappa2     -0.1053605 -6.397277 -6.397277 -1.112772     0.40923276
+
+The following parameters appear to be approaching zero:
+          Param starting_value Lower           MLE Upper final_gradient
+25 L_epsilon1_z              1  -Inf  7.461783e-05   Inf   0.0008391968
+49 L_epsilon2_z              1  -Inf -2.667453e-06   Inf  -0.0002574581
+Please turn off factor-model variance parameters `L_` that are approaching zero and re-run the model</code></pre>
 <p>Corrections to the initial run included turning off anistopy and epsilon parameters. This still resulted in logkappa1 hitting the upper bound. I increased knots several times. Some variant had me turn off the omegas as well, which allowed the model to finish and plot output, but the output is very dumb. Plots are in the allagg_fall folder.</p>
 <p>In the latest run corresponding to the script above, logkappa1 still hits a bound even with 1000 knots and one of the epsilons is still approaching 0:</p>
 <pre><code>### Writing output from `fit_model` in directory: /Users/sarah.gaichas/Documents/0_Data/bluefishdiet/pyindex/allagg_fall//
@@ -621,6 +668,55 @@ In addition: Warning messages:
 </code></pre>
 <p>Crashes with error: Error: Please change model structure to avoid problems with parameter estimates and then re-try; see details in <code>?check_fit</code></p>
 <p>There is no file output when it stops with parameters at bounds or 0.</p>
+<p>Tried spring data with everything on at first and 1000 knots. Ran more iterations but still unable to finish. Settings:</p>
+<pre><code>settings = make_settings( n_x = 1000, 
+                          Region = &quot;northwest_atlantic&quot;,
+                          strata.limits = list(&#39;All_areas&#39; = 1:1e5), 
+                          purpose = &quot;index2&quot;, 
+                          bias.correct = FALSE,
+                          #use_anisotropy = FALSE,
+                          #fine_scale = FALSE,
+                          FieldConfig = c(Omega1 = &quot;IID&quot;, 
+                                          Epsilon1 = &quot;IID&quot;, 
+                                          Omega2 = &quot;IID&quot;, 
+                                          Epsilon2 = &quot;IID&quot;)</code></pre>
+<p>and results:</p>
+<pre><code>Check bounds for the following parameters:
+        Param starting_value     Lower       MLE     Upper final_gradient
+2  ln_H_input      0.0000000 -5.000000 -5.000000  5.000000    0.112599280
+20  logkappa1     -0.1053605 -6.397277 -1.112772 -1.112772   -0.003133263
+38  logkappa2     -0.1053605 -6.397277 -6.397277 -1.112772    0.916661889
+
+The following parameters appear to be approaching zero:
+          Param starting_value Lower          MLE Upper final_gradient
+19 L_epsilon1_z              1  -Inf 2.614913e-05   Inf   9.785198e-08
+37 L_epsilon2_z              1  -Inf 2.112385e-08   Inf   1.336896e-06
+Please turn off factor-model variance parameters `L_` that are approaching zero and re-run the model
+</code></pre>
+<p>turn off anistropy, spring settings:</p>
+<pre><code>settings = make_settings( n_x = 1000, 
+                          Region = &quot;northwest_atlantic&quot;,
+                          strata.limits = list(&#39;All_areas&#39; = 1:1e5), 
+                          purpose = &quot;index2&quot;, 
+                          bias.correct = FALSE,
+                          use_anisotropy = FALSE,
+                          #fine_scale = FALSE,
+                          FieldConfig = c(Omega1 = &quot;IID&quot;, 
+                                          Epsilon1 = &quot;IID&quot;, 
+                                          Omega2 = &quot;IID&quot;, 
+                                          Epsilon2 = &quot;IID&quot;)
+                         )
+                         </code></pre>
+<p>and results:</p>
+<pre><code>Check bounds for the following parameters:
+       Param starting_value     Lower       MLE     Upper final_gradient
+18 logkappa1     -0.1053605 -6.397277 -1.112772 -1.112772  -0.0003071745
+36 logkappa2     -0.1053605 -6.397277 -6.397277 -1.112772   0.1456314221
+
+The following parameters appear to be approaching zero:
+          Param starting_value Lower           MLE Upper final_gradient
+35 L_epsilon2_z              1  -Inf -1.438294e-07   Inf  -9.645067e-06
+Please turn off factor-model variance parameters `L_` that are approaching zero and re-run the model</code></pre>
 <div id="refs" class="references csl-bib-body hanging-indent">
 <div id="ref-ng_predator_2021" class="csl-entry">
 Ng, E. L., Deroba, J. J., Essington, T. E., Grüss, A., Smith, B. E., and Thorson, J. T. 2021. Predator stomach contents can provide accurate indices of prey biomass. ICES Journal of Marine Science, 78: 1146–1159. <a href="https://doi.org/10.1093/icesjms/fsab026">https://doi.org/10.1093/icesjms/fsab026</a> (Accessed 1 September 2021).
