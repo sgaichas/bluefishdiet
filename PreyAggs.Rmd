@@ -26,6 +26,8 @@ library(ecodata)
 #library(VAST)
 ```
 
+## Building an input prey dataset
+
 Use food habits data from Laurel's condition repository, object is called `allfh`
 
 ```{r}
@@ -283,6 +285,18 @@ Save the input data for the initial aggregated prey index VAST:
 saveRDS(bluepyagg_stn, here("fhdat/bluepyagg_stn.rds"))
 ```
 
+## Suggestions from Bluefish WG review 10 Dec
+
+Consider truncating the time series could start in 1985 similar to bluefish assessment.
+
+Consider leaving out more dissimilar predators, especially really different life history types and habitat/foraging mode. First to go may be the winter skate which was in a different subgroup from bluefish. Second could be split out small bluefish and weakfish group from @garrison_dietary_2000.
+
+Flag the other managed species that are bluefish prey abd who manages them.
+
+What covariates could be used to describe differences in foraging efficiency between predators? Possibly predator length as in @ng_predator_2021, but think about other predator attributes.
+
+## Next steps
+
 After the first run with all prey aggregated we can explore possible prey categories:  
 
 +  Inshore fish (menhaden, bay anchovy, engraulidae?, sandlance, spot?)
@@ -295,3 +309,5 @@ Presence of family level categories (Cephalopoda, Engraulidae) makes habitat spl
 Do some dynamic mapping if engraulidae mostly with anchoa make inshore? 
 If cephalapods with loligo make inshore; Illex offshore?
 Circular though.
+
+## References
