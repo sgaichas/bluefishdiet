@@ -293,6 +293,8 @@ Consider leaving out more dissimilar predators, especially really different life
 
 Flag the other managed species that are bluefish prey abd who manages them.
 
+Do we want to include inverts among the bluefish prey? ID some important ones. 
+
 What covariates could be used to describe differences in foraging efficiency between predators? Possibly predator length as in @ng_predator_2021, but think about other predator attributes.
 
 ## Next steps
