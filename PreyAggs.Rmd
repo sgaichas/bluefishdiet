@@ -208,7 +208,7 @@ bluepyall_stn <- fh.nefsc.pisc.blueprey %>%
          bottemp, surftemp, setdepth) %>%
   group_by(id) %>%
   #mean blueprey g per stomach per tow: sum all blueprey g/n stomachs in tow
-  mutate(bluepywt = case_when(blueprey == "blueprey" ~ pywgti,
+  mutate(bluepywt = case_when(blueprey == "blueprey" ~ pyamtw,
                                TRUE ~ 0.0),
          bluepynam = case_when(blueprey == "blueprey" ~ pynam,
                                TRUE ~ NA_character_)) 
