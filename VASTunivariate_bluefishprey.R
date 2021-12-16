@@ -14,11 +14,15 @@ library(VAST)
 
 bluepyagg_stn <- readRDS(here("fhdat/bluepyagg_stn.rds"))
 
+# filter to assessment years at Tony's suggestion
+
 bluepyagg_stn_fall <- bluepyagg_stn %>%
   ungroup() %>%
-  filter(season_ng == "FALL") %>%
+  filter(season_ng == "FALL",
+         year > 1984) %>%
   mutate(Vessel = "NEFSC",
-         AreaSwept_km2 = 0.0384) %>%
+         #AreaSwept_km2 = 0.0384) %>%
+         AreaSwept_km2 = 1) %>% #Elizabeth's code
   select(Catch_g = meanbluepywt,
          Year = year,
          Vessel,
@@ -28,9 +32,11 @@ bluepyagg_stn_fall <- bluepyagg_stn %>%
   as.data.frame()
 
 bluepyagg_stn_spring <- bluepyagg_stn %>%
-  filter(season_ng == "SPRING")%>%
+  filter(season_ng == "SPRING",
+         year > 1984) %>%
   mutate(Vessel = "NEFSC",
-         AreaSwept_km2 = 0.0384) %>%
+         #AreaSwept_km2 = 0.0384) %>%
+         AreaSwept_km2 =1) %>% #Elizabeth's code
   select(Catch_g = meanbluepywt,
          Year = year,
          Vessel,
@@ -51,9 +57,30 @@ if(!dir.exists(working_dir)) {
 
 # Make settings (turning off bias.correct to save time for example)
 # NEFSC strata limits https://github.com/James-Thorson-NOAA/VAST/issues/302
+
+# use only MAB, GB, GOM, SS EPUs 
+# leave out south of Cape Hatteras at Elizabeth's suggestion
+# could also leave out SS?
+# CHECK if these EPUs match what we use in SOE
+
+MABGBGOM <- northwest_atlantic_grid %>% 
+  filter(EPU %in% c("Mid_Atlantic_Bight", "Georges_Bank", "Gulf_of_Maine")) %>% 
+  select(MAB_GB_GOM = stratum_number) %>% 
+  distinct()
+
+MABGBGOMSS <- northwest_atlantic_grid %>% 
+  filter(EPU %in% c("Mid_Atlantic_Bight", "Georges_Bank", "Gulf_of_Maine",
+                    "Scotian_Shelf")) %>% 
+  select(MAB_GB_GOM_SS = stratum_number) %>% 
+  distinct()
+
+
+strata.limits <- as.list(MABGBGOMSS)
+
 settings = make_settings( n_x = 1000, 
                           Region = "northwest_atlantic",
-                          strata.limits = list('All_areas' = 1:1e5), 
+                          #strata.limits = list('All_areas' = 1:1e5), full area
+                          strata.limits = strata.limits,
                           purpose = "index2", 
                           bias.correct = FALSE,
                           use_anisotropy = FALSE,
@@ -97,7 +124,8 @@ if(!dir.exists(working_dir)) {
 
 settings = make_settings( n_x = 1000, 
                           Region = "northwest_atlantic",
-                          strata.limits = list('All_areas' = 1:1e5), 
+                          #strata.limits = list('All_areas' = 1:1e5),
+                          strata.limits = strata.limits,
                           purpose = "index2", 
                           bias.correct = FALSE,
                           use_anisotropy = FALSE,
