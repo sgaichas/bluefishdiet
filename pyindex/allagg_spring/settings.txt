@@ -28,7 +28,7 @@ $FieldConfig
 
 $RhoConfig
    Beta1    Beta2 Epsilon1 Epsilon2 
-       0        0        1        0 
+       1        0        1        0 
 
 $VamConfig
 Method   Rank Timing 

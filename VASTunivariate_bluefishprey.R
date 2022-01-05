@@ -14,7 +14,10 @@ library(VAST)
 
 bluepyagg_stn <- readRDS(here("fhdat/bluepyagg_stn.rds"))
 
+#bluepyagg_stn <- bluepyagg_pred_stn
+
 # filter to assessment years at Tony's suggestion
+# try datasets with subset of predators (start with 1)
 
 bluepyagg_stn_fall <- bluepyagg_stn %>%
   #ungroup() %>%
@@ -22,8 +25,9 @@ bluepyagg_stn_fall <- bluepyagg_stn %>%
          year > 1984) %>%
   mutate(Vessel = "NEFSC",
          #AreaSwept_km2 = 0.0384) %>%
-         AreaSwept_km2 = 1) %>% #Elizabeth's code
-  select(Catch_g = meanbluepywt,
+         AreaSwept_km2 = 1, #Elizabeth's code
+         declon = -declon) %>% 
+  select(Catch_g = meanbluepywt, #use bluepywt for individuals input in example
          Year = year,
          Vessel,
          AreaSwept_km2,
@@ -37,7 +41,8 @@ bluepyagg_stn_spring <- bluepyagg_stn %>%
          year > 1984) %>%
   mutate(Vessel = "NEFSC",
          #AreaSwept_km2 = 0.0384) %>%
-         AreaSwept_km2 =1) %>% #Elizabeth's code
+         AreaSwept_km2 =1, #Elizabeth's code
+         declon = -declon) %>% 
   select(Catch_g = meanbluepywt,
          Year = year,
          Vessel,
@@ -72,18 +77,29 @@ MABGB <- northwest_atlantic_grid %>%
   select(MAB_GB_GOM_SS = stratum_number) %>% 
   distinct()
 
+GB <- northwest_atlantic_grid %>% 
+  filter(EPU %in% c("Georges_Bank")) %>% 
+  select(MAB_GB_GOM_SS = stratum_number) %>% 
+  distinct()
+
+
+MAB <- northwest_atlantic_grid %>% 
+  filter(EPU %in% c("Mid_Atlantic_Bight")) %>% 
+  select(MAB_GB_GOM_SS = stratum_number) %>% 
+  distinct()
+
 # configs
 FieldConfig <- c(
   "Omega1"   = 1,   # number of spatial variation factors (0, 1, AR1)
   "Epsilon1" = 1,   # number of spatio-temporal factors
-  "Omega2"   = 0, 
-  "Epsilon2" = 0
+  "Omega2"   = 1, 
+  "Epsilon2" = 1
 ) 
 
 RhoConfig <- c(
   "Beta1" = 0,      # temporal structure on years (intercepts) 
   "Beta2" = 0, 
-  "Epsilon1" = 1,   # temporal structure on spatio-temporal variation
+  "Epsilon1" = 0,   # temporal structure on spatio-temporal variation
   "Epsilon2" = 0
 ) 
 # 0 off (fixed effects)

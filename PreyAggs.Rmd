@@ -299,17 +299,227 @@ What covariates could be used to describe differences in foraging efficiency bet
 
 ## Next steps
 
+### Split predators into categories
+
+Poor performance of aggregated model may be due to different predator distribution.
+
+#### Bluefish only
+
+Dataset similar to Ng but with all prey combined for bluefish preds. Compare also to results of her dataset with bluefish only and Atlantic herring + Clupeidae--should get same result!
+
+```{r}
+
+pred <- "BLUEFISH"
+
+  #pisc stomachs in tow count pdid for each pred and sum
+piscstom <- bluepyall_stn %>%
+  filter(pdcomnam %in% pred) %>%
+  group_by(id, pdcomnam) %>%
+  summarise(nstompd = n_distinct(pdid)) %>%
+  group_by(id) %>%
+  summarise(nstomtot = sum(nstompd))
+
+#mean and var pred length per tow
+pisclen <- bluepyall_stn %>%
+  filter(pdcomnam %in% pred) %>%
+  summarise(meanpisclen = mean(pdlen),
+            varpisclen = var(pdlen))
+
+bluepyagg_pred_stn <- bluepyall_stn %>%
+  filter(pdcomnam %in% pred) %>%
+  summarise(sumbluepywt = sum(bluepywt),
+            nbluepysp = n_distinct(bluepynam, na.rm = T),
+            npreysp = n_distinct(pynam),
+            npiscsp = n_distinct(pdcomnam)) %>%
+  left_join(piscstom) %>%
+  mutate(meanbluepywt = sumbluepywt/nstomtot) %>%
+  left_join(pisclen) %>%
+  left_join(stndat)
+
+```
+
+Try bluefish only as preds with herring only as prey for GB
+
+```{r}
+
+pred <- "BLUEFISH"
+prey <- c("CLUPEA HARENGUS", "CLUPEIDAE")
+
+  #pisc stomachs in tow count pdid for each pred and sum
+piscstom <- bluepyall_stn %>%
+  filter(pdcomnam %in% pred) %>%
+  group_by(id, pdcomnam) %>%
+  summarise(nstompd = n_distinct(pdid)) %>%
+  group_by(id) %>%
+  summarise(nstomtot = sum(nstompd))
+
+#mean and var pred length per tow
+pisclen <- bluepyall_stn %>%
+  filter(pdcomnam %in% pred) %>%
+  summarise(meanpisclen = mean(pdlen),
+            varpisclen = var(pdlen))
+
+bluepyagg_pred_stn <- bluepyall_stn %>%
+  filter(pdcomnam %in% pred) %>%
+  mutate(bluepywt = case_when(bluepynam %in% prey ~ pyamtw,
+                               TRUE ~ 0.0)) %>%
+  # summarise(sumbluepywt = sum(bluepywt),
+  #           nbluepysp = n_distinct(bluepynam, na.rm = T),
+  #           npreysp = n_distinct(pynam),
+  #           npiscsp = n_distinct(pdcomnam)) %>%
+  left_join(piscstom) %>%
+  # mutate(meanbluepywt = sumbluepywt/nstomtot) %>%
+  left_join(pisclen) %>%
+  left_join(stndat)
+
+```
+
+
+#### Cod + Dogfish + Bluefish
+
+```{r}
+
+pred <- c("ATLANTIC COD", "SPINY DOGFISH", "BLUEFISH")
+
+  #pisc stomachs in tow count pdid for each pred and sum
+piscstom <- bluepyall_stn %>%
+  filter(pdcomnam %in% pred) %>%
+  group_by(id, pdcomnam) %>%
+  summarise(nstompd = n_distinct(pdid)) %>%
+  group_by(id) %>%
+  summarise(nstomtot = sum(nstompd))
+
+#mean and var pred length per tow
+pisclen <- bluepyall_stn %>%
+  filter(pdcomnam %in% pred) %>%
+  summarise(meanpisclen = mean(pdlen),
+            varpisclen = var(pdlen))
+
+bluepyagg_pred_stn <- bluepyall_stn %>%
+  filter(pdcomnam %in% pred) %>%
+  summarise(sumbluepywt = sum(bluepywt),
+            nbluepysp = n_distinct(bluepynam, na.rm = T),
+            npreysp = n_distinct(pynam),
+            npiscsp = n_distinct(pdcomnam)) %>%
+  left_join(piscstom) %>%
+  mutate(meanbluepywt = sumbluepywt/nstomtot) %>%
+  left_join(pisclen) %>%
+  left_join(stndat)
+
+```
+
+#### Piscivores a
+
+
+
+### Split prey into categories
+
 After the first run with all prey aggregated we can explore possible prey categories:  
 
-+  Inshore fish (menhaden, bay anchovy, engraulidae?, sandlance, spot?)
-+  Offshore fish (Atl herring/clupeidae, Atl mackerel/scomber, butterfish, hakes)
-+  Inshore squid (Loligo)
-+  Offshore squid (Illex)
-+  Other (AR, misc, inverts other than squid) No, skip this.
+#### Smallest prey categories
+
+Try species level plus add in the family level:
++  Atl herring/clupeidae (like Ng model but with agg predators)
++  Atl mackerel/scombridae
++  Bay anchovy/striped anchovy/engroualidae
++  Sandlances
++  Butterfish
++  Hakes
++  Menhaden (enough? will have more in NEAMAP?)
++  Loligo/cephalopoda
++  Illex, also with cephalapoda?
+
+```{r}
+
+bluepyall_stn <- fh.nefsc.pisc.blueprey %>%
+  #create id linking cruise6_station
+  #create season_ng spring and fall Spring=Jan-May, Fall=June-Dec
+  mutate(id = paste0(cruise6, "_", station),
+         year = as.numeric(year),
+         month = as.numeric(month),
+         season_ng = case_when(month <= 5 ~ "SPRING",
+                               month >= 6 ~ "FALL",
+                               TRUE ~ as.character(NA))
+         ) %>%
+  select(year, season_ng, id, 
+         pynam, pyamtw, pywgti, pyvoli, blueprey, 
+         pdcomnam, pdid, PiscGuild, pdlen, pdsvol, pdswgt, 
+         beglat, beglon, declat, declon, 
+         bottemp, surftemp, setdepth) %>%
+  group_by(id) %>%
+  #mean blueprey g per stomach per tow: sum all blueprey g/n stomachs in tow
+  mutate(bluepywt = case_when(blueprey == "blueprey" ~ pyamtw,
+                               TRUE ~ 0.0),
+         bluepynam = case_when(blueprey == "blueprey" ~ pynam,
+                               TRUE ~ NA_character_)) 
+
+stndat <- bluepyall_stn %>%
+  select(year, season_ng, id, 
+         beglat, beglon, declat, declon, 
+         bottemp, surftemp, setdepth) %>%
+  distinct()
+
+#pisc stomachs in tow count pdid for each pred and sum
+piscstom <- bluepyall_stn %>%
+  group_by(id, pdcomnam) %>%
+  summarise(nstompd = n_distinct(pdid)) %>%
+  group_by(id) %>%
+  summarise(nstomtot = sum(nstompd))
+
+#mean and var pred length per tow
+pisclen <- bluepyall_stn %>%
+  summarise(meanpisclen = mean(pdlen),
+            varpisclen = var(pdlen))
+
+# split out prey or prey group here
+bluepycat <- data.frame(bpycat = c("sandlances",
+                                   "squids", #Ceph
+                                   "herrings",
+                                   "herrings",
+                                   "anchovies",
+                                   "squids", #Illex
+                                   "squids", #Loligo
+                                   "squids", #Loligo
+                                   "hakes",
+                                   "butterfish",
+                                   "flatfish",
+                                   "bluefish",
+                                   "mackerels",
+                                   "anchovies",
+                                   "round herring",
+                                   "scup",
+                                   "anchovies",
+                                   "menhaden",
+                                   "weakfish",
+                                   "anchovies"),
+                        pynam = blueprey$pynam)
+
+
+bluepyspp_stn <- bluepyall_stn %>%
+  left_join(bluepycat) %>%
+  
+  summarise(sumbluepywt = sum(bluepywt),
+            nbluepysp = n_distinct(bluepynam, na.rm = T),
+            npreysp = n_distinct(pynam),
+            npiscsp = n_distinct(pdcomnam)) %>%
+  left_join(piscstom) %>%
+  mutate(meanbluepywt = sumbluepywt/nstomtot) %>%
+  left_join(pisclen) %>%
+  left_join(stndat)
+  
+```
+
+#### Intermediate prey categories
+
++  Inshore fish (menhaden, bay anchovy, engraulidae?, sandlance, spot?)  
++  Offshore fish (Atl herring/clupeidae, Atl mackerel/scomber, butterfish, hakes)  
++  Inshore squid (Loligo)  
++  Offshore squid (Illex)  
 
 Presence of family level categories (Cephalopoda, Engraulidae) makes habitat splitting difficult.
 Do some dynamic mapping if engraulidae mostly with anchoa make inshore? 
 If cephalapods with loligo make inshore; Illex offshore?
 Circular though.
+
 
 ## References
