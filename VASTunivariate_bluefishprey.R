@@ -116,10 +116,10 @@ settings = make_settings( n_x = 1000,
                           strata.limits = strata.limits,
                           purpose = "index2", 
                           bias.correct = FALSE,
-                          use_anisotropy = FALSE,
+                          #use_anisotropy = FALSE,
                           #fine_scale = FALSE,
-                          FieldConfig = FieldConfig,
-                          RhoConfig = RhoConfig
+                          #FieldConfig = FieldConfig,
+                          #RhoConfig = RhoConfig
                           )
 
  #Aniso=FALSE, #correct ln_H_input at bound
