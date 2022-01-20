@@ -45,16 +45,17 @@ We'll scrape the settings and parameter estimates from each folder to compare AI
 # from each output folder in pyindex, 
 outdir <- here("pyindex")
 moddirs <- list.dirs(outdir) 
+moddirs <- moddirs[-1]
 # keep folder name
 modnames <- list.dirs(outdir, full.names = FALSE)
 
 # function to apply extracting info
-getmodinfo <- function(dir){
+getmodinfo <- function(d.name){
   # read settings
-  modpath <- stringr::str_split(dir, "/", simplify = TRUE)
+  modpath <- stringr::str_split(d.name, "/", simplify = TRUE)
   modname <- modpath[length(modpath)]
   
-  settings <- read.table(file.path(dir, "settings.txt"), comment.char = "",
+  settings <- read.table(file.path(d.name, "settings.txt"), comment.char = "",
     fill = TRUE, header = FALSE)
   
   n_x <- as.numeric(as.character(settings[(which(settings[,1]=="$n_x")+1),2]))
@@ -79,6 +80,8 @@ getmodinfo <- function(dir){
     omega2 <- as.character(settings[(which(settings[,1]=="$FieldConfig")+4),1])
     epsilon1 <- as.character(settings[(which(settings[,1]=="$FieldConfig")+3),2])
     epsilon2 <- as.character(settings[(which(settings[,1]=="$FieldConfig")+4),2])
+    beta1 <- "IID"
+    beta2 <- "IID"
   }
   
   
@@ -88,11 +91,39 @@ getmodinfo <- function(dir){
   rho_epsilon1 <- as.numeric(as.character(settings[(which(settings[,1]=="$RhoConfig")+4),1]))
   rho_epsilon2 <- as.numeric(as.character(settings[(which(settings[,1]=="$RhoConfig")+4),2]))
   
-  # read parameter estimates
+  # read parameter estimates, object is called parameter_Estimates
+  load(file.path(d.name, "parameter_estimates.RData"))
+  
+  AIC <- parameter_estimates$AIC[1]  
   
   
+  
+  # return model atributes as a dataframe
+  out <- data.frame(modname = modname,
+                    n_x = n_x,
+                    grid_size_km = grid_size_km,
+                    max_cells = max_cells,
+                    use_anisotropy = use_anisotropy,
+                    fine_scale =  fine_scale,
+                    bias.correct = bias.correct,
+                    omega1 = omega1,
+                    omega2 = omega2,
+                    epsilon1 = epsilon1,
+                    epsilon2 = epsilon2,
+                    beta1 = beta1,
+                    beta2 = beta2,
+                    rho_epsilon1 = rho_epsilon1,
+                    rho_epsilon2 = rho_epsilon2,
+                    rho_beta1 = rho_beta1,
+                    rho_beta2 = rho_beta2,
+                    AIC = AIC
+  )
+  	
+	return(out)
+
 }
 
+modselect <- purrr::map_dfr(moddirs, getmodinfo)
 
 
 
