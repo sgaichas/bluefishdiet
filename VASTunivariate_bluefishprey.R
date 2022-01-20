@@ -90,10 +90,10 @@ MAB <- northwest_atlantic_grid %>%
 
 # configs
 FieldConfig <- c(
-  "Omega1"   = 1,   # number of spatial variation factors (0, 1, AR1)
-  "Epsilon1" = 1,   # number of spatio-temporal factors
-  "Omega2"   = 1, 
-  "Epsilon2" = 1
+  "Omega1"   = 0,   # number of spatial variation factors (0, 1, AR1)
+  "Epsilon1" = 0,   # number of spatio-temporal factors
+  "Omega2"   = 0, 
+  "Epsilon2" = 0
 ) 
 
 RhoConfig <- c(
@@ -110,15 +110,15 @@ RhoConfig <- c(
 
 strata.limits <- as.list(MABGBGOMSS)
 
-settings = make_settings( n_x = 1000, 
+settings = make_settings( n_x = 500, 
                           Region = "northwest_atlantic",
                           #strata.limits = list('All_areas' = 1:1e5), full area
                           strata.limits = strata.limits,
                           purpose = "index2", 
                           bias.correct = FALSE,
-                          #use_anisotropy = FALSE,
+                          use_anisotropy = FALSE,
                           #fine_scale = FALSE,
-                          #FieldConfig = FieldConfig,
+                          FieldConfig = FieldConfig,
                           #RhoConfig = RhoConfig
                           )
 
@@ -132,7 +132,7 @@ settings = make_settings( n_x = 1000,
 
 # select dataset and set directory for output
 
-season <- c("fall")
+season <- c("fall_500_noomeps12_noaniso")
 
 working_dir <- here::here(sprintf("pyindex/allagg_%s/", season))
 
@@ -164,7 +164,7 @@ plot( fit,
 
 # Run model spring
 
-season <- c("spring")
+season <- c("spring_500_noomeps12_noaniso")
 
 working_dir <- here::here(sprintf("pyindex/allagg_%s/", season))
 
