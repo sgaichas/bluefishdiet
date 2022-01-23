@@ -96,6 +96,17 @@ FieldConfig <- c(
   "Epsilon2" = 0
 ) 
 
+# Model selection options, 
+# Season_knots + suffix below
+#                           FieldConfig default (all IID)
+# _noaniso                  FieldConfig default (all IID) and use_anistropy = FALSE
+# _noomeps2                 FieldConfig 0 for Omega2, Epsilon2
+# _noomeps2_noaniso         FieldConfig 0 for Omega2, Epsilon2 and use_anistropy = FALSE
+# _noomeps2_noeps1          FieldConfig 0 for Omega2, Epsilon2, Omega1
+# _noomeps2_noeps1_noaniso  FieldConfig 0 for Omega2, Epsilon2, Omega1 and use_anistropy = FALSE
+# _noomeps12                FieldConfig all 0
+# _noomeps12_noaniso        FieldConfig all 0 and use_anistropy = FALSE
+
 RhoConfig <- c(
   "Beta1" = 0,      # temporal structure on years (intercepts) 
   "Beta2" = 0, 
@@ -107,6 +118,7 @@ RhoConfig <- c(
 # 2 random walk
 # 3 constant among years (fixed effect)
 # 4 AR1
+
 
 strata.limits <- as.list(MABGBGOMSS)
 
@@ -154,8 +166,9 @@ fit <- fit_model(
   Lat_i = bluepyagg_stn_fall$Lat, 
   Lon_i = bluepyagg_stn_fall$Lon, 
   t_i = bluepyagg_stn_fall$Year, 
-  b_i = bluepyagg_stn_fall$Catch_g,
+  b_i = as_units(bluepyagg_stn_fall[,'Catch_g'], 'g'),,
   a_i = rep(1, nrow(bluepyagg_stn_fall)), 
+  Use_REML = TRUE,
   working_dir = paste0(working_dir, "/"))
 
 # Plot results
@@ -179,6 +192,7 @@ fit = fit_model( settings = settings,
                  t_i = bluepyagg_stn_spring[,'Year'], 
                  b_i = as_units(bluepyagg_stn_spring[,'Catch_g'], 'g'), 
                  a_i = as_units(bluepyagg_stn_spring[,'AreaSwept_km2'], 'km^2'),
+                 Use_REML = TRUE,
                  working_dir = paste0(working_dir, "/"))
 
 # Plot results

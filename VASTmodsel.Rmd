@@ -34,6 +34,8 @@ Having built an initial dataset of haul-specific mean bluefish prey weight per s
 
 Again following what @ng_predator_2021 did for herring, but with 500 knots, estimated by k-means clustering of the data, to define the spatial dimensions of each seasonal model. We similarly apply a Poisson-link delta model to estimate expected prey mass per predator stomach.  
 
+Model selection follows @ng_predator_2021 using REML. 
+
 I updated the script each time for index standardization model, using 500 knots to speed things up (run from script `VASTunivariate_bluefishprey.R`, *not* in rmd). This is the most recent version:
 
 ```{r, code = readLines(here("VASTunivariate_bluefishprey.R")), eval=F}
