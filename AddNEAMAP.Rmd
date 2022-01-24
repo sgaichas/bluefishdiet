@@ -1,0 +1,37 @@
+---
+title: "Add NEAMAP to aggregate prey index VAST model"
+author: "Sarah Gaichas"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    code_fold: hide
+link-citations: yes
+csl: ices-journal-of-marine-science.csl
+bibliography: FishDiet_EcoIndicators.bib
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      message = FALSE,
+                      warning = FALSE)
+
+library(tidyverse)
+library(here)
+#library(DT)
+#library(pdftools)
+#library(patchwork)
+#library(ggiraph)
+
+#library(ecodata)
+#library(VAST)
+```
+
+Thoughts from the WG in January
+
+Not just add NEAMAP but also let model estimate any q adjustments for Albatross/Bigelow years
+
+While we are there consider mean (and variance?) of predator length as a catchabiliy covariate
+
+Is there output that can translate into inshore/offshore availability for the aggregate univariate index? Center of gravity plot, partition index into quadrants?
+
+
