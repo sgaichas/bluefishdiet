@@ -30,8 +30,21 @@ Thoughts from the WG in January
 
 Not just add NEAMAP but also let model estimate any q adjustments for Albatross/Bigelow years
 
+
+
 While we are there consider mean (and variance?) of predator length as a catchabiliy covariate
 
-Is there output that can translate into inshore/offshore availability for the aggregate univariate index? Center of gravity plot, partition index into quadrants?
+Is there output that can translate into inshore/offshore availability for the aggregate univariate index? Center of gravity plot, partition index into quadrants? Need to realign NE SE instead of N and E and track the SE axis (lower inshore, higher offshore)
+
+
+
+Timeline:
+
+*  Finalize index 30 April
+
+*  Working paper finalized 1 October 
+
+*  Review 14-18 November 2022
+
 
 
