@@ -26,17 +26,25 @@ library(here)
 #library(VAST)
 ```
 
-Thoughts from the WG in January
+## Thoughts from the WG in January
 
 Not just add NEAMAP but also let model estimate any q adjustments for Albatross/Bigelow years
 
-
-
 While we are there consider mean (and variance?) of predator length as a catchabiliy covariate
 
-Is there output that can translate into inshore/offshore availability for the aggregate univariate index? Center of gravity plot, partition index into quadrants? Need to realign NE SE instead of N and E and track the SE axis (lower inshore, higher offshore) see https://github.com/James-Thorson-NOAA/VAST/wiki/Define-new-axes-for-range-edge-and-centroid
+Is there output that can translate into inshore/offshore availability for the aggregate univariate index? 
+
+Center of gravity plot, partition index into quadrants? Need to realign NE SE instead of N and E and track the SE axis (lower inshore, higher offshore) see https://github.com/James-Thorson-NOAA/VAST/wiki/Define-new-axes-for-range-edge-and-centroid
+
+And a coastline for NEUS already developed here
+https://github.com/afredston/range-edge-niches/blob/master/scripts/get_axes_of_measurement.R#L33
 
 Use fit$ model output components for density and define portions of extrapolation grid as inshore and offshore, find density in each over time
+
+Options for defining inshore vs offshore (discussion with Mike, Katie, and Tony as summarized by Tony):
+1. An inshore band representing old Albatross strata (current NEAMAP) strata,  
+2. An inshore band representing the inshore strata sampled by the Bigelow, 
+3. a 3 mile boundary (representng availability to recreational fishery-MRIP).  
 
 
 Timeline:
@@ -46,6 +54,54 @@ Timeline:
 *  Working paper finalized 1 October 
 
 *  Review 14-18 November 2022
+
+## Add NEAMAP
+
+Ensure NEAMAP data colums align with current dataset
+
+```{r}
+# current dataset, add vessel
+nefsc_bluepyagg_stn <- readRDS(here("fhdat/bluepyagg_stn.rds")) %>%
+  mutate(vessel = case_when(year<2009 ~ "AL",
+                            year>=2009 ~ "HB"))
+
+
+# NEAMAP add vessel and rename
+neamap_bluepreyagg_stn <- read.csv(here("fhdat/NEAMAP_Mean stomach weights_Bluefish Prey.csv")) %>%
+  mutate(vessel = "NEAMAP",
+         id = station,
+         sumbluepywt = sumbluepreywt,
+         nbluepysp = nbfpreyspp,
+         #npreysp = ,
+         npiscsp = npiscspp,
+         nstomtot = nstomtot, 
+         meanbluepywt = meanbluepreywt,
+         meanpisclen = meanpisclen.simple, 
+         #varpisclen = ,
+         season_ng = season,
+         declat  = lat,
+         declon = lon,
+         bottemp = bWT,
+         #surftemp = , 
+         setdepth = depthm)
+  
+# combine  
+bluepyagg_stn <-  nefsc_bluepyagg_stn %>%
+  bind_rows(neamap_bluepreyagg_stn) %>%
+  select(id, sumbluepywt, nbluepysp, npreysp, npiscsp, nstomtot,
+         meanbluepywt, meanpisclen, varpisclen, 
+         year, season_ng, declat, declon, bottemp, surftemp, setdepth, vessel)
+
+
+```
+
+Get 28,596 observations but one nefsc has a NA year so no vessel assigned--check this.
+
+## Realign center of gravity along NEUS coastline
+
+
+
+## Define inshore and offshore regions
 
 
 
