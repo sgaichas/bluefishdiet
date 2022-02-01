@@ -279,7 +279,7 @@ Z_gm = cbind( Z_gm, "coast_km"=coast_km )
 Z_gm_axes = colnames(Z_gm)
 
 # save for later
-saveRDS(Z_gm, Z_gmFile)
+#saveRDS(Z_gm, Z_gmFile)
 
 
 # Plot to confirm
