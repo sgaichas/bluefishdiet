@@ -154,20 +154,22 @@ fit <- fit_model(
   run_model = FALSE,
   working_dir = paste0(working_dir, "/"))
 
-axisdistdat <-  readRDS(here("spatialdat/neus_coastdistdat.rds"))
+coastdistdat <-  readRDS(here("spatialdat/neus_coastdistdat.rds"))
 
 # extract northings and eastings 
 Z_gm = fit$spatial_list$loc_g 
 
-# create UTM object with correct attributes 
+# convert northings/eastings to lat/lon
 tmpUTM = cbind('PID'=1,'POS'=1:nrow(Z_gm),'X'=Z_gm[,'E_km'],'Y'=Z_gm[,'N_km'])
+
+# create UTM object with correct attributes 
 attr(tmpUTM,"projection") = "UTM"
-attr(tmpUTM,"zone") = 2 
+attr(tmpUTM,"zone") = fit$extrapolation_list$zone - ifelse( fit$extrapolation_list$flip_around_dateline==TRUE, 30, 0 )
 
 # convert to lat/lon for merging with custom axis
-latlon_g = PBSmapping::convUL(tmpUTM)                                                         
+latlon_g = PBSmapping::convUL(tmpUTM)                                                         #$
 latlon_g = cbind( 'Lat'=latlon_g[,"Y"], 'Lon'=latlon_g[,"X"])
-latlon_g <- as.data.frame(latlon_g) # should be a df with lat/lon coordinates 
+latlon_g <- as.data.frame(latlon_g)
 
 # function to save the custom axis position that minimize Euclidean distance from each set of VAST coordinates
 get_length <- function(lon, lat, distdf) {
@@ -181,16 +183,18 @@ get_length <- function(lon, lat, distdf) {
 }
 
 # apply this to match each VAST knot with a position along the custom axis
-line_km=NULL
+# use lat/lon to get coastal distance
+coast_km = NULL
 for(k in 1:nrow(latlon_g)){
-  out = get_length(lon=latlon_g$Lon[k], lat=latlon_g$Lat[k], distdf = axisdistdat)/1000 
-  line_km <- c(line_km, out)
+  out = get_length(lon=latlon_g$Lon[k], lat=latlon_g$Lat[k], distdf = coastdistdat)/1000 # works better in a for loop than in apply where it's hard to get the rowwise nature to work--revisit sometime?
+  coast_km <- c(coast_km, out)
 }
 
 # bind the axis positions that match each knot back to Z_gm
-Z_gm = cbind( Z_gm, "line_km"=line_km )
+Z_gm = cbind( Z_gm, "coast_km"=coast_km )
 Z_gm_axes = colnames(Z_gm)
 
+# save for later
 #saveRDS(Z_gm, Z_gmFile)
 
 # Plot to confirm
@@ -225,29 +229,31 @@ if(!dir.exists(working_dir)) {
 
 fit <- fit_model(
   settings = settings, 
-  Lat_i = bluepyagg_stn_fall$Lat, 
-  Lon_i = bluepyagg_stn_fall$Lon, 
-  t_i = bluepyagg_stn_fall$Year, 
-  b_i = as_units(bluepyagg_stn_fall[,'Catch_g'], 'g'),
-  a_i = rep(1, nrow(bluepyagg_stn_fall)), 
+  Lat_i = bluepyagg_stn_spring$Lat, 
+  Lon_i = bluepyagg_stn_spring$Lon, 
+  t_i = bluepyagg_stn_spring$Year, 
+  b_i = as_units(bluepyagg_stn_spring[,'Catch_g'], 'g'),
+  a_i = rep(1, nrow(bluepyagg_stn_spring)), 
   #Use_REML = TRUE,
   run_model = FALSE,
   working_dir = paste0(working_dir, "/"))
 
-axisdistdat <-  read.rds(here("spatialdat/neus_cpastdistdat.rds"))
+coastdistdat <-  readRDS(here("spatialdat/neus_coastdistdat.rds"))
 
 # extract northings and eastings 
 Z_gm = fit$spatial_list$loc_g 
 
-# create UTM object with correct attributes 
+# convert northings/eastings to lat/lon
 tmpUTM = cbind('PID'=1,'POS'=1:nrow(Z_gm),'X'=Z_gm[,'E_km'],'Y'=Z_gm[,'N_km'])
+
+# create UTM object with correct attributes 
 attr(tmpUTM,"projection") = "UTM"
-attr(tmpUTM,"zone") = 2 
+attr(tmpUTM,"zone") = fit$extrapolation_list$zone - ifelse( fit$extrapolation_list$flip_around_dateline==TRUE, 30, 0 )
 
 # convert to lat/lon for merging with custom axis
-latlon_g = PBSmapping::convUL(tmpUTM)                                                         
+latlon_g = PBSmapping::convUL(tmpUTM)                                                         #$
 latlon_g = cbind( 'Lat'=latlon_g[,"Y"], 'Lon'=latlon_g[,"X"])
-latlon_g <- as.data.frame(latlon_g) # should be a df with lat/lon coordinates 
+latlon_g <- as.data.frame(latlon_g)
 
 # function to save the custom axis position that minimize Euclidean distance from each set of VAST coordinates
 get_length <- function(lon, lat, distdf) {
@@ -261,17 +267,20 @@ get_length <- function(lon, lat, distdf) {
 }
 
 # apply this to match each VAST knot with a position along the custom axis
-line_km=NULL
+# use lat/lon to get coastal distance
+coast_km = NULL
 for(k in 1:nrow(latlon_g)){
-  out = get_length(lon=latlon_g$Lon[k], lat=latlon_g$Lat[k], distdf = axisdistdat)/1000 
-  line_km <- c(line_km, out)
+  out = get_length(lon=latlon_g$Lon[k], lat=latlon_g$Lat[k], distdf = coastdistdat)/1000 # works better in a for loop than in apply where it's hard to get the rowwise nature to work--revisit sometime?
+  coast_km <- c(coast_km, out)
 }
 
 # bind the axis positions that match each knot back to Z_gm
-Z_gm = cbind( Z_gm, "line_km"=line_km )
+Z_gm = cbind( Z_gm, "coast_km"=coast_km )
 Z_gm_axes = colnames(Z_gm)
 
-#saveRDS(Z_gm, Z_gmFile)
+# save for later
+saveRDS(Z_gm, Z_gmFile)
+
 
 # Plot to confirm
 plot( x=Z_gm[,1], y=Z_gm[,2], col=viridisLite::viridis(25)[cut(Z_gm[,3],25)] )
@@ -279,11 +288,11 @@ plot( x=Z_gm[,1], y=Z_gm[,2], col=viridisLite::viridis(25)[cut(Z_gm[,3],25)] )
 # Fit model with new coordinates
 fit <- fit_model(
   settings = settings, 
-  Lat_i = bluepyagg_stn_fall$Lat, 
-  Lon_i = bluepyagg_stn_fall$Lon, 
-  t_i = bluepyagg_stn_fall$Year, 
-  b_i = as_units(bluepyagg_stn_fall[,'Catch_g'], 'g'),
-  a_i = rep(1, nrow(bluepyagg_stn_fall)), 
+  Lat_i = bluepyagg_stn_spring$Lat, 
+  Lon_i = bluepyagg_stn_spring$Lon, 
+  t_i = bluepyagg_stn_spring$Year, 
+  b_i = as_units(bluepyagg_stn_spring[,'Catch_g'], 'g'),
+  a_i = rep(1, nrow(bluepyagg_stn_spring)), 
   #Use_REML = TRUE,
   Z_gm = Z_gm,
   working_dir = paste0(working_dir, "/"))
