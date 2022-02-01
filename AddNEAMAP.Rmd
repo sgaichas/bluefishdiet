@@ -17,6 +17,12 @@ knitr::opts_chunk$set(echo = TRUE,
 
 library(tidyverse)
 library(here)
+library(sf)
+library(rnaturalearth)
+library(raster)
+library(smoothr)
+library(gridExtra)
+
 #library(DT)
 #library(pdftools)
 #library(patchwork)
@@ -63,7 +69,8 @@ Ensure NEAMAP data colums align with current dataset
 # current dataset, add vessel
 nefsc_bluepyagg_stn <- readRDS(here("fhdat/bluepyagg_stn.rds")) %>%
   mutate(vessel = case_when(year<2009 ~ "AL",
-                            year>=2009 ~ "HB"))
+                            year>=2009 ~ "HB", 
+                            TRUE ~ as.character(NA)))
 
 
 # NEAMAP add vessel and rename
@@ -95,9 +102,64 @@ bluepyagg_stn <-  nefsc_bluepyagg_stn %>%
 
 ```
 
-Get 28,596 observations but one nefsc has a NA year so no vessel assigned--check this.
+Get 28,596 observations but one nefsc has a NA year so no vessel assigned--check this. (Two stations from cruise 201202, missing lat and long so drop.)
+
+
 
 ## Realign center of gravity along NEUS coastline
+
+Following the excellent instrucions of Alexa Fredston at Rutgers, we can use the NE coast as an axis for calculating center of gravity to realign the calculations as alongshore and inshore/offshore.
+
+From https://github.com/James-Thorson-NOAA/VAST/wiki/Define-new-axes-for-range-edge-and-centroid and using the coastline from https://github.com/afredston/range-edge-niches/blob/master/scripts/get_axes_of_measurement.R 
+
+Get coastline:
+
+```{r}
+
+# First get the coastline, verbatim lines 15-43 here
+# https://github.com/afredston/range-edge-niches/blob/master/scripts/get_axes_of_measurement.R 
+
+usamap <- rnaturalearth::ne_countries(scale = "small", country = "united states of america", returnclass = "sf")[1] %>% 
+  st_cast("MULTILINESTRING") # get basic map of the country 
+
+## Northeast:
+
+# set bounding boxes
+neus.xmin=-78
+neus.xmax=-66
+neus.ymin=35
+neus.ymax=45
+
+neus.bbox1 <- st_set_crs(st_as_sf(as(raster::extent(neus.xmin, neus.xmax, neus.ymin, neus.ymax), "SpatialPolygons")), st_crs(usamap))
+neus.bbox2 <- st_set_crs(st_as_sf(as(raster::extent(-78, -74, 42, 45), "SpatialPolygons")), st_crs(usamap)) # smaller bounding box to get rid of extra lines on the map 
+
+neusmap <- usamap %>% 
+  st_intersection(neus.bbox1) %>%  
+  st_difference(neus.bbox2) # gets rid of extra non coastal line 
+
+neus.smoothgeom <- neusmap %>% 
+  smoothr::smooth(method="ksmooth", smoothness=8) %>% # smoother was applied incrementally more until the Chesapeake went away 
+  as("Spatial") %>% 
+  geom()
+
+neus.geomdists <- pointDistance(neus.smoothgeom[-nrow(neus.smoothgeom), c("x", "y")], neus.smoothgeom[-1, c("x", "y")], lonlat=TRUE)
+neus.coastdistdat <- data.frame(neus.smoothgeom[, c('x','y')], seglength=c(0, neus.geomdists))
+neus.coastdistdat$lengthfromhere <- rev(cumsum(rev(neus.coastdistdat[,"seglength"])))
+# first row should match st_length(smoothmap)
+
+write_rds(neus.coastdistdat, here("spatialdat","neus_coastdistdat.rds"))
+
+# plot it
+
+```
+
+Apply to model. Now following steps in https://github.com/James-Thorson-NOAA/VAST/wiki/Define-new-axes-for-range-edge-and-centroid we first set up the model to get default coordinates but don't run it, create the custom axis using the coastline object above, then pass the custom axis to the model and run it.
+
+We'll first test with the previously running model without the additional complication of NEAMAP.
+
+```{r}
+
+```
 
 
 
