@@ -116,7 +116,7 @@ RhoConfig <- c(
 # 3 constant among years (fixed effect)
 # 4 AR1
 
-OverdispersionConfig	<- c("eta1"=1, "eta2"=1)
+OverdispersionConfig	<- c("eta1"=0, "eta2"=0)
 # eta1 = vessel effects on prey encounter rate
 # eta2 = vessel effects on prey weight
 
@@ -145,7 +145,7 @@ settings = make_settings( n_x = 500,
 
 # select dataset and set directory for output
 
-season <- c("fall_500_wneamap_eta11")
+season <- c("fall_500_wneamap")
 
 working_dir <- here::here(sprintf("pyindex/allagg_%s/", season))
 
@@ -179,7 +179,7 @@ plot( fit,
 
 # Run model spring
 
-season <- c("spring_500_wneamap_eta11")
+season <- c("spring_500_wneamap")
 
 working_dir <- here::here(sprintf("pyindex/allagg_%s/", season))
 
