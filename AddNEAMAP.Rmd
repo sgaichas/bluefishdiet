@@ -105,7 +105,14 @@ saveRDS(bluepyagg_stn, here("fhdat/bluepyagg_stn_all.rds"))
 
 Get 28,596 observations but one nefsc has a NA year so no vessel assigned--check this. (Two stations from cruise 201202, missing lat and long so drop.)
 
+This script uses the full dataset and compares different vessel effect parameterizations. This treats vessel differences as overdispersion in the first and or second linear predictor.
 
+```{r, code = readLines(here("VASTunivariate_bfp_addneamap.R")), eval=F}
+```
+
+Outputs are in [this google folder](https://drive.google.com/drive/folders/1ns2VdOWWZmVKpvCJC3PZu2D-CHXXUIfJ?usp=sharing).
+
+Next option is to use vessel as a catchabilty covariate instead.
 
 ## Realign center of gravity along NEUS coastline
 
@@ -185,10 +192,12 @@ We'll first test with the previously running model without the additional compli
 
 This is giving us alongshore center of gravity. We also want the rotated inshore-offshore center of gravity. For that I need to add another coordinate?
 
-
+Alternatively, rotate the axes to be offset 45 degrees from Northings and Eastings?
 
 
 ## Define inshore and offshore regions
+
+Three options for different strata for derived quantities: 3 miles from shore, NEAMAP outer boundary, Albatross inshore strata boundary.
 
 
 
