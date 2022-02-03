@@ -58,6 +58,28 @@ if (window.hljs) {
 
 
 
+<style type="text/css">
+/* for pandoc --citeproc since 2.11 */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+}
+.hanging div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}
+</style>
 
 
 
@@ -178,7 +200,7 @@ pre code {
 
 <h1 class="title toc-ignore">Add NEAMAP to aggregate prey index VAST model</h1>
 <h4 class="author">Sarah Gaichas</h4>
-<h4 class="date">02 February, 2022</h4>
+<h4 class="date">03 February, 2022</h4>
 
 </div>
 
@@ -443,6 +465,218 @@ plot( fit,
       working_dir = paste0(working_dir, &quot;/&quot;)) </code></pre>
 <p>Outputs are in <a href="https://drive.google.com/drive/folders/1ns2VdOWWZmVKpvCJC3PZu2D-CHXXUIfJ?usp=sharing">this google folder</a>.</p>
 <p>Next option is to use vessel as a catchabilty covariate instead.</p>
+<p>Altenatively, adding the predator length covariate may more directly model vessel differences in predator catch that affect stomach contents than modeling a vessel catchability covariate direclty. This was the appropach taken by <span class="citation"><a href="#ref-ng_predator_2021" role="doc-biblioref">Ng <em>et al.</em></a> (<a href="#ref-ng_predator_2021" role="doc-biblioref">2021</a>)</span>.</p>
+<p>This script uses predatar mean length as a catchability covariate, with the option to add number of distinct predator types as well.</p>
+<pre class="r"><code># VAST attempt 2 univariate model as a script
+# modified from https://github.com/James-Thorson-NOAA/VAST/wiki/Index-standardization
+
+# Load packages
+library(here)
+library(dplyr)
+library(VAST)
+
+#Read in data, separate spring and fall, and rename columns for VAST:
+
+bluepyagg_stn &lt;- readRDS(here(&quot;fhdat/bluepyagg_stn_all.rds&quot;))
+
+#bluepyagg_stn &lt;- bluepyagg_pred_stn
+
+# filter to assessment years at Tony&#39;s suggestion
+
+# code Vessel as AL=0, HB=1, NEAMAP=2
+
+bluepyagg_stn_fall &lt;- bluepyagg_stn %&gt;%
+  #ungroup() %&gt;%
+  filter(season_ng == &quot;FALL&quot;,
+         year &gt; 1984) %&gt;%
+  mutate(AreaSwept_km2 = 1, #Elizabeth&#39;s code
+         #declon = -declon already done before neamap merge
+         Vessel = as.numeric(as.factor(vessel))-1
+         ) %&gt;% 
+  select(Catch_g = meanbluepywt, #use bluepywt for individuals input in example
+         Year = year,
+         Vessel,
+         AreaSwept_km2,
+         Lat = declat,
+         Lon = declon,
+         meanpisclen,
+         npiscsp) %&gt;%
+  na.omit() %&gt;%
+  as.data.frame()
+
+bluepyagg_stn_spring &lt;- bluepyagg_stn %&gt;%
+  filter(season_ng == &quot;SPRING&quot;,
+         year &gt; 1984) %&gt;%
+  mutate(AreaSwept_km2 =1, #Elizabeth&#39;s code
+         #declon = -declon already done before neamap merge
+         Vessel = as.numeric(as.factor(vessel))-1
+         ) %&gt;% 
+  select(Catch_g = meanbluepywt,
+         Year = year,
+         Vessel,
+         AreaSwept_km2,
+         Lat = declat,
+         Lon = declon,
+         meanpisclen,
+         npiscsp) %&gt;%
+  na.omit() %&gt;%
+  as.data.frame()
+
+
+# Make settings (turning off bias.correct to save time for example)
+# NEFSC strata limits https://github.com/James-Thorson-NOAA/VAST/issues/302
+
+# use only MAB, GB, GOM, SS EPUs 
+# leave out south of Cape Hatteras at Elizabeth&#39;s suggestion
+# could also leave out SS?
+# CHECK if these EPUs match what we use in SOE
+
+MABGBGOM &lt;- northwest_atlantic_grid %&gt;% 
+  filter(EPU %in% c(&quot;Mid_Atlantic_Bight&quot;, &quot;Georges_Bank&quot;, &quot;Gulf_of_Maine&quot;)) %&gt;% 
+  select(MAB_GB_GOM = stratum_number) %&gt;% 
+  distinct()
+
+MABGBGOMSS &lt;- northwest_atlantic_grid %&gt;% 
+  filter(EPU %in% c(&quot;Mid_Atlantic_Bight&quot;, &quot;Georges_Bank&quot;, &quot;Gulf_of_Maine&quot;,
+                    &quot;Scotian_Shelf&quot;)) %&gt;% 
+  select(MAB_GB_GOM_SS = stratum_number) %&gt;% 
+  distinct()
+
+MABGB &lt;- northwest_atlantic_grid %&gt;% 
+  filter(EPU %in% c(&quot;Mid_Atlantic_Bight&quot;, &quot;Georges_Bank&quot;)) %&gt;% 
+  select(MAB_GB_GOM_SS = stratum_number) %&gt;% 
+  distinct()
+
+GB &lt;- northwest_atlantic_grid %&gt;% 
+  filter(EPU %in% c(&quot;Georges_Bank&quot;)) %&gt;% 
+  select(MAB_GB_GOM_SS = stratum_number) %&gt;% 
+  distinct()
+
+
+MAB &lt;- northwest_atlantic_grid %&gt;% 
+  filter(EPU %in% c(&quot;Mid_Atlantic_Bight&quot;)) %&gt;% 
+  select(MAB_GB_GOM_SS = stratum_number) %&gt;% 
+  distinct()
+
+# configs
+FieldConfig &lt;- c(
+  &quot;Omega1&quot;   = 0,   # number of spatial variation factors (0, 1, AR1)
+  &quot;Epsilon1&quot; = 0,   # number of spatio-temporal factors
+  &quot;Omega2&quot;   = 0, 
+  &quot;Epsilon2&quot; = 0
+) 
+
+# Model selection options, 
+# Season_knots + suffix below
+#                           FieldConfig default (all IID)
+# _noaniso                  FieldConfig default (all IID) and use_anistropy = FALSE
+# _noomeps2                 FieldConfig 0 for Omega2, Epsilon2
+# _noomeps2_noaniso         FieldConfig 0 for Omega2, Epsilon2 and use_anistropy = FALSE
+# _noomeps2_noeps1          FieldConfig 0 for Omega2, Epsilon2, Omega1
+# _noomeps2_noeps1_noaniso  FieldConfig 0 for Omega2, Epsilon2, Omega1 and use_anistropy = FALSE
+# _noomeps12                FieldConfig all 0
+# _noomeps12_noaniso        FieldConfig all 0 and use_anistropy = FALSE
+
+RhoConfig &lt;- c(
+  &quot;Beta1&quot; = 0,      # temporal structure on years (intercepts) 
+  &quot;Beta2&quot; = 0, 
+  &quot;Epsilon1&quot; = 0,   # temporal structure on spatio-temporal variation
+  &quot;Epsilon2&quot; = 0
+) 
+# 0 off (fixed effects)
+# 1 independent
+# 2 random walk
+# 3 constant among years (fixed effect)
+# 4 AR1
+
+OverdispersionConfig    &lt;- c(&quot;eta1&quot;=0, &quot;eta2&quot;=0)
+# eta1 = vessel effects on prey encounter rate
+# eta2 = vessel effects on prey weight
+
+strata.limits &lt;- as.list(MABGBGOMSS)
+
+settings = make_settings( n_x = 500, 
+                          Region = &quot;northwest_atlantic&quot;,
+                          #strata.limits = list(&#39;All_areas&#39; = 1:1e5), full area
+                          strata.limits = strata.limits,
+                          purpose = &quot;index2&quot;, 
+                          bias.correct = FALSE,
+                          #use_anisotropy = FALSE,
+                          #fine_scale = FALSE,
+                          #FieldConfig = FieldConfig,
+                          #RhoConfig = RhoConfig,
+                          OverdispersionConfig = OverdispersionConfig
+                          )
+
+ #Aniso=FALSE, #correct ln_H_input at bound
+ #FieldConfig[&quot;Epsilon1&quot;]=0, #correct L_epsilon1_z approaching 0  
+ #FieldConfig[&quot;Epsilon2&quot;]=0 #correct L_epsilon2_z approaching 0 
+ #increase knots to address bounds for logkappa?
+ # https://github.com/James-Thorson-NOAA/VAST/issues/300
+ # or try finescale=FALSE
+ # then Omegas hit bounds, had to turn then off too
+
+# select dataset and set directory for output
+
+season &lt;- c(&quot;fall_500_allsurvs_lenno&quot;)
+
+working_dir &lt;- here::here(sprintf(&quot;pyindex/allagg_%s/&quot;, season))
+
+if(!dir.exists(working_dir)) {
+  dir.create(working_dir)
+}
+
+# Run model fall
+# fit = fit_model( settings = settings, 
+#                  Lat_i = bluepyagg_stn_fall[,&#39;Lat&#39;], 
+#                  Lon_i = bluepyagg_stn_fall[,&#39;Lon&#39;], 
+#                  t_i = bluepyagg_stn_fall[,&#39;Year&#39;], 
+#                  b_i = as_units(bluepyagg_stn_fall[,&#39;Catch_g&#39;], &#39;g&#39;), 
+#                  a_i = as_units(bluepyagg_stn_fall[,&#39;AreaSwept_km2&#39;], &#39;km^2&#39;),
+#                  working_dir = paste0(working_dir, &quot;/&quot;))
+
+fit &lt;- fit_model(
+  settings = settings, 
+  Lat_i = bluepyagg_stn_fall$Lat, 
+  Lon_i = bluepyagg_stn_fall$Lon, 
+  t_i = bluepyagg_stn_fall$Year, 
+  b_i = as_units(bluepyagg_stn_fall[,&#39;Catch_g&#39;], &#39;g&#39;),
+  a_i = rep(1, nrow(bluepyagg_stn_fall)),
+  v_i = bluepyagg_stn_fall$Vessel,
+  Q_ik = as.matrix(bluepyagg_stn_fall[,c(&quot;meanpisclen&quot;, &quot;npiscsp&quot;)]),
+  #Use_REML = TRUE,
+  working_dir = paste0(working_dir, &quot;/&quot;))
+
+# Plot results
+plot( fit,
+      working_dir = paste0(working_dir, &quot;/&quot;))
+
+# Run model spring
+
+season &lt;- c(&quot;spring_500_allsurvs_lenno&quot;)
+
+working_dir &lt;- here::here(sprintf(&quot;pyindex/allagg_%s/&quot;, season))
+
+if(!dir.exists(working_dir)) {
+  dir.create(working_dir)
+}                         
+                          
+
+fit = fit_model( settings = settings, 
+                 Lat_i = bluepyagg_stn_spring[,&#39;Lat&#39;], 
+                 Lon_i = bluepyagg_stn_spring[,&#39;Lon&#39;], 
+                 t_i = bluepyagg_stn_spring[,&#39;Year&#39;], 
+                 b_i = as_units(bluepyagg_stn_spring[,&#39;Catch_g&#39;], &#39;g&#39;), 
+                 a_i = as_units(bluepyagg_stn_spring[,&#39;AreaSwept_km2&#39;], &#39;km^2&#39;),
+                 v_i = bluepyagg_stn_spring$Vessel,
+                 Q_ik = as.matrix(bluepyagg_stn_spring[,c(&quot;meanpisclen&quot;, &quot;npiscsp&quot;)]),
+                # Use_REML = TRUE,
+                 working_dir = paste0(working_dir, &quot;/&quot;))
+
+# Plot results
+plot( fit,
+      working_dir = paste0(working_dir, &quot;/&quot;)) </code></pre>
+<p>Initial run has a lower AIC than runs with overdispersion for vessel effects.</p>
 </div>
 <div id="realign-center-of-gravity-along-neus-coastline" class="section level2">
 <h2>Realign center of gravity along NEUS coastline</h2>
@@ -816,6 +1050,11 @@ plot( fit,
 <div id="define-inshore-and-offshore-regions" class="section level2">
 <h2>Define inshore and offshore regions</h2>
 <p>Three options for different strata for derived quantities: 3 miles from shore, NEAMAP outer boundary, Albatross inshore strata boundary.</p>
+<div id="refs" class="references csl-bib-body hanging-indent">
+<div id="ref-ng_predator_2021" class="csl-entry">
+Ng, E. L., Deroba, J. J., Essington, T. E., Grüss, A., Smith, B. E., and Thorson, J. T. 2021. Predator stomach contents can provide accurate indices of prey biomass. ICES Journal of Marine Science, 78: 1146–1159. <a href="https://doi.org/10.1093/icesjms/fsab026">https://doi.org/10.1093/icesjms/fsab026</a> (Accessed 1 September 2021).
+</div>
+</div>
 </div>
 
 
