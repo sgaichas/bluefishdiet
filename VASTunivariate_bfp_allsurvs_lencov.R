@@ -31,7 +31,8 @@ bluepyagg_stn_fall <- bluepyagg_stn %>%
          Lat = declat,
          Lon = declon,
          meanpisclen,
-         npiscsp) %>%
+         npiscsp,
+         bottemp) %>%
   na.omit() %>%
   as.data.frame()
 
@@ -49,7 +50,8 @@ bluepyagg_stn_spring <- bluepyagg_stn %>%
          Lat = declat,
          Lon = declon,
          meanpisclen,
-         npiscsp) %>%
+         npiscsp,
+         bottemp) %>%
   na.omit() %>%
   as.data.frame()
 
@@ -149,7 +151,7 @@ settings = make_settings( n_x = 500,
 
 # select dataset and set directory for output
 
-season <- c("fall_500_allsurvs_lenno")
+season <- c("fall_500_allsurvs_len_bottemp")
 
 working_dir <- here::here(sprintf("pyindex/allagg_%s/", season))
 
@@ -174,7 +176,7 @@ fit <- fit_model(
   b_i = as_units(bluepyagg_stn_fall[,'Catch_g'], 'g'),
   a_i = rep(1, nrow(bluepyagg_stn_fall)),
   v_i = bluepyagg_stn_fall$Vessel,
-  Q_ik = as.matrix(bluepyagg_stn_fall[,c("meanpisclen", "npiscsp")]),
+  Q_ik = as.matrix(bluepyagg_stn_fall[,c("meanpisclen", "bottemp")]),
   #Use_REML = TRUE,
   working_dir = paste0(working_dir, "/"))
 
@@ -184,7 +186,7 @@ plot( fit,
 
 # Run model spring
 
-season <- c("spring_500_allsurvs_lenno")
+season <- c("spring_500_allsurvs_len_bottemp")
 
 working_dir <- here::here(sprintf("pyindex/allagg_%s/", season))
 
@@ -198,9 +200,9 @@ fit = fit_model( settings = settings,
                  Lon_i = bluepyagg_stn_spring[,'Lon'], 
                  t_i = bluepyagg_stn_spring[,'Year'], 
                  b_i = as_units(bluepyagg_stn_spring[,'Catch_g'], 'g'), 
-                 a_i = as_units(bluepyagg_stn_spring[,'AreaSwept_km2'], 'km^2'),
+                 a_i = rep(1, nrow(bluepyagg_stn_spring)),
                  v_i = bluepyagg_stn_spring$Vessel,
-                 Q_ik = as.matrix(bluepyagg_stn_spring[,c("meanpisclen", "npiscsp")]),
+                 Q_ik = as.matrix(bluepyagg_stn_spring[,c("meanpisclen", "bottemp")]),
                 # Use_REML = TRUE,
                  working_dir = paste0(working_dir, "/"))
 
