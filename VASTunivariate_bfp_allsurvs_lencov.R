@@ -151,7 +151,7 @@ settings = make_settings( n_x = 500,
 
 # select dataset and set directory for output
 
-season <- c("fall_500_allsurvs_len_bottemp")
+season <- c("fall_500_allsurvs_lenno_bottemp")
 
 working_dir <- here::here(sprintf("pyindex/allagg_%s/", season))
 
@@ -176,7 +176,7 @@ fit <- fit_model(
   b_i = as_units(bluepyagg_stn_fall[,'Catch_g'], 'g'),
   a_i = rep(1, nrow(bluepyagg_stn_fall)),
   v_i = bluepyagg_stn_fall$Vessel,
-  Q_ik = as.matrix(bluepyagg_stn_fall[,c("meanpisclen", "bottemp")]),
+  Q_ik = as.matrix(bluepyagg_stn_fall[,c("meanpisclen", "npiscsp", "bottemp")]),
   #Use_REML = TRUE,
   working_dir = paste0(working_dir, "/"))
 
@@ -186,7 +186,7 @@ plot( fit,
 
 # Run model spring
 
-season <- c("spring_500_allsurvs_len_bottemp")
+season <- c("spring_500_allsurvs_lenno_bottemp")
 
 working_dir <- here::here(sprintf("pyindex/allagg_%s/", season))
 
@@ -202,7 +202,7 @@ fit = fit_model( settings = settings,
                  b_i = as_units(bluepyagg_stn_spring[,'Catch_g'], 'g'), 
                  a_i = rep(1, nrow(bluepyagg_stn_spring)),
                  v_i = bluepyagg_stn_spring$Vessel,
-                 Q_ik = as.matrix(bluepyagg_stn_spring[,c("meanpisclen", "bottemp")]),
+                 Q_ik = as.matrix(bluepyagg_stn_spring[,c("meanpisclen", "npiscsp", "bottemp")]),
                 # Use_REML = TRUE,
                  working_dir = paste0(working_dir, "/"))
 
