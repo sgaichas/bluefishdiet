@@ -114,14 +114,143 @@ Outputs are in [this google folder](https://drive.google.com/drive/folders/1ns2V
 
 Next option is to use vessel as a catchabilty covariate instead.
 
-Altenatively, adding the predator length covariate may more directly model vessel differences in predator catch that affect stomach contents than modeling a vessel catchability covariate direclty. This was the appropach taken by @ng_predator_2021.
+Altenatively, adding the predator length covariate may more directly model vessel differences in predator catch that affect stomach contents than modeling a vessel catchability covariate direclty. This was the appropach taken by @ng_predator_2021. They found that predator length covariates were strongly supported as catchability covariates (larger predators being more likely to have more prey in stomachs).
 
-This script uses predatar mean length as a catchability covariate, with the option to add number of distinct predator types as well.
+This script uses predatar mean length as a catchability covariate, with the option to add number of distinct predator types, and temperature as well.
+
+The rationale for including number of predator species is that more species "sampling" the prey field may result in more prey in stomachs. 
+
+The rationale for including bottom temperature is that predator metabolism and consumption changes with temperature, although this may not be linear depending on the temperature range. 
 
 ```{r, code = readLines(here("VASTunivariate_bfp_allsurvs_lencov.R")), eval=F}
 ```
 
-Initial run has a lower AIC than runs with overdispersion for vessel effects.
+Initial run with length and number of predators has a lower AIC than runs with overdispersion for vessel effects.
+
+We'll compare all runs with NEAMAP added and overdispersion vs catchability covariates here (using maximum likelihood to calculate AIC instead of REML because we are not changing the random effects):
+
+```{r}
+# from each output folder in pyindex, 
+outdir <- here("pyindex")
+moddirs <- list.dirs(outdir) 
+moddirs <- moddirs[-1]
+# keep folder name
+modnames <- list.dirs(outdir, full.names = FALSE)
+
+# function to apply extracting info
+getmodinfo <- function(d.name){
+  # read settings
+  modpath <- stringr::str_split(d.name, "/", simplify = TRUE)
+  modname <- modpath[length(modpath)]
+  
+  settings <- read.table(file.path(d.name, "settings.txt"), comment.char = "",
+    fill = TRUE, header = FALSE)
+  
+  n_x <- as.numeric(as.character(settings[(which(settings[,1]=="$n_x")+1),2]))
+  grid_size_km <- as.numeric(as.character(settings[(which(settings[,1]=="$grid_size_km")+1),2]))
+  max_cells <- as.numeric(as.character(settings[(which(settings[,1]=="$max_cells")+1),2]))
+  use_anisotropy <- as.character(settings[(which(settings[,1]=="$use_anisotropy")+1),2])
+  fine_scale <- as.character(settings[(which(settings[,1]=="$fine_scale")+1),2])
+  bias.correct <- as.character(settings[(which(settings[,1]=="$bias.correct")+1),2])
+  
+  #FieldConfig
+  if(settings[(which(settings[,1]=="$FieldConfig")+1),1]=="Component_1"){
+    omega1 <- as.character(settings[(which(settings[,1]=="$FieldConfig")+2),2])
+    omega2 <- as.character(settings[(which(settings[,1]=="$FieldConfig")+3),1])
+    epsilon1 <- as.character(settings[(which(settings[,1]=="$FieldConfig")+4),2])
+    epsilon2 <- as.character(settings[(which(settings[,1]=="$FieldConfig")+5),1])
+    beta1 <- as.character(settings[(which(settings[,1]=="$FieldConfig")+6),2])
+    beta2 <- as.character(settings[(which(settings[,1]=="$FieldConfig")+7),1])
+  }
+  
+  if(settings[(which(settings[,1]=="$FieldConfig")+1),1]=="Omega1"){
+    omega1 <- as.character(settings[(which(settings[,1]=="$FieldConfig")+3),1])
+    omega2 <- as.character(settings[(which(settings[,1]=="$FieldConfig")+4),1])
+    epsilon1 <- as.character(settings[(which(settings[,1]=="$FieldConfig")+3),2])
+    epsilon2 <- as.character(settings[(which(settings[,1]=="$FieldConfig")+4),2])
+    beta1 <- "IID"
+    beta2 <- "IID"
+  }
+  
+  
+  #RhoConfig
+  rho_beta1 <- as.numeric(as.character(settings[(which(settings[,1]=="$RhoConfig")+3),1]))
+  rho_beta2 <- as.numeric(as.character(settings[(which(settings[,1]=="$RhoConfig")+3),2]))
+  rho_epsilon1 <- as.numeric(as.character(settings[(which(settings[,1]=="$RhoConfig")+4),1]))
+  rho_epsilon2 <- as.numeric(as.character(settings[(which(settings[,1]=="$RhoConfig")+4),2]))
+  
+  # read parameter estimates, object is called parameter_Estimates
+  load(file.path(d.name, "parameter_estimates.RData"))
+  
+  AIC <- parameter_estimates$AIC[1]  
+  converged <- parameter_estimates$Convergence_check[1]
+  fixedcoeff <- unname(parameter_estimates$number_of_coefficients[2])
+  randomcoeff <- unname(parameter_estimates$number_of_coefficients[3])
+  
+  
+  # return model atributes as a dataframe
+  out <- data.frame(modname = modname,
+                    n_x = n_x,
+                    grid_size_km = grid_size_km,
+                    max_cells = max_cells,
+                    use_anisotropy = use_anisotropy,
+                    fine_scale =  fine_scale,
+                    bias.correct = bias.correct,
+                    omega1 = omega1,
+                    omega2 = omega2,
+                    epsilon1 = epsilon1,
+                    epsilon2 = epsilon2,
+                    beta1 = beta1,
+                    beta2 = beta2,
+                    rho_epsilon1 = rho_epsilon1,
+                    rho_epsilon2 = rho_epsilon2,
+                    rho_beta1 = rho_beta1,
+                    rho_beta2 = rho_beta2,
+                    AIC = AIC,
+                    converged = converged,
+                    fixedcoeff = fixedcoeff,
+                    randomcoeff = randomcoeff
+  )
+  	
+	return(out)
+
+}
+
+# combine into one table for comparison
+
+modselect <- purrr::map_dfr(moddirs, getmodinfo)
+
+
+```
+
+Only compare the models which include NEAMAP data:
+
+```{r}
+
+# only compare AIC for the 500 knot models with neamap included
+modselect.500.allsurvs <- modselect %>%
+  filter(n_x == 500) %>%
+  filter(str_detect(modname, c("wneamap", "allsurvs"))) %>%
+  mutate(season = case_when(str_detect(modname, "fall") ~ "Fall",
+                            str_detect(modname, "spring") ~ "Spring",
+                            TRUE ~ as.character(NA))) %>%
+  mutate(converged2 = case_when(str_detect(converged, "no evidence") ~ "likely",
+                                str_detect(converged, "is likely not") ~ "unlikely",
+                                TRUE ~ as.character(NA))) %>%
+  group_by(season) %>%
+  mutate(deltaAIC = AIC-min(AIC)) %>%
+  select(modname, season, deltaAIC, fixedcoeff,
+         randomcoeff, use_anisotropy, 
+         omega1, omega2, epsilon1, epsilon2, 
+         beta1, beta2, AIC, converged2) %>%
+  arrange(AIC)
+
+DT::datatable(modselect.500, rownames = FALSE, 
+              options= list(pageLength = 25, scrollX = TRUE))
+```
+
+
+Best fit model(s)?
 
 ## Realign center of gravity along NEUS coastline
 
@@ -202,6 +331,61 @@ We'll first test with the previously running model without the additional compli
 This is giving us alongshore center of gravity. We also want the rotated inshore-offshore center of gravity. For that I need to add another coordinate?
 
 Alternatively, rotate the axes to be offset 45 degrees from Northings and Eastings?
+
+Following the example for the [Bering Sea linear axis](https://github.com/James-Thorson-NOAA/VAST/wiki/Define-new-axes-for-range-edge-and-centroid), we add two lines. The along shelf axis directly follows [Kevin Friedland's axis for measuring species distribution change](https://noaa-edab.github.io/tech-doc/species-distribution-indicators.html#methods-51):
+
+>The along-shelf axis begins at 76.53°W 34.60°N and terminates at 65.71°W 43.49°N.
+
+And the offshore axis is perpendicular to the alongshore axis, originating from its center. 
+
+```{r}
+# set line endpoints 
+neus.alongshore.lon <- c(-76.53,-65.71)
+neus.alongshore.lat <- c(34.60,43.49)
+
+# draw line
+neus.alongshore.line <- data.frame(neus.alongshore.lon, neus.alongshore.lat) %>%
+  rename('x'=neus.alongshore.lon,'y'=neus.alongshore.lat) %>%
+  st_as_sf(coords=c('x','y')) %>%
+  summarise() %>%
+  st_cast("LINESTRING") %>% 
+  smoothr::densify(n=99) %>% # choose number of line segments: here it's 99 for 100 points
+  st_cast("MULTIPOINT") 
+
+neus.alongshore.points <- data.frame(st_coordinates(neus.alongshore.line)) %>%
+  rename("x"=X, "y"=Y)
+
+neus.alongshore.dists <- pointDistance(neus.alongshore.points[-nrow(neus.alongshore.points), c("x", "y")], neus.alongshore.points[-1, c("x", "y")], lonlat=TRUE)
+
+neus.alongshore.axisdistdat <- data.frame(neus.alongshore.points[, c('x','y')], seglength=c(0, neus.alongshore.dists))
+neus.alongshore.axisdistdat$lengthfromhere <- rev(cumsum(rev(neus.alongshore.axisdistdat[,"seglength"])))
+
+#plot to ensure it's right!
+ggplot() +
+    geom_sf(data=neusmap, color="#999999") +
+    geom_sf(data=neus.alongshore.line %>% st_set_crs(st_crs(neusmap)), color="darkblue", lwd=1.5) + 
+    #scale_x_continuous(limits=c(neus.xmin, neus.xmax)) +
+    #scale_y_continuous(limits=c(neus.ymin, neus.ymax)) +
+    theme_bw() +
+    #labs(title=paste0("Smoothness=", smoothval)) +
+    theme(axis.text.x=element_text(angle=45))
+
+#find perpendicular axis at midpoint of alonshore line
+
+neus.offshore.lon
+neus.offshore.lat
+
+
+
+ebs.dists <- pointDistance(ebs.points[-nrow(ebs.points), c("x", "y")], ebs.points[-1, c("x", "y")], lonlat=TRUE)
+
+ebs.axisdistdat <- data.frame(ebs.points[, c('x','y')], seglength=c(0, ebs.dists))
+ebs.axisdistdat$lengthfromhere <- rev(cumsum(rev(ebs.axisdistdat[,"seglength"])))
+
+saveRDS(ebs.axisdistdat, here("processed-data","ebs_axisdistdat.rds"))
+
+```
+
 
 
 ## Define inshore and offshore regions
