@@ -336,7 +336,7 @@ Following the example for the [Bering Sea linear axis](https://github.com/James-
 
 >The along-shelf axis begins at 76.53°W 34.60°N and terminates at 65.71°W 43.49°N.
 
-And the offshore axis is perpendicular to the alongshore axis, originating from its center. 
+And the offshore axis is perpendicular to the alongshore axis, originating from its center. Code to rotate a geographic feature from xhttps://geocompr.robinlovelace.net/geometric-operations.html#affine-transformations, a portion of a great book featuring `sf` functions and usage: [Geocomputation with R](https://geocompr.robinlovelace.net/index.html)
 
 ```{r}
 # set line endpoints 
@@ -361,32 +361,66 @@ neus.alongshore.axisdistdat <- data.frame(neus.alongshore.points[, c('x','y')], 
 neus.alongshore.axisdistdat$lengthfromhere <- rev(cumsum(rev(neus.alongshore.axisdistdat[,"seglength"])))
 
 #plot to ensure it's right!
+# ggplot() +
+#     geom_sf(data=neusmap, color="#999999") +
+#     geom_sf(data=neus.alongshore.line %>% st_set_crs(st_crs(neusmap)), color="darkblue", lwd=1.5) + 
+#     #scale_x_continuous(limits=c(neus.xmin, neus.xmax)) +
+#     #scale_y_continuous(limits=c(neus.ymin, neus.ymax)) +
+#     theme_bw() +
+#     #labs(title=paste0("Smoothness=", smoothval)) +
+#     theme(axis.text.x=element_text(angle=45))
+
+#find perpendicular axis at midpoint of alongshore line
+# since we made this line 100 units, center is at ~50
+halfway <- neus.alongshore.axisdistdat[50,]
+
+# or we could calculate it properly
+mid.lat <- sum(neus.alongshore.lat)/2
+mid.lon <- sum(neus.alongshore.lon)/2
+
+# or use a built in function
+midpoint.alongshore <- st_centroid(neus.alongshore.line)
+
+# rotate alongshore line 90 degress at midpoint
+# functions see https://geocompr.robinlovelace.net/geometric-operations.html
+rotation = function(a){
+  r = a * pi / 180 #degrees to radians
+  matrix(c(cos(r), sin(r), -sin(r), cos(r)), nrow = 2, ncol = 2)
+} 
+
+#nz_rotate = (nz_sfc - nz_centroid_sfc) * rotation(30) + nz_centroid_sfc
+
+neus.alongshore.line_sfc <- st_geometry(neus.alongshore.line)
+midpoint.alongshore_sfc <- st_centroid(neus.alongshore.line_sfc)
+
+neus.offshore.line <- (neus.alongshore.line_sfc - midpoint.alongshore_sfc) * rotation(90) + midpoint.alongshore_sfc
+
 ggplot() +
     geom_sf(data=neusmap, color="#999999") +
-    geom_sf(data=neus.alongshore.line %>% st_set_crs(st_crs(neusmap)), color="darkblue", lwd=1.5) + 
+    geom_sf(data=neus.alongshore.line_sfc %>% st_set_crs(st_crs(neusmap)), color="darkblue", lwd=1.5) +
+    geom_sf(data=neus.offshore.line %>% st_set_crs(st_crs(neusmap)), color="darkblue", lwd=1.5) +
     #scale_x_continuous(limits=c(neus.xmin, neus.xmax)) +
     #scale_y_continuous(limits=c(neus.ymin, neus.ymax)) +
     theme_bw() +
     #labs(title=paste0("Smoothness=", smoothval)) +
     theme(axis.text.x=element_text(angle=45))
 
-#find perpendicular axis at midpoint of alonshore line
+neus.offshore.points <- data.frame(st_coordinates(neus.offshore.line)) %>%
+  rename("x"=X, "y"=Y)
 
-neus.offshore.lon
-neus.offshore.lat
+neus.offshore.dists <- pointDistance(neus.offshore.points[-nrow(neus.offshore.points), c("x", "y")], neus.offshore.points[-1, c("x", "y")], lonlat=TRUE)
 
+neus.offshore.axisdistdat <- data.frame(neus.offshore.points[, c('x','y')], seglength=c(0, neus.offshore.dists))
+neus.offshore.axisdistdat$lengthfromhere <- rev(cumsum(rev(neus.offshore.axisdistdat[,"seglength"])))
 
-
-ebs.dists <- pointDistance(ebs.points[-nrow(ebs.points), c("x", "y")], ebs.points[-1, c("x", "y")], lonlat=TRUE)
-
-ebs.axisdistdat <- data.frame(ebs.points[, c('x','y')], seglength=c(0, ebs.dists))
-ebs.axisdistdat$lengthfromhere <- rev(cumsum(rev(ebs.axisdistdat[,"seglength"])))
-
-saveRDS(ebs.axisdistdat, here("processed-data","ebs_axisdistdat.rds"))
+write_rds(neus.alongshore.axisdistdat, here("spatialdat","neus.alongshore.axisdistdat.rds"))
+write_rds(neus.offshore.axisdistdat, here("spatialdat","neus.offshore.axisdistdat.rds"))
 
 ```
 
+Affline transformations may not preserve angles so this rotation looks a little off when 90 is specified.
 
+We could also project a linear axis offshore from the non-linear coastline axis?
 
 ## Define inshore and offshore regions
 
