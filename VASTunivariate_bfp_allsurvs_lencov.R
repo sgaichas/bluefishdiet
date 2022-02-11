@@ -24,7 +24,7 @@ bluepyagg_stn_fall <- bluepyagg_stn %>%
          #declon = -declon already done before neamap merge
          Vessel = as.numeric(as.factor(vessel))-1
          ) %>% 
-  select(Catch_g = meanbluepywt, #use bluepywt for individuals input in example
+  dplyr::select(Catch_g = meanbluepywt, #use bluepywt for individuals input in example
          Year = year,
          Vessel,
          AreaSwept_km2,
@@ -32,7 +32,8 @@ bluepyagg_stn_fall <- bluepyagg_stn %>%
          Lon = declon,
          meanpisclen,
          npiscsp,
-         bottemp) %>%
+         #bottemp #this leaves out many stations for NEFSC
+         ) %>%
   na.omit() %>%
   as.data.frame()
 
@@ -43,7 +44,7 @@ bluepyagg_stn_spring <- bluepyagg_stn %>%
          #declon = -declon already done before neamap merge
          Vessel = as.numeric(as.factor(vessel))-1
          ) %>% 
-  select(Catch_g = meanbluepywt,
+  dplyr::select(Catch_g = meanbluepywt,
          Year = year,
          Vessel,
          AreaSwept_km2,
@@ -51,7 +52,8 @@ bluepyagg_stn_spring <- bluepyagg_stn %>%
          Lon = declon,
          meanpisclen,
          npiscsp,
-         bottemp) %>%
+         #bottemp #this leaves out many stations for NEFSC
+         ) %>%
   na.omit() %>%
   as.data.frame()
 
@@ -176,7 +178,7 @@ fit <- fit_model(
   b_i = as_units(bluepyagg_stn_fall[,'Catch_g'], 'g'),
   a_i = rep(1, nrow(bluepyagg_stn_fall)),
   v_i = bluepyagg_stn_fall$Vessel,
-  #Q_ik = as.matrix(bluepyagg_stn_fall[,c("npiscsp", "bottemp")]),
+  #Q_ik = as.matrix(bluepyagg_stn_fall[,c("npiscsp")]),
   #Use_REML = TRUE,
   working_dir = paste0(working_dir, "/"))
 
@@ -202,7 +204,7 @@ fit = fit_model( settings = settings,
                  b_i = as_units(bluepyagg_stn_spring[,'Catch_g'], 'g'), 
                  a_i = rep(1, nrow(bluepyagg_stn_spring)),
                  v_i = bluepyagg_stn_spring$Vessel,
-                # Q_ik = as.matrix(bluepyagg_stn_spring[,c("npiscsp", "bottemp")]),
+                # Q_ik = as.matrix(bluepyagg_stn_spring[,c("npiscsp")]),
                 # Use_REML = TRUE,
                  working_dir = paste0(working_dir, "/"))
 
