@@ -15,15 +15,15 @@ knitr::opts_chunk$set(echo = TRUE,
                       message = FALSE,
                       warning = FALSE)
 
-library(tidyverse)
 library(here)
 library(sf)
 library(rnaturalearth)
 library(raster)
 library(smoothr)
 library(gridExtra)
+library(tidyverse)
 
-#library(DT)
+library(DT)
 #library(pdftools)
 #library(patchwork)
 #library(ggiraph)
@@ -240,10 +240,9 @@ modselect.500.allsurvs <- modselect %>%
   group_by(season) %>%
   mutate(deltaAIC = AIC-min(AIC)) %>%
   arrange(AIC) %>%
-  ungroup() %>%
-  select(modname, season, deltaAIC, fixedcoeff,
-         randomcoeff, use_anisotropy, 
-         omega1, omega2, epsilon1, epsilon2, 
+  dplyr::select(modname, season, deltaAIC, fixedcoeff,
+         randomcoeff, use_anisotropy,
+         omega1, omega2, epsilon1, epsilon2,
          beta1, beta2, AIC, converged2)
 
 DT::datatable(modselect.500.allsurvs, rownames = FALSE, 
