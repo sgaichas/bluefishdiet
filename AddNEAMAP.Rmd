@@ -116,11 +116,11 @@ Next option is to use vessel as a catchabilty covariate instead.
 
 Altenatively, adding the predator length covariate may more directly model vessel differences in predator catch that affect stomach contents than modeling a vessel catchability covariate direclty. This was the appropach taken by @ng_predator_2021. They found that predator length covariates were strongly supported as catchability covariates (larger predators being more likely to have more prey in stomachs).
 
-This script uses predatar mean length as a catchability covariate, with the option to add number of distinct predator types, and temperature as well.
+This script uses predator mean length as a catchability covariate, with the option to add number of distinct predator types, and temperature as well.
 
 The rationale for including number of predator species is that more species "sampling" the prey field may result in more prey in stomachs. 
 
-The rationale for including bottom temperature is that predator metabolism and consumption changes with temperature, although this may not be linear depending on the temperature range. 
+*It turns out including bottom temperature leaves out a lot of data, so for now I will not use this.* If the WG wants to explore it I'll need to do runs with only the subset of data with temperature to compare with vessel effects, or use a different bottom temperature dataset like Charles Perretti did for summer flounder.  If we use it, the rationale for including bottom temperature is that predator metabolism and consumption changes with temperature, although this may not be linear depending on the temperature range. 
 
 ```{r, code = readLines(here("VASTunivariate_bfp_allsurvs_lencov.R")), eval=F}
 ```
@@ -250,11 +250,15 @@ DT::datatable(modselect.500.allsurvs, rownames = FALSE,
 ```
 
 
-Best fit model(s)?
+Best fit model(s)? allsurvs is a check that should be identical to wneamap, and it is.
+
+Including predator mean length and number of predator species seems to fit better than including either alone, vessel overdispersion parameters, or no covariates.
+
+
 
 ## Realign center of gravity along NEUS coastline
 
-Following the excellent instrucions of Alexa Fredston at Rutgers, we can use the NE coast as an axis for calculating center of gravity to realign the calculations as alongshore and inshore/offshore.
+Following the excellent instructions of Alexa Fredston at Rutgers, we can use the NE coast as an axis for calculating center of gravity to realign the calculations as alongshore and inshore/offshore.
 
 From https://github.com/James-Thorson-NOAA/VAST/wiki/Define-new-axes-for-range-edge-and-centroid and using the coastline from https://github.com/afredston/range-edge-niches/blob/master/scripts/get_axes_of_measurement.R 
 
@@ -421,6 +425,15 @@ write_rds(neus.offshore.axisdistdat, here("spatialdat","neus.offshore.axisdistda
 Affline transformations may not preserve angles so this rotation looks a little off when 90 is specified.
 
 We could also project a linear axis offshore from the non-linear coastline axis?
+
+This should project coast, alongshore, and offshore axes:
+
+```{r, code = readLines(here("VASTunivariate_bfp_allsurvs_lencov_tiltaxis.R")), eval=F}
+```
+
+Here is the best model with both surveys, predator mean length and number of predator species as covariates, with the rotated axes.
+
+
 
 ## Define inshore and offshore regions
 

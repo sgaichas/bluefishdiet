@@ -208,7 +208,7 @@ pre code {
 
 <h1 class="title toc-ignore">Add NEAMAP to aggregate prey index VAST model</h1>
 <h4 class="author">Sarah Gaichas</h4>
-<h4 class="date">07 February, 2022</h4>
+<h4 class="date">11 February, 2022</h4>
 
 </div>
 
@@ -476,7 +476,7 @@ plot( fit,
 <p>Altenatively, adding the predator length covariate may more directly model vessel differences in predator catch that affect stomach contents than modeling a vessel catchability covariate direclty. This was the appropach taken by <span class="citation"><a href="#ref-ng_predator_2021" role="doc-biblioref">Ng <em>et al.</em></a> (<a href="#ref-ng_predator_2021" role="doc-biblioref">2021</a>)</span>. They found that predator length covariates were strongly supported as catchability covariates (larger predators being more likely to have more prey in stomachs).</p>
 <p>This script uses predatar mean length as a catchability covariate, with the option to add number of distinct predator types, and temperature as well.</p>
 <p>The rationale for including number of predator species is that more species “sampling” the prey field may result in more prey in stomachs.</p>
-<p>The rationale for including bottom temperature is that predator metabolism and consumption changes with temperature, although this may not be linear depending on the temperature range.</p>
+<p><em>It turns out including bottom temperature leaves out a lot of data, so for now I will not use this.</em> If the WG wants to explore it I’ll need to do runs with only the subset of data with temperature to compare with vessel effects, or use a different bottom temperature dataset like Charles Perretti did for summer flounder. If we use it, he rationale for including bottom temperature is that predator metabolism and consumption changes with temperature, although this may not be linear depending on the temperature range.</p>
 <pre class="r"><code># VAST attempt 2 univariate model as a script
 # modified from https://github.com/James-Thorson-NOAA/VAST/wiki/Index-standardization
 
@@ -503,7 +503,7 @@ bluepyagg_stn_fall &lt;- bluepyagg_stn %&gt;%
          #declon = -declon already done before neamap merge
          Vessel = as.numeric(as.factor(vessel))-1
          ) %&gt;% 
-  select(Catch_g = meanbluepywt, #use bluepywt for individuals input in example
+  dplyr::select(Catch_g = meanbluepywt, #use bluepywt for individuals input in example
          Year = year,
          Vessel,
          AreaSwept_km2,
@@ -511,7 +511,8 @@ bluepyagg_stn_fall &lt;- bluepyagg_stn %&gt;%
          Lon = declon,
          meanpisclen,
          npiscsp,
-         bottemp) %&gt;%
+         #bottemp #this leaves out many stations for NEFSC
+         ) %&gt;%
   na.omit() %&gt;%
   as.data.frame()
 
@@ -522,7 +523,7 @@ bluepyagg_stn_spring &lt;- bluepyagg_stn %&gt;%
          #declon = -declon already done before neamap merge
          Vessel = as.numeric(as.factor(vessel))-1
          ) %&gt;% 
-  select(Catch_g = meanbluepywt,
+  dplyr::select(Catch_g = meanbluepywt,
          Year = year,
          Vessel,
          AreaSwept_km2,
@@ -530,7 +531,8 @@ bluepyagg_stn_spring &lt;- bluepyagg_stn %&gt;%
          Lon = declon,
          meanpisclen,
          npiscsp,
-         bottemp) %&gt;%
+         #bottemp #this leaves out many stations for NEFSC
+         ) %&gt;%
   na.omit() %&gt;%
   as.data.frame()
 
@@ -630,7 +632,7 @@ settings = make_settings( n_x = 500,
 
 # select dataset and set directory for output
 
-season &lt;- c(&quot;fall_500_allsurvs&quot;)
+season &lt;- c(&quot;fall_500_allsurvs_no&quot;)
 
 working_dir &lt;- here::here(sprintf(&quot;pyindex/allagg_%s/&quot;, season))
 
@@ -655,7 +657,7 @@ fit &lt;- fit_model(
   b_i = as_units(bluepyagg_stn_fall[,&#39;Catch_g&#39;], &#39;g&#39;),
   a_i = rep(1, nrow(bluepyagg_stn_fall)),
   v_i = bluepyagg_stn_fall$Vessel,
-  #Q_ik = as.matrix(bluepyagg_stn_fall[,c(&quot;npiscsp&quot;, &quot;bottemp&quot;)]),
+  Q_ik = as.matrix(bluepyagg_stn_fall[,c(&quot;npiscsp&quot;)]),
   #Use_REML = TRUE,
   working_dir = paste0(working_dir, &quot;/&quot;))
 
@@ -665,7 +667,7 @@ plot( fit,
 
 # Run model spring
 
-season &lt;- c(&quot;spring_500_allsurvs&quot;)
+season &lt;- c(&quot;spring_500_allsurvs_no&quot;)
 
 working_dir &lt;- here::here(sprintf(&quot;pyindex/allagg_%s/&quot;, season))
 
@@ -681,7 +683,7 @@ fit = fit_model( settings = settings,
                  b_i = as_units(bluepyagg_stn_spring[,&#39;Catch_g&#39;], &#39;g&#39;), 
                  a_i = rep(1, nrow(bluepyagg_stn_spring)),
                  v_i = bluepyagg_stn_spring$Vessel,
-                # Q_ik = as.matrix(bluepyagg_stn_spring[,c(&quot;npiscsp&quot;, &quot;bottemp&quot;)]),
+                 Q_ik = as.matrix(bluepyagg_stn_spring[,c(&quot;npiscsp&quot;)]),
                 # Use_REML = TRUE,
                  working_dir = paste0(working_dir, &quot;/&quot;))
 
@@ -793,15 +795,15 @@ modselect.500.allsurvs &lt;- modselect %&gt;%
   group_by(season) %&gt;%
   mutate(deltaAIC = AIC-min(AIC)) %&gt;%
   arrange(AIC) %&gt;%
-  select(modname, season, deltaAIC, fixedcoeff,
+  dplyr::select(modname, season, deltaAIC, fixedcoeff,
          randomcoeff, use_anisotropy,
          omega1, omega2, epsilon1, epsilon2,
          beta1, beta2, AIC, converged2)
 
 DT::datatable(modselect.500.allsurvs, rownames = FALSE, 
               options= list(pageLength = 25, scrollX = TRUE))</code></pre>
-<div id="htmlwidget-d96ec3d2d6107d699e3e" style="width:100%;height:auto;" class="datatables html-widget"></div>
-<script type="application/json" data-for="htmlwidget-d96ec3d2d6107d699e3e">{"x":{"filter":"none","data":[["allagg_spring_500_allsurvs_lenno_bottemp","allagg_spring_500_allsurvs_no_bottemp","allagg_fall_500_allsurvs_lenno_bottemp","allagg_spring_500_allsurvs_len_bottemp","allagg_spring_500_allsurvs_no","allagg_fall_500_allsurvs_len_bottemp","allagg_spring_500_allsurvs_bottemp","allagg_fall_500_allsurvs_no_bottemp","allagg_fall_500_allsurvs_no","allagg_spring_500_allsurvs","allagg_fall_500_allsurvs_bottemp","allagg_fall_500_allsurvs","allagg_spring_500_allsurvs_lenno","allagg_spring_500_allsurvs_len","allagg_spring_500_wneamap_eta11","allagg_spring_500_wneamap_eta10","allagg_fall_500_allsurvs_lenno","allagg_spring_500_wneamap","allagg_fall_500_allsurvs_len","allagg_fall_500_wneamap_eta11","allagg_fall_500_wneamap_eta10","allagg_fall_500_wneamap"],["Spring","Spring","Fall","Spring","Spring","Fall","Spring","Fall","Fall","Spring","Fall","Fall","Spring","Spring","Spring","Spring","Fall","Spring","Fall","Fall","Fall","Fall"],[0,642.844349393432,0,862.301589763098,961.610330649928,707.820628221889,1538.66753245947,938.926829761098,997.874860881871,1985.5763679104,1635.6994345187,1696.2650746554,5790.53423918119,6877.96164133101,7054.18101288036,7223.2004509235,6558.28728963486,7664.13320347806,7337.05803169408,8128.87089947396,8168.79187445498,8321.41920710534],[87,85,87,85,83,85,83,85,83,81,83,81,85,83,83,82,85,81,83,83,82,81],[40848,40848,40848,40848,40848,40848,40848,40848,40848,40848,40848,40848,40848,40848,40854,40851,40848,40848,40848,40854,40851,40848],["TRUE","TRUE","TRUE","TRUE","TRUE","TRUE","TRUE","TRUE","TRUE","TRUE","TRUE","TRUE","TRUE","TRUE","TRUE","TRUE","TRUE","TRUE","TRUE","TRUE","TRUE","TRUE"],["IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID"],["IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID"],["IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID"],["IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID"],["IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID"],["IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID"],[39486.6076399416,40129.451989335,40254.3689077352,40348.9092297047,40448.2179705915,40962.1895359571,41025.2751724011,41193.2957374963,41252.2437686171,41472.184007852,41890.0683422539,41950.6339823906,45277.1418791228,46364.5692812726,46540.788652822,46709.8080908651,46812.65619737,47150.7408434197,47591.4269394293,48383.2398072091,48423.1607821902,48575.7881148405],["likely","likely","likely","likely","likely","likely","likely","likely","likely","likely","likely","likely","likely","likely","likely","likely","likely","likely","likely","likely","likely","likely"]],"container":"<table class=\"display\">\n  <thead>\n    <tr>\n      <th>modname<\/th>\n      <th>season<\/th>\n      <th>deltaAIC<\/th>\n      <th>fixedcoeff<\/th>\n      <th>randomcoeff<\/th>\n      <th>use_anisotropy<\/th>\n      <th>omega1<\/th>\n      <th>omega2<\/th>\n      <th>epsilon1<\/th>\n      <th>epsilon2<\/th>\n      <th>beta1<\/th>\n      <th>beta2<\/th>\n      <th>AIC<\/th>\n      <th>converged2<\/th>\n    <\/tr>\n  <\/thead>\n<\/table>","options":{"pageLength":25,"scrollX":true,"columnDefs":[{"className":"dt-right","targets":[2,3,4,12]}],"order":[],"autoWidth":false,"orderClasses":false}},"evals":[],"jsHooks":[]}</script>
+<div id="htmlwidget-3feabd9bebf03dac9ebb" style="width:100%;height:auto;" class="datatables html-widget"></div>
+<script type="application/json" data-for="htmlwidget-3feabd9bebf03dac9ebb">{"x":{"filter":"none","data":[["allagg_spring_500_allsurvs_lenno","allagg_spring_500_allsurvs_no","allagg_spring_500_allsurvs_len","allagg_spring_500_wneamap_eta11","allagg_spring_500_wneamap_eta10","allagg_fall_500_allsurvs_lenno","allagg_spring_500_allsurvs","allagg_spring_500_wneamap","allagg_fall_500_allsurvs_len","allagg_fall_500_allsurvs_no","allagg_fall_500_wneamap_eta11","allagg_fall_500_wneamap_eta10","allagg_fall_500_allsurvs","allagg_fall_500_wneamap"],["Spring","Spring","Spring","Spring","Spring","Fall","Spring","Spring","Fall","Fall","Fall","Fall","Fall","Fall"],[0,734.657261207394,1087.42740214983,1263.64677369918,1432.66621174231,0,1873.59896429688,1873.59896429688,778.77074205922,989.2137243303,1570.5836098391,1610.50458482013,1763.13191747048,1763.13191747048],[85,83,83,83,82,85,81,81,83,83,83,82,81,81],[40848,40848,40848,40854,40851,40848,40848,40848,40848,40848,40854,40851,40848,40848],["TRUE","TRUE","TRUE","TRUE","TRUE","TRUE","TRUE","TRUE","TRUE","TRUE","TRUE","TRUE","TRUE","TRUE"],["IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID"],["IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID"],["IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID"],["IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID"],["IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID"],["IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID","IID"],[45277.1418791228,46011.7991403302,46364.5692812726,46540.788652822,46709.8080908651,46812.65619737,47150.7408434197,47150.7408434197,47591.4269394293,47801.8699217003,48383.2398072091,48423.1607821902,48575.7881148405,48575.7881148405],["likely","likely","likely","likely","likely","likely","likely","likely","likely","likely","likely","likely","likely","likely"]],"container":"<table class=\"display\">\n  <thead>\n    <tr>\n      <th>modname<\/th>\n      <th>season<\/th>\n      <th>deltaAIC<\/th>\n      <th>fixedcoeff<\/th>\n      <th>randomcoeff<\/th>\n      <th>use_anisotropy<\/th>\n      <th>omega1<\/th>\n      <th>omega2<\/th>\n      <th>epsilon1<\/th>\n      <th>epsilon2<\/th>\n      <th>beta1<\/th>\n      <th>beta2<\/th>\n      <th>AIC<\/th>\n      <th>converged2<\/th>\n    <\/tr>\n  <\/thead>\n<\/table>","options":{"pageLength":25,"scrollX":true,"columnDefs":[{"className":"dt-right","targets":[2,3,4,12]}],"order":[],"autoWidth":false,"orderClasses":false}},"evals":[],"jsHooks":[]}</script>
 <p>Best fit model(s)?</p>
 </div>
 <div id="realign-center-of-gravity-along-neus-coastline" class="section level2">
