@@ -46,3 +46,10 @@ vignettes/*.pdf
 
 # R Environment Variables
 .Renviron
+
+# local folders
+/bottemp_data
+/vast_example
+/pyindextests
+
+vast_example.zip

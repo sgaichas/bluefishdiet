@@ -401,8 +401,14 @@ neus.offshore.line <- (neus.alongshore.line_sfc - midpoint.alongshore_sfc) * rot
 
 ggplot() +
     geom_sf(data=neusmap, color="#999999") +
-    geom_sf(data=neus.alongshore.line_sfc %>% st_set_crs(st_crs(neusmap)), color="darkblue", lwd=1.5) +
-    geom_sf(data=neus.offshore.line %>% st_set_crs(st_crs(neusmap)), color="darkblue", lwd=1.5) +
+    geom_sf(data=neus.alongshore.line_sfc %>% st_set_crs(st_crs(neusmap)), 
+            color="darkblue", 
+            #col=viridisLite::viridis(25)[cut(as.numeric(neus.alongshore.line_sfc),25)],
+            lwd=1.5) +
+    geom_sf(data=neus.offshore.line %>% st_set_crs(st_crs(neusmap)), 
+            color="darkblue", 
+            #ol=viridisLite::viridis(25)[cut(as.numeric(neus.alongshore.line_sfc),25)],
+            lwd=1.5) +
     #scale_x_continuous(limits=c(neus.xmin, neus.xmax)) +
     #scale_y_continuous(limits=c(neus.ymin, neus.ymax)) +
     theme_bw() +
@@ -433,11 +439,28 @@ This should project coast, alongshore, and offshore axes:
 
 Here is the best model with both surveys, predator mean length and number of predator species as covariates, with the rotated axes.
 
+### Fall Index
 
+![Fall Index](pyindex/allagg_fall_500_allsurvs_lenno_tilt/Index.png)  
+
+### Fall Center of Gravity (far right is inshore-offshore)
+
+![Fall COG](pyindex/allagg_fall_500_allsurvs_lenno_tilt/center_of_gravity.png) 
+
+
+### Spring Index
+
+![Spring Index](pyindex/allagg_spring_500_allsurvs_lenno_tilt/Index.png) 
+### Spring Center of Gravity (far right is inshore-offshore) 
+
+![Spring COG](pyindex/allagg_spring_500_allsurvs_lenno_tilt/center_of_gravity.png) 
 
 ## Define inshore and offshore regions
 
 Three options for different strata for derived quantities: 3 miles from shore, NEAMAP outer boundary, Albatross inshore strata boundary.
 
+In progress...
+
+# References
 
 
