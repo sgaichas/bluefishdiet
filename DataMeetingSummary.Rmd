@@ -324,6 +324,7 @@ source(here("get_diet.R"))
 bluefish <- get_diet(135) 
 
 preycolsel <- preycol[toupper(names(preycol)) %in% blueprey$pynam] 
+names(preycolsel) <- toupper(names(preycolsel))
 
 p1 <-   ggplot(bluefish, aes(year, relmsw, fill=prey)) +
    geom_bar(stat = "identity") + #
