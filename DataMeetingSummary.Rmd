@@ -43,7 +43,7 @@ We adapt this to get an index for "bluefish prey" rather than a single prey spec
 
 We characterize weight of bluefish prey from all piscivores caught at each location and model that over time/space. Covariates explaining patterns in bluefish prey index include number of predators and size composition of predators at each location. 
 
-# What do bluefish eat?
+## What do bluefish eat?
 
 Bluefish eat small pelagics that are not well sampled by bottom trawl surveys. Bluefish themselves are not well sampled by bottom trawl surveys. Nevertheless, the diet samples collected for bluefish indicate that anchovies, herrings, squids, butterfish, scup, and small hakes are important prey. 
 
@@ -56,629 +56,137 @@ We first characterize annual food habits data from NEFSC.
 load(url("https://github.com/Laurels1/Condition/raw/master/data/allfh.RData"))
 ```
 
+### Bluefish diet summaries
+```{r}
+bluefishaggdiet <- read_csv(here("datfromshiny","DC.Bluefish (Pomatomus saltatrix).All.2021-10-07.csv"))
 
-This is the `get_diet()` function from [ECSA](https://github.com/NOAA-EDAB/ECSA/blob/master/R/get_diet.R), modified to use all available strata:
+# decadal diet
+diet70 <- read_csv(here("datfromshiny","DC.Bluefish (Pomatomus saltatrix).1970s.2021-10-07.csv")) %>%
+  mutate(Decade = 1970)
+diet80 <- read_csv(here("datfromshiny","DC.Bluefish (Pomatomus saltatrix).1980s.2021-10-07.csv"))%>%
+  mutate(Decade = 1980)
+diet90 <- read_csv(here("datfromshiny","DC.Bluefish (Pomatomus saltatrix).1990s.2021-10-07.csv"))%>%
+  mutate(Decade = 1990)
+diet00 <- read_csv(here("datfromshiny","DC.Bluefish (Pomatomus saltatrix).2000s.2021-10-07.csv"))%>%
+  mutate(Decade = 2000)
+diet10 <- read_csv(here("datfromshiny","DC.Bluefish (Pomatomus saltatrix).2010s.2021-10-07.csv"))%>%
+  mutate(Decade = 2010)
 
-```{r, get_diet}
-#' Get diet composition data for plotting
-#'
-#' Creates a dataset for plotting annual or seasonal weighted diet composition with sample sizes.
-#' Datasets are for a selected species and set of seasonal survey strata.
-#' Currently only works for summer flounder with strata pre-selected.
-#' Need to clearly define what each data column is, render to tidy data.
-#' This is a first draft that will be revised with dplyr functions later.
-#' n.b., Original file from Brian Smith, August 23 2018 was allwt_nstoms.R, renamed as get_diet.R
-#'
-#'
-#' @param species_code numeric. Three digit svspp code
-#'
-#' @return dataframe with variables svspp, year, season, meansw, num_tows, variance, cv, prey, totwt, relmsw, ci, relci, nstom
-#'
-#' @examples
-#' head(get_diet(103))
-#'
+bluefishdecadediet <- bind_rows(diet70, diet80, diet90, diet00, diet10)
 
-get_diet <- function(species_code){
-  
-  #### This part here should be replaced with a file for all NEUS stocks
-  # sss <- read.csv("data/seasonal_stock_strata.csv",
-  #                 stringsAsFactors = FALSE)
-  # 
-  # sixcode <- c('acared','alewif','amepla','atlcod','atlhal','atlher','atlmac','atlwol',
-  #              'barska','blabas','bluefi','bluher','butter','cleska','haddoc',
-  #              'litska','monkfh','ocpout','offhak','polloc','redhak','rosska',
-  #              'scupzz','silhak','smodog','smoska','spidog','sumflo','thoska',
-  #              'whihak','window','winflo','winska','witflo','yelflo','amlobs','joncra')
-  # 
-  # svspp_list <- c(155,33,102,73,101,32,121,192,22,141,
-  #                 135,34,131,24,74,26,197,193,69,
-  #                 75,77,25,143,72,13,27,15,103,
-  #                 28,76,108,106,23,107,105,301,312)
-  # 
-  # 
-  # #Get data, manipulate, set constants
-  # svspp_df <- data.frame(sp = sixcode,
-  #                        svspp = svspp_list, 
-  #                        stringsAsFactors = FALSE)
-  # 
-  # seasonal_strata <- sss %>% 
-  #   mutate(season = toupper(season)) %>% 
-  #   left_join(svspp_df, by = "sp") %>% 
-  #   rename(stratum = strata) %>% 
-  #   filter(svspp %in% species_code)
+# seasonal diet
+dietspring <- read_csv(here("datfromshiny","DC.Bluefish (Pomatomus saltatrix).SPRING.2021-10-07.csv"))%>%
+  mutate(Season = "Spring")
+dietfall <- read_csv(here("datfromshiny","DC.Bluefish (Pomatomus saltatrix).FALL.2021-10-07.csv"))%>%
+  mutate(Season = "Fall")
 
+bluefishseasondiet <- bind_rows(dietspring, dietfall)
 
-  # seasonal_strata <- read.csv("data/stock_list.csv", stringsAsFactors = FALSE) %>% 
-  #   dplyr::select(season,
-  #                 sp = species_code,
-  #                 stock_area = stock,
-  #                 stratum = strat,
-  #                 svspp) %>% 
-  #   dplyr::filter(svspp == species_code,
-  #                 season %in% c("fall", "spring")) %>% 
-  #   dplyr::mutate(season = toupper(season))
-  
-  
-  ## Need to figure out how to access via ERDDAP
-  #load("data/allfhsg.RData")
-  
-  #load(here("fhdat", "allfhsg_2016.RData"))
-  
-  # spring_strata <- seasonal_strata$stratum[seasonal_strata$season == 'SPRING']
-  # summer_strata <- seasonal_strata$stratum[seasonal_strata$season == 'SUMMER']
-  # fall_strata <-   seasonal_strata$stratum[seasonal_strata$season == 'FALL']
-  # winter_strata <- seasonal_strata$stratum[seasonal_strata$season == 'WINTER']
-  
-  ## Filter out only good stomachs for strata and species
-  allsum_raw <- allfh %>%
-    filter(pynam != 'BLOWN', 
-           pynam != 'PRESERVED',
-           pynam != ' ',
-           purcode == 10, 
-           svspp %in% species_code)#,
-           # (season == "SPRING" & stratum %in% spring_strata) |
-           #   (season == "SUMMER" & stratum %in% summer_strata) |
-           #   (season == "FALL"   & stratum %in% fall_strata)   |
-           #   (season == "WINTER" & stratum %in% winter_strata))
-  
-  ## Number of stomachs by length and weight
-  
-  ## Sum by length
-  allsum_len <- allsum_raw %>%
-    group_by(year,
-             season,
-             svspp,
-             cruise,
-             station,
-             pdid,
-             pdsex,
-             pdlen) %>%
-    summarise(totwt = sum(pyamtw)) %>%
-    na.omit() %>%
-    group_by(year,
-             season,
-             svspp) %>%
-    summarise(nstom    = n(),
-              meanstom = mean(totwt, na.rm = TRUE),
-              varstom  = var(totwt, na.rm = TRUE),
-              meanlen  = mean(pdlen, na.rm = TRUE),
-              numlen   = n(),
-              minstom  = min(totwt, na.rm = TRUE),
-              maxstom  = max(totwt, na.rm = TRUE),
-              minlen   = min(pdlen, na.rm = TRUE),
-              maxlen   = max(pdlen, na.rm = TRUE))
-  
-  ## Sum by weight
-  allsum_wgt <- allsum_raw %>%
-    group_by(year,
-             season,
-             svspp,
-             cruise,
-             station,
-             pdid,
-             pdsex,
-             pdwgt,
-             pdlen) %>%
-    summarise(totwt = sum(pyamtw, na.rm = TRUE)) %>%
-    na.omit() %>%
-    group_by(year,
-             season,
-             svspp) %>%
-    summarise(meanwgt = mean(pdwgt, na.rm = TRUE),
-              numwgt  = n(),
-              minwgt  = min(pdwgt, na.rm = TRUE),
-              maxwgt  = max(pdwgt, na.rm = TRUE))
-  
-  #stomstats2
-  nstom_df <- allsum_len %>%
-    left_join(allsum_wgt, by = c("year", "season", "svspp")) %>%
-    # mutate(std.error = sqrt(varstom/nstom)) %>% 
-    select(svspp, year, season, nstom)
-  
-  #----------------------------------Start weighted diet proportion code-------------------------------------#
-  
-  ## Select and rename the appropriate columns
-  allsum_strat <- allsum_raw %>%
-    select(cruise6, stratum, station, 
-           year,
-           season,
-           svspp, pdid, 
-           pdsex, pdlen, 
-           tax = collsci, 
-           pyamt = pyamtw, 
-           catnum, numlen, 
-           tot_catnum_stratum, tot_catwgt_stratum, tot_tows_spp_stratum, 
-           stratum_area)
-  
-  ## Group into seasonal length-class and remove NAs
-  num_strat <- allsum_strat %>%
-    group_by(cruise6,
-             station,
-             year,
-             season,
-             svspp,
-             pdid,
-             pdsex,
-             pdlen) %>%
-    summarise(xxxx = n()) %>%
-    group_by(cruise6,
-             station, 
-             year,
-             season, 
-             svspp, 
-             pdsex, 
-             pdlen) %>%
-    summarise(numlen2 = n()) %>%
-    left_join(allsum_strat,  by = c("cruise6", "station", "year",
-                                    "season", "svspp", "pdsex", "pdlen")) %>% 
-    mutate(numlen_fin = case_when(numlen < numlen2 ~ numlen2,
-                                  numlen >= numlen2 ~ numlen,
-                                  TRUE ~ NA_integer_)) %>%
-    select(c(cruise6, stratum, station,
-             year,
-             season, 
-             svspp, pdid, pdsex, pdlen, tax, pyamt, 
-             catnum, tot_catnum_stratum, tot_catwgt_stratum,
-             tot_tows_spp_stratum, stratum_area, numlen, numlen_fin))
-  
-  
-  sum_strat <- num_strat %>%
-    group_by(cruise6,
-             station, 
-             year, 
-             season,
-             svspp, 
-             pdsex,
-             pdlen, 
-             numlen_fin) %>%
-    summarise(dummy_var = sum(numlen, na.rm = TRUE)) %>% 
-    na.omit() %>%
-    group_by(cruise6,
-             station, 
-             year, 
-             season, 
-             svspp, 
-             pdlen) %>%
-    summarise(rnumlen_fin = sum(numlen_fin, na.rm = TRUE)) %>%
-    left_join(num_strat, by = c("cruise6", "station", "year", "season", "svspp", "pdlen")) %>% 
-    mutate(rnumlen_fin = ifelse(svspp !=13 | svspp !=15, 
-                                numlen_fin, 
-                                rnumlen_fin)) %>%
-    group_by(cruise6, 
-             station,
-             year,
-             season,
-             svspp, 
-             pdsex, 
-             catnum) %>%
-    summarise(dummy_var = sum(numlen)) %>% 
-    na.omit()
-  
-  
-  sum_catnum <- sum_strat %>%
-    group_by(cruise6,
-             station, 
-             year,
-             season,
-             svspp) %>%
-    summarise(rcatnum = sum(catnum, na.rm = TRUE)) %>%
-    na.omit() %>%
-    left_join(num_strat,  by = c("cruise6", "station", "year", "season", "svspp")) %>% 
-    mutate(rcatnum = ifelse(svspp != 13 | svspp != 15, 
-                            catnum, 
-                            rcatnum))
-  
-  sum_catstratum <- sum_catnum %>%
-    group_by(cruise6, stratum, 
-             year,
-             season, 
-             svspp, 
-             pdsex, 
-             tot_tows_spp_stratum,
-             tot_catnum_stratum,
-             tot_catwgt_stratum) %>%
-    summarise(dum_var = sum(rcatnum, na.rm = TRUE)) %>%
-    na.omit()
-  
-  ####################################################################################################################################
-  
-  max_tot_tows_spp_stratum <- sum_catstratum %>%
-    group_by(cruise6, 
-             stratum, 
-             year,
-             season,
-             svspp) %>% 
-    summarise(tot_tows_spp_stratum = max(tot_tows_spp_stratum, na.rm = TRUE))
-  
-  sum_rcatstratum <- sum_catstratum %>%
-    group_by(cruise6, 
-             stratum, 
-             year,
-             season,
-             svspp) %>%
-    summarise(rtot_catnum_stratum = sum(tot_catnum_stratum, na.rm = TRUE),
-              rtot_catwgt_stratum = sum(tot_catwgt_stratum, na.rm = TRUE)) %>% 
-    na.omit() %>%
-    left_join(max_tot_tows_spp_stratum, by = c("cruise6", "stratum", "year", "season", "svspp")) %>%
-    rename(rtot_tows_spp_stratum = tot_tows_spp_stratum)
-  
-  final_strat <- sum_rcatstratum %>%
-    left_join(sum_catnum, by = c("cruise6", "stratum", "year", "season", "svspp")) %>% 
-    mutate(rtot_catnum_stratum = ifelse(svspp != 13 | svspp != 15, 
-                                        tot_catnum_stratum, 
-                                        rtot_catnum_stratum),
-           rtot_catwgt_stratum = ifelse(svspp != 13 | svspp != 15, 
-                                        tot_catwgt_stratum, 
-                                        rtot_catwgt_stratum),
-           rtot_tows_spp_stratum = ifelse(svspp != 13 | svspp != 15, 
-                                          tot_tows_spp_stratum,
-                                          rtot_tows_spp_stratum))
-  
-  ####################################################################################################################################
-  py_raw <- final_strat %>%
-    group_by(cruise6, 
-             station, 
-             year,
-             season, 
-             svspp, pdid, pdlen, tax) %>%
-    summarise(pysum = sum(pyamt, na.rm = TRUE)) %>% 
-    na.omit() 
-  
-  py_nostom <- py_raw %>%
-    ungroup() %>% 
-    arrange(cruise6, station,
-            year,
-            season,
-            svspp,
-            pdid) %>%
-    group_by(cruise6,
-             station, 
-             year,
-             season, 
-             svspp, 
-             pdid) %>% 
-    top_n(-1, wt = pysum) %>%
-    group_by(cruise6, 
-             station, 
-             year, 
-             season, 
-             svspp) %>%
-    summarise(nostom = n())
-  
-  py_list <- data.frame(tax = unique(py_raw$tax),
-                        pycode = paste0('prey', 1:length(unique(py_raw$tax))))
-  
-  
-  py_all <- py_nostom %>%
-    left_join(py_raw, by = c("cruise6", "station", "year", "season", "svspp")) %>% 
-    left_join(py_list, by = "tax")
-  
-  
-  pd_strat <- final_strat %>%
-    group_by(cruise6, 
-             station, 
-             year,
-             season,
-             svspp, 
-             pdid, 
-             pdlen) %>% 
-    top_n(-1, wt = stratum_area) 
-  
-  
-  pd_nas <- pd_strat %>%
-    group_by(cruise6, 
-             station, 
-             year,
-             season,
-             svspp, 
-             pdlen) %>%
-    summarise(rnumlen_fin = sum(numlen_fin, na.rm = TRUE)) %>%
-    na.omit()
-  
-  pd_strat <- pd_strat %>%
-    left_join(pd_nas, by = c("cruise6", "year", "season", "svspp", "station", "pdlen")) %>% 
-    select(cruise6, station, stratum, 
-           year,
-           season,
-           svspp, pdid, pdlen,
-           rcatnum, rtot_catnum_stratum,
-           tot_catwgt_stratum, rtot_catwgt_stratum,
-           rtot_tows_spp_stratum, stratum_area, rnumlen_fin)
-  
-  #Working with fish data.frame----------------------------------------------------------------------------------#
-  fish_ply <- py_all %>%
-    select(-tax) %>% 
-    left_join(pd_strat, by = c("cruise6", "station", "year", "season", "svspp", "pdid", "pdlen"))
-  
-  
-  ####################################################################################################################################
-  ## Take the median value for each prey group
-  trans_ply <- fish_ply %>%
-    group_by(cruise6, stratum, station,
-             year, season, 
-             svspp, rcatnum,
-             rtot_catnum_stratum, 
-             rtot_catwgt_stratum,
-             rtot_tows_spp_stratum,
-             stratum_area, rnumlen_fin, pycode) %>%
-    summarize(pysum = median(pysum, na.rm = FALSE))
-  
-  ## Weighted mean and mean of pysum
-  pysum_wm <- trans_ply %>%
-    group_by(cruise6, stratum, station, 
-             year, season,
-             svspp, rcatnum, 
-             rtot_catnum_stratum,
-             rtot_tows_spp_stratum,
-             stratum_area, pycode) %>% 
-    summarize(wmean = weighted.mean(pysum, w = rnumlen_fin))# %>%
-  
-  ## Mean
-  pysum_m <- pysum_wm %>%
-    group_by(cruise6, stratum, station,
-             year, season,
-             svspp, rcatnum,
-             rtot_catnum_stratum,
-             rtot_tows_spp_stratum,
-             stratum_area,
-             pycode) %>%
-    summarize(musw = mean(wmean, na.rm = TRUE),
-              musw2 = wmean * rcatnum)
-  
-  ## by station
-  pysum_wm_s <- pysum_m %>%
-    group_by(cruise6, stratum, 
-             year, season,
-             svspp,
-             rtot_catnum_stratum,
-             rtot_tows_spp_stratum,
-             stratum_area, 
-             pycode) %>% 
-    summarize(tmsw_strat = sum(musw2, na.rm = TRUE))
-  
-  musw_strat_ply <- pysum_wm_s %>% 
-    group_by(cruise6, stratum, 
-             year, season,
-             svspp,
-             rtot_catnum_stratum,
-             rtot_tows_spp_stratum,
-             stratum_area, 
-             pycode) %>% 
-    summarize(musw_strat = tmsw_strat/rtot_tows_spp_stratum) %>%
-    ungroup() %>%
-    mutate(munfish_strat = rtot_catnum_stratum / rtot_tows_spp_stratum)
-  
-  
-  munfish_stratdat_ply <- musw_strat_ply %>%
-    ungroup() %>%
-    mutate(munfish_strat = rtot_catnum_stratum / rtot_tows_spp_stratum) %>%
-    select(cruise6, stratum,
-           year, season,
-           svspp, munfish_strat)
-  
-  
-  #weight by stratum area
-  pymean_strat <- musw_strat_ply %>% 
-    group_by(svspp, year, season,
-             pycode) %>% 
-    summarize(msw_strat = weighted.mean(musw_strat, stratum_area, na.rm = TRUE),
-              m_nfish_strat = weighted.mean(munfish_strat, stratum_area, na.rm = TRUE),
-              num_stra = n())
-  
-  
-  meansw_s_ply <- pymean_strat %>% 
-    group_by(svspp, year, season, pycode) %>%
-    summarize(meansw_s = msw_strat/m_nfish_strat)
-  
-  meansw_ply <- pysum_m %>% 
-    group_by(svspp, year, season, pycode) %>%
-    summarize(meansw = weighted.mean(musw, rcatnum, na.rm = TRUE),
-              num_tows = n())
-  
-  master_ply <- pysum_m %>% #musw and musw2
-    left_join(pysum_wm_s) %>%  #tmsw_strat
-    left_join(musw_strat_ply) %>% # musw_strat
-    left_join(meansw_ply) %>% # meansw
-    left_join(meansw_s_ply) %>% # meansw_s
-    left_join(pymean_strat) %>%     # msw_strat
-    select(-munfish_strat) %>% 
-    mutate(prod = rcatnum^2 * ((musw - meansw))^2,
-           prodf = (rcatnum - m_nfish_strat)^2,
-           prodd = (musw2 - musw_strat)^2,
-           prod_cov = (rcatnum - m_nfish_strat) * (musw2 - musw_strat))# %>% 
-  
-  mprod_mnumfish2_ply <- master_ply %>%
-    group_by(svspp, year, season, pycode) %>%
-    summarize(mprod = mean(prod, na.rm = TRUE),
-              mnumfish = mean(rcatnum, na.rm = TRUE))
-  
-  new4_ply <- master_ply %>% 
-    group_by(svspp, year, season, pycode) %>% 
-    summarize(sprod = sum(prod, na.rm = TRUE),
-              mprod = mean(prod, na.rm = TRUE),
-              mnumfish = mean(rcatnum, na.rm = TRUE))
-  
-  new6_ply <- master_ply %>% 
-    group_by(svspp, year, season,
-             pycode, cruise6, stratum,
-             stratum_area, rtot_tows_spp_stratum,
-             m_nfish_strat) %>%
-    summarize(sprodf = sum(prodf, na.rm = TRUE),
-              sprodd = sum(prodd, na.rm = TRUE),
-              sprod_cov = sum(prod_cov, na.rm = TRUE)) %>% 
-    ungroup() %>% 
-    mutate(dfntows_strat = rtot_tows_spp_stratum - 1,
-           varprodf = (stratum_area^2) * ((sprodf/dfntows_strat)/rtot_tows_spp_stratum),
-           varprodd = (stratum_area^2) * ((sprodd/dfntows_strat)/rtot_tows_spp_stratum),
-           varprod_cov = (stratum_area^2) * ((sprod_cov/dfntows_strat)/rtot_tows_spp_stratum),
-           varprodf = if_else(rtot_tows_spp_stratum > 1,
-                              varprodf,
-                              0),
-           varprodd = if_else(rtot_tows_spp_stratum > 1,
-                              varprodd,
-                              0),
-           varprod_cov = if_else(rtot_tows_spp_stratum > 1, 
-                                 varprod_cov,
-                                 0))
-  
-  sumvarprod_ply <- new6_ply %>% 
-    group_by(svspp, year, season, pycode) %>%
-    summarize(svarprodf = sum(varprodf, na.rm = TRUE),
-              svarprodd = sum(varprodd, na.rm = TRUE),
-              svarprod_cov = sum(varprod_cov, na.rm = TRUE),
-              stratum_area = sum(stratum_area, na.rm = TRUE)) %>% 
-    ungroup() %>% 
-    mutate(varf = svarprodf / stratum_area^2,
-           vard = svarprodd/ stratum_area^2,
-           var_cov = svarprod_cov/ stratum_area^2) %>% 
-    select(-stratum_area)
-  
-  new4_strat_ply <- new4_ply %>% 
-    left_join(sumvarprod_ply) 
-  
-  
-  #merge with  select master columns
-  six_ply <- new4_strat_ply %>%
-    left_join(master_ply) %>% 
-    mutate(variance = ifelse(num_tows > 1 & mnumfish != 0 & meansw!=0 & m_nfish_strat !=0 & meansw_s!=0,
-                             1/(num_tows * (mnumfish)^2) * (sprod/(num_tows-1)),
-                             0),
-           cv = ifelse(num_tows > 1 & mnumfish != 0 & meansw != 0 & m_nfish_strat != 0 & meansw_s != 0,
-                       ((variance)^0.5)/meansw,
-                       0),
-           var_s = ifelse(num_tows > 1 & mnumfish != 0 & meansw != 0 & m_nfish_strat != 0 & meansw_s != 0,
-                          (meansw_s^2) * ((varf/(m_nfish_strat^2)) + (vard/(msw_strat^2)) - (2 * var_cov/m_nfish_strat/msw_strat)),
-                          0),
-           cv_s = ifelse(num_tows > 1 & mnumfish != 0 & meansw != 0 & m_nfish_strat != 0 & meansw_s != 0,
-                         ((var_s)^0.5)/meansw_s,0)) %>% 
-    select(pycode, svspp, year, season, meansw,
-           meansw_s, num_tows, m_nfish_strat, num_stra, 
-           variance, cv, var_s, cv_s, pycode) %>% 
-    distinct(.keep_all = TRUE)
-  
-  final_ply <- six_ply %>% 
-    mutate(pycode = as.factor(pycode)) %>% 
-    left_join(py_list) %>% 
-    left_join(nstom_df) %>% 
-    group_by(svspp, year, season) %>% 
-    mutate(totwt = sum(meansw, na.rm = TRUE),
-           totwt_s = sum(meansw_s, na.rm = TRUE),
-           relmsw = 100*(meansw/totwt),
-           relmsw_s = 100*(meansw_s/totwt_s),
-           ci = sqrt(variance/num_tows)*2,
-           relci = (ci/totwt)*100,
-           ci_s = sqrt(var_s/num_tows)*2,
-           relci_s = (ci_s/totwt_s)*100) %>% 
-    select(svspp, year, season, meansw, num_tows,
-           variance, cv, prey = tax, totwt, 
-           relmsw, ci, relci, nstom)
-  
-  
-  # })
-  return(final_ply)
-  
-}
+# regional diet
+dietMAB <- read_csv(here("datfromshiny","DC.Bluefish (Pomatomus saltatrix).MID-ATLANTIC BIGHT.2021-10-07.csv")) %>%
+  mutate(Region = "MAB")
+dietSNE <- read_csv(here("datfromshiny","DC.Bluefish (Pomatomus saltatrix).SOUTHERN NEW ENGLAND.2021-10-07.csv"))%>%
+  mutate(Region = "SNE")
+dietGB <- read_csv(here("datfromshiny","DC.Bluefish (Pomatomus saltatrix).GEORGES BANK.2021-10-07.csv"))%>%
+  mutate(Region = "GB")
 
-# diet_ply <- final_ply %>%
-#   select(year, season, prey, relmsw, num_tows) %>%
-#   group_by(season, prey) %>%
-#   filter(relmsw>0.01) %>%
-#   filter(mean(relmsw)>10.0)
-# 
-# 
-# diet <- final %>%
-#   select(year, season, prey, relmsw, num_tows) %>%
-#   group_by(season, prey) %>%
-#   filter(relmsw>0.01) %>%
-#   filter(mean(relmsw)>10.0)
-# 
-# 
-# library(ggplot2)
-# compplot <- ggplot(diet, aes(year, relmsw, fill=prey)) +
-#   geom_bar(stat = "identity") +
-#   ylab("Percent in Diet") +
-#   xlab("Year") +
-#   facet_wrap("season", nrow=3) +
-#   theme_bw() +
-#   viridis::scale_fill_viridis(discrete = TRUE) +
-#   theme(legend.position="bottom",
-#         legend.text=element_text(size=5))
-# 
-# compplot_ply <- ggplot(diet_ply, aes(year, relmsw, fill=prey)) +
-#   geom_bar(stat = "identity") +
-#   ylab("Percent in Diet") +
-#   xlab("Year") +
-#   facet_wrap("season", nrow=3) +
-#   theme_bw() +
-#   viridis::scale_fill_viridis(discrete = TRUE) +
-#   theme(legend.position="bottom",
-#         legend.text=element_text(size=5))
-# 
-# library(patchwork)
-# 
-# compplot + compplot_ply
-# compi <- compplot + geom_bar_interactive(stat = "identity", aes(tooltip = prey, data_id = prey))
+bluefishregiondiet <- bind_rows(dietMAB, dietSNE, dietGB)
 
-# 
-# ptm <- proc.time()
-# 
-# df_diet <- get_diet(103)
-# ggiraph(code = print(df_diet), height=14)
-# 
-# out <- data.frame(t = (proc.time() - ptm)[3],
-#                   sys = Sys.time())
-# out
+# bluefish size diet
+dietSM <- read_csv(here("datfromshiny","DC.Bluefish (Pomatomus saltatrix).S.2021-10-07.csv")) %>%
+  mutate(Size = "Small")
+dietMED <- read_csv(here("datfromshiny","DC.Bluefish (Pomatomus saltatrix).M.2021-10-07.csv"))%>%
+  mutate(Size = "Medium")
+dietLG <- read_csv(here("datfromshiny","DC.Bluefish (Pomatomus saltatrix).L.2021-10-07.csv"))%>%
+  mutate(Size = "Large")
 
+bluefishsizediet <- bind_rows(dietSM, dietMED, dietLG)
 
-# d <- read.csv("~/attempts.csv")
-# d <- d %>% arrange(time)
-# plot(d$sys, type = "l")
-# points(rep(mean(d$sys),nrow(d)))
+preylist <- unique(c(bluefishaggdiet$Prey, bluefishdecadediet$Prey, bluefishregiondiet$Prey, bluefishseasondiet$Prey, bluefishsizediet$Prey))
+
 ```
-
-Plot bluefish annual diet
 
 ```{r}
-
-bluefish <- get_diet(135) 
-
-p1 <-   ggplot(bluefish, aes(year, relmsw, fill=prey)) +
-   geom_bar(stat = "identity") + #
-   ylab("Percent in Diet") +
-   xlab("Year") +
-   facet_wrap("season", nrow=4) +
-   theme_bw() +
-   viridis::scale_fill_viridis(discrete = TRUE) +
-   theme(legend.position = "none"
-         #legend.position="bottom",
-         #legend.text=element_text(size=5)
-         ) +
-    geom_bar_interactive(stat = "identity", aes(tooltip = prey, data_id = prey))
-
-ggiraph(code = print(p1), height=14)  
+#from http://medialab.github.io/iwanthue/ using 35 categories, colorblind friendly
+# again from http://medialab.github.io/iwanthue/ All colors colorspace, colorblind friendly, hard
+preycol <- c("#00495d",
+"#3ac100",
+"#a646f7",
+"#72ff75",
+"#8d00a6",
+"#c6ff90",
+"#0268f1",
+"#ff8d23",
+"#0144a6",
+"#01a249",
+"#e1009e",
+"#abffe1",
+"#7e0082",
+"#fffdd4",
+"#24001c",
+"#bbf6ff",
+"#a60029",
+"#0176c8",
+"#8a4700",
+"#a083ff",
+"#454400",
+"#ff7fff",
+"#005d35",
+"#c9005e",
+"#00483e",
+"#ff96e4",
+"#291d00",
+"#d5a5ff",
+"#2e0400",
+"#ffc5d6",
+"#00285f",
+"#ffbb88",
+"#4a002e",
+"#ff8092",
+"#68001a")
+names(preycol) <- as.factor(preylist)
 
 ```
 
+#### Bluefish diet by season (all years, regions, and bluefish sizes) {.tabset}
+
+##### Plot
+```{r}
+p <- ggplot(bluefishseasondiet, aes(x=as.factor(Season), y=Pct.m, fill=Prey)) +
+  geom_bar_interactive(width = 0.95, stat = "identity", show.legend = FALSE,
+                       aes(tooltip = Prey, data_id = Prey))+
+  scale_fill_manual(values=preycol) +         #custom colors
+  ggthemes::theme_tufte()
+ggiraph(code=print(p))
+```
+
+##### Table
+```{r}
+datatable(bluefishseasondiet[,-c(1:2, 10)], rownames = FALSE,
+          caption = 'Table 4: Bluefish prey by season, 1973-2020.')
+```
+
+#### {-}
+
+#### Bluefish diet by decade (all regions and bluefish sizes) {.tabset} 
+
+##### Plot
+```{r}
+p <- ggplot(bluefishdecadediet, aes(x=as.factor(Decade), y=Pct.m, fill=Prey)) +
+  geom_bar_interactive(width = 0.95, stat = "identity", show.legend = FALSE,
+                       aes(tooltip = Prey, data_id = Prey))+
+  scale_fill_manual(values=preycol) +         #custom colors
+  ggthemes::theme_tufte()
+ggiraph(code=print(p))
+```
+
+##### Table
+```{r}
+datatable(bluefishdecadediet[,-c(1:2, 10)], rownames = FALSE,
+          caption = 'Table 5: Bluefish prey by decade, 1973-2020.')
+```
+
+#### {-}
 
 ## Which predators to include?
 
@@ -784,6 +292,32 @@ datatable(blueprey, rownames = FALSE,
 
 This gives us 20 individual prey names. 
 
+Which are included in the decadal diet compositions? All but the gray.
+
+```{r}
+preycolsel <- preycol[toupper(names(preycol)) %in% blueprey$pynam] 
+
+p <- ggplot(bluefishdecadediet, aes(x=as.factor(Decade), y=Pct.m, fill=Prey)) +
+  geom_bar_interactive(width = 0.95, stat = "identity", show.legend = FALSE,
+                       aes(tooltip = Prey, data_id = Prey))+
+  scale_fill_manual(values=preycolsel) +         #custom colors
+  ggthemes::theme_tufte()
+ggiraph(code=print(p))
+```
+
+Which are included seasonally?  
+```{r}
+preycolsel <- preycol[toupper(names(preycol)) %in% blueprey$pynam] 
+
+p <- ggplot(bluefishseasondiet, aes(x=as.factor(Season), y=Pct.m, fill=Prey)) +
+  geom_bar_interactive(width = 0.95, stat = "identity", show.legend = FALSE,
+                       aes(tooltip = Prey, data_id = Prey))+
+  scale_fill_manual(values=preycolsel) +         #custom colors
+  ggthemes::theme_tufte()
+ggiraph(code=print(p))
+```
+
+
 How many tows with piscivore diets had these preynames? 
 
 ```{r}
@@ -840,7 +374,7 @@ No year/season combinations have 0 stations with aggregated bluefish prey. Summa
 summary(coverage$nstation)
 ```
 
-So we can aggregate over all these prey in all predator stomachs at a particular station to get mean bluefish prey weight per predator stomach. Calculate variance in prey weight too, n prey species, prey diversity index? The catchability covariates at each station could be number of predators, number of predator species, diversity/evenness of predator species, mean predator length, variance predator length. The habitat covariates at each station could be temperature, bottom depth?
+So we can aggregate over all these prey in all predator stomachs at a particular station to get mean bluefish prey weight per predator stomach. The catchability covariates at each station could be number of predators, number of predator species, diversity/evenness of predator species, mean predator length, variance predator length. The habitat covariates at each station could be temperature, bottom depth, or other physical parameters.
 
 ```{r}
 
@@ -1104,10 +638,214 @@ DT::datatable(modselect.500.allsurvs, rownames = FALSE,
               options= list(pageLength = 25, scrollX = TRUE))
 ```
 
-(The allsurvs model is a check that should be identical to wneamap, and it is.)
+(The allsurvs model is a check that should be identical to wneamap, and it is. The _tilt model has extra axes from code below but is otherwise identical to the best fit model.)
 
 Including predator mean length and number of predator species seems to fit better than including either alone, vessel overdispersion parameters, or no covariates.
 
+## Realign center of gravity along/across NEUS coastline
+
+Following the excellent instructions of Alexa Fredston at Rutgers, we can use the NE coast as an axis [@fredston_range_2021] for calculating center of gravity to realign the calculations as alongshore and inshore/offshore.
+
+From https://github.com/James-Thorson-NOAA/VAST/wiki/Define-new-axes-for-range-edge-and-centroid and using the coastline from https://github.com/afredston/range-edge-niches/blob/master/scripts/get_axes_of_measurement.R 
+
+Get coastline, make supplemental figure from [Fredson et al. 2021](https://onlinelibrary.wiley.com/doi/10.1111/gcb.15614):
+
+```{r}
+
+# First get the coastline, verbatim lines 15-43 here
+# https://github.com/afredston/range-edge-niches/blob/master/scripts/get_axes_of_measurement.R 
+
+usamap <- rnaturalearth::ne_countries(scale = "small", country = "united states of america", returnclass = "sf")[1] %>% 
+  st_cast("MULTILINESTRING") # get basic map of the country 
+
+## Northeast:
+
+# set bounding boxes
+neus.xmin=-78
+neus.xmax=-66
+neus.ymin=35
+neus.ymax=45
+
+neus.bbox1 <- st_set_crs(st_as_sf(as(raster::extent(neus.xmin, neus.xmax, neus.ymin, neus.ymax), "SpatialPolygons")), st_crs(usamap))
+neus.bbox2 <- st_set_crs(st_as_sf(as(raster::extent(-78, -74, 42, 45), "SpatialPolygons")), st_crs(usamap)) # smaller bounding box to get rid of extra lines on the map 
+
+neusmap <- usamap %>% 
+  st_intersection(neus.bbox1) %>%  
+  st_difference(neus.bbox2) # gets rid of extra non coastal line 
+
+# if WG wants a different smooth, change below based on fig
+neus.smoothgeom <- neusmap %>% 
+  smoothr::smooth(method="ksmooth", smoothness=8) %>% # smoother was applied incrementally more until the Chesapeake went away 
+  as("Spatial") %>% 
+  geom()
+
+neus.geomdists <- pointDistance(neus.smoothgeom[-nrow(neus.smoothgeom), c("x", "y")], neus.smoothgeom[-1, c("x", "y")], lonlat=TRUE)
+neus.coastdistdat <- data.frame(neus.smoothgeom[, c('x','y')], seglength=c(0, neus.geomdists))
+neus.coastdistdat$lengthfromhere <- rev(cumsum(rev(neus.coastdistdat[,"seglength"])))
+# first row should match st_length(smoothmap)
+
+write_rds(neus.coastdistdat, here("spatialdat","neus_coastdistdat.rds"))
+
+# plot it, lines 114-129 https://github.com/afredston/range-edge-niches/blob/master/scripts/get_axes_of_measurement.R
+
+usoutline <- rnaturalearth::ne_states("united states of america", returnclass = "sf") %>% 
+  st_sf()
+
+# iterate over NEUS smoothness values that we used 
+neus_smoothplot <- function(smoothval){
+  out <- ggplot() +
+    geom_sf(data=usoutline, color="#999999") +
+    geom_sf(data=neusmap %>% 
+              smoothr::smooth(method="ksmooth", smoothness=smoothval), color="darkblue", lwd=1.5) + 
+    scale_x_continuous(limits=c(neus.xmin, neus.xmax)) +
+    scale_y_continuous(limits=c(neus.ymin, neus.ymax)) +
+    theme_bw() +
+    labs(title=paste0("Smoothness=", smoothval)) +
+    theme(axis.text.x=element_text(angle=45)) 
+}
+
+neus.smoothmap.list <- lapply(seq(1, 8, 1), neus_smoothplot)
+
+neus.smoothmap <- do.call("grid.arrange", c(neus.smoothmap.list, ncol=3))
+
+
+```
+
+Apply to model. Now following steps in https://github.com/James-Thorson-NOAA/VAST/wiki/Define-new-axes-for-range-edge-and-centroid we first set up the model to get default coordinates but don't run it, create the custom axis using the coastline object above, then pass the custom axis to the model and run it.
+
+Following the example for the [Bering Sea linear axis](https://github.com/James-Thorson-NOAA/VAST/wiki/Define-new-axes-for-range-edge-and-centroid), we add two lines. The along shelf axis directly follows [Kevin Friedland's axis for measuring species distribution change](https://noaa-edab.github.io/tech-doc/species-distribution-indicators.html#methods-51):
+
+>The along-shelf axis begins at 76.53°W 34.60°N and terminates at 65.71°W 43.49°N.
+
+And the offshore axis is perpendicular to the alongshore axis, originating from its center. Code to rotate a geographic feature from xhttps://geocompr.robinlovelace.net/geometric-operations.html#affine-transformations, a portion of a great book featuring `sf` functions and usage: [Geocomputation with R](https://geocompr.robinlovelace.net/index.html)
+
+```{r}
+# set line endpoints 
+neus.alongshore.lon <- c(-76.53,-65.71)
+neus.alongshore.lat <- c(34.60,43.49)
+
+# draw line
+neus.alongshore.line <- data.frame(neus.alongshore.lon, neus.alongshore.lat) %>%
+  rename('x'=neus.alongshore.lon,'y'=neus.alongshore.lat) %>%
+  st_as_sf(coords=c('x','y')) %>%
+  summarise() %>%
+  st_cast("LINESTRING") %>% 
+  smoothr::densify(n=99) %>% # choose number of line segments: here it's 99 for 100 points
+  st_cast("MULTIPOINT") 
+
+neus.alongshore.points <- data.frame(st_coordinates(neus.alongshore.line)) %>%
+  rename("x"=X, "y"=Y)
+
+neus.alongshore.dists <- pointDistance(neus.alongshore.points[-nrow(neus.alongshore.points), c("x", "y")], neus.alongshore.points[-1, c("x", "y")], lonlat=TRUE)
+
+neus.alongshore.axisdistdat <- data.frame(neus.alongshore.points[, c('x','y')], seglength=c(0, neus.alongshore.dists))
+neus.alongshore.axisdistdat$lengthfromhere <- rev(cumsum(rev(neus.alongshore.axisdistdat[,"seglength"])))
+
+#plot to ensure it's right!
+# ggplot() +
+#     geom_sf(data=neusmap, color="#999999") +
+#     geom_sf(data=neus.alongshore.line %>% st_set_crs(st_crs(neusmap)), color="darkblue", lwd=1.5) + 
+#     #scale_x_continuous(limits=c(neus.xmin, neus.xmax)) +
+#     #scale_y_continuous(limits=c(neus.ymin, neus.ymax)) +
+#     theme_bw() +
+#     #labs(title=paste0("Smoothness=", smoothval)) +
+#     theme(axis.text.x=element_text(angle=45))
+
+#find perpendicular axis at midpoint of alongshore line
+# since we made this line 100 units, center is at ~50
+halfway <- neus.alongshore.axisdistdat[50,]
+
+# or we could calculate it properly
+mid.lat <- sum(neus.alongshore.lat)/2
+mid.lon <- sum(neus.alongshore.lon)/2
+
+# or use a built in function
+midpoint.alongshore <- st_centroid(neus.alongshore.line)
+
+# rotate alongshore line 90 degress at midpoint
+# functions see https://geocompr.robinlovelace.net/geometric-operations.html
+rotation = function(a){
+  r = a * pi / 180 #degrees to radians
+  matrix(c(cos(r), sin(r), -sin(r), cos(r)), nrow = 2, ncol = 2)
+} 
+
+#nz_rotate = (nz_sfc - nz_centroid_sfc) * rotation(30) + nz_centroid_sfc
+
+neus.alongshore.line_sfc <- st_geometry(neus.alongshore.line)
+midpoint.alongshore_sfc <- st_centroid(neus.alongshore.line_sfc)
+
+neus.offshore.line <- (neus.alongshore.line_sfc - midpoint.alongshore_sfc) * rotation(90) + midpoint.alongshore_sfc
+
+ggplot() +
+    geom_sf(data=neusmap, color="#999999") +
+    geom_sf(data=neus.alongshore.line_sfc %>% st_set_crs(st_crs(neusmap)), 
+            color="darkblue", 
+            #col=viridisLite::viridis(25)[cut(as.numeric(neus.alongshore.line_sfc),25)],
+            lwd=1.5) +
+    geom_sf(data=neus.offshore.line %>% st_set_crs(st_crs(neusmap)), 
+            color="darkblue", 
+            #ol=viridisLite::viridis(25)[cut(as.numeric(neus.alongshore.line_sfc),25)],
+            lwd=1.5) +
+    #scale_x_continuous(limits=c(neus.xmin, neus.xmax)) +
+    #scale_y_continuous(limits=c(neus.ymin, neus.ymax)) +
+    theme_bw() +
+    #labs(title=paste0("Smoothness=", smoothval)) +
+    theme(axis.text.x=element_text(angle=45))
+
+neus.offshore.points <- data.frame(st_coordinates(neus.offshore.line)) %>%
+  rename("x"=X, "y"=Y)
+
+neus.offshore.dists <- pointDistance(neus.offshore.points[-nrow(neus.offshore.points), c("x", "y")], neus.offshore.points[-1, c("x", "y")], lonlat=TRUE)
+
+neus.offshore.axisdistdat <- data.frame(neus.offshore.points[, c('x','y')], seglength=c(0, neus.offshore.dists))
+neus.offshore.axisdistdat$lengthfromhere <- rev(cumsum(rev(neus.offshore.axisdistdat[,"seglength"])))
+
+write_rds(neus.alongshore.axisdistdat, here("spatialdat","neus.alongshore.axisdistdat.rds"))
+write_rds(neus.offshore.axisdistdat, here("spatialdat","neus.offshore.axisdistdat.rds"))
+
+```
+
+Affline transformations may not preserve angles so this rotation looks a little off when 90 is specified.
+
+We could also project a linear axis offshore from the non-linear coastline axis? But those axes will intersect. 
+
+This should project coast, alongshore, and offshore axes:
+
+```{r, code = readLines(here("VASTunivariate_bfp_allsurvs_lencov_tiltaxis.R")), eval=F}
+```
+
+Here is the best model with both surveys, predator mean length and number of predator species as covariates, with the rotated axes.
+
+### Fall Index
+
+![Fall Index](pyindex/allagg_fall_500_allsurvs_lenno_tilt/Index.png)  
+
+### Fall Center of Gravity (far right is inshore-offshore)
+
+![Fall COG](pyindex/allagg_fall_500_allsurvs_lenno_tilt/center_of_gravity.png) 
+
+### Fall Density
+
+![Fall Density](pyindex/allagg_fall_500_allsurvs_lenno_tilt/ln_density-predicted.png)
+
+
+### Spring Index
+
+![Spring Index](pyindex/allagg_spring_500_allsurvs_lenno_tilt/Index.png)   
+
+### Spring Center of Gravity (far right is inshore-offshore) 
+
+![Spring COG](pyindex/allagg_spring_500_allsurvs_lenno_tilt/center_of_gravity.png) 
+
+### Spring Density
+
+![Spring Density](pyindex/allagg_spring_500_allsurvs_lenno_tilt/ln_density-predicted.png)
+
+## Define inshore and offshore regions
+
+Three options for different strata for derived quantities: 3 miles from shore, NEAMAP outer boundary, Albatross inshore strata boundary.
+
+In progress...
 
 
 ## References
