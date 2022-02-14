@@ -843,6 +843,17 @@ Here is the best model with both surveys, predator mean length and number of pre
 
 ## Define inshore and offshore regions
 
+```{r, eval=FALSE}
+#diagnose opposite directions for coastline and alongshore
+fallfit <- readRDS(here("pyindex/allagg_fall_500_allsurvs_lenno_tilt/fit.rds"))
+fallfit$input_args$extra_args$Z_gm
+
+springfit <- readRDS(here("pyindex/allagg_spring_500_allsurvs_lenno_tilt/fit.rds"))
+springfit$input_args$extra_args$Z_gm
+
+```
+
+
 Three options for different strata for derived quantities: 3 miles from shore, NEAMAP outer boundary, Albatross inshore strata boundary.
 
 In progress...
