@@ -1,0 +1,82 @@
+---
+title: "Prey Similarlity Update"
+author: "Sarah Gaichas"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    code_fold: hide
+link-citations: yes
+csl: ices-journal-of-marine-science.csl
+bibliography: FishDiet_EcoIndicators.bib
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      message = FALSE,
+                      warning = FALSE)
+
+library(tidyverse)
+library(here)
+library(DT)
+library(pdftools)
+library(patchwork)
+library(ggiraph)
+
+library(ecodata)
+
+```
+
+## Update prey overlap analysis
+
+For bluefish forage index modeling, we are selecting a set of predators that have high diet similarity to bluefish. 
+
+@garrison_dietary_2000 evaluated similarity of predator diets on the Northeast US shelf to develop foraging guilds. They used NEFSC bottom trawl survey data 1973-1997. We are using diets from 1985-2020 to characterize the prey index. Therefore an additional 20+ years of diet information is available to assess whether predator diet similarity has changed. In addition, identifying the predators with the most similar diets (and foraging habits) to bluefish is useful for this analysis.
+
+### Methods
+
+@garrison_dietary_2000 used hierarchical agglomerative clustering to evaluate groups of species with similar diets. Specifically, the Schoener similarity index [@schoener_nonsynchronous_1970] was applied
+
+>to assess the dietary overlap, Dij, between predator pairs:
+
+$$ D_{i,j} = 1 – 0.5 (∑ |p_{i,k} – p_{j,k}|) $$
+
+>where $p_{i,k}$ = mean proportional volume of prey type k in predator i and $p_{i,k}$ = mean proportional volume of
+prey type k in predator j. 
+
+@garrison_dietary_2000 used a set of 52 prey categories to characterize diet. This does not correspond to current standardized prey categories, which range from highly aggregated general categories ("gencat") through analysis categories ("analcat") and collection categories ("collcat"). Lowest possible taxonomic information is "pynam" and the number of prey groups within each category is:
+
+```{r}
+# object is called `allfh`
+load(url("https://github.com/Laurels1/Condition/raw/master/data/allfh.RData"))
+```
+
+```{r}
+gencomlist <- allfh %>%
+  select(pynam, gencat, analcat, collcat, gencom2, analcom3) 
+
+gencomlist %>%
+  summarise_all(n_distinct)
+
+```
+
+It seems we could either reconstruct the categories from @garrison_dietary_2000 or use the "analcom" category. Over 100 prey categories may be a bit much. Alternatively, additional detail on prey may help identify which piscivores are closest to bluefish. Scott is using a list of 56 prey categories that may be close enough to the orignal list.
+
+```{r}
+preycats <- read_csv(here("fhdat/prey_categories.csv"))
+```
+
+The mean proportions were presumably taken over the entire time period 1973-1997 for the entire Northeast US shelf (survey area) and did not distinguish between seasons.
+
+
+
+We could try to reproduce the original time period, add all years up to recent, do only 1997-recent, or some combination.
+
+
+
+
+### Results
+
+
+
+
+## References
