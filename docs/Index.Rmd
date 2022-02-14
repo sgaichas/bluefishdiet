@@ -17,11 +17,12 @@ output: html_document
 
 <a href="https://sgaichas.github.io/bluefishdiet/VASTmod1.html" target="_blank"> Try VAST index all prey aggregated - December 6 2021 </a>
 
-<a href="https://sgaichas.github.io/bluefishdiet/VASTmod2.html" target="_blank"> Working VAST index all prey aggregated with results - January 7 2021 </a>
+<a href="https://sgaichas.github.io/bluefishdiet/VASTmod2.html" target="_blank"> Working VAST index all prey aggregated with results - January 7 2022 </a>
 
-<a href="https://sgaichas.github.io/bluefishdiet/VASTmodsel.html" target="_blank"> Evaluate different model structures using AIC, NEFSC data only - January 19 2021 </a>
+<a href="https://sgaichas.github.io/bluefishdiet/VASTmodsel.html" target="_blank"> Evaluate different model structures using AIC, NEFSC data only - January 19 2022 </a>
 
-<a href="https://sgaichas.github.io/bluefishdiet/AddNEAMAP.html" target="_blank"> Working on adding NEAMAP survey - February 2 2021 </a>
+<a href="https://sgaichas.github.io/bluefishdiet/AddNEAMAP.html" target="_blank"> Working on adding NEAMAP survey - February 2 2022 </a>
 
+<a href="https://sgaichas.github.io/bluefishdiet/DataMeetingSummary.html" target="_blank"> Summary of progress for data meeting - February 14 2022 </a>
 
 
