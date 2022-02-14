@@ -478,6 +478,7 @@ saveRDS(bluepyagg_stn, here("fhdat/bluepyagg_stn_all.rds"))
 1.  Should we add 2021 data when it becomes available?
 1.  Should we use the full spatial domain or reduce the footprint to match bluefish occurrence? How much of the Gulf of Maine and Scotian Shelf should we include?
 1.  Should we consider leaving out more dissimilar predators, especially really different life history types and habitat/foraging mode. First to go may be the winter skate which was in a different subgroup from bluefish. Second could be split out small bluefish and weakfish group from @garrison_dietary_2000.
+1.  Any other prey to add?
 1.  If we consider a multivarite model, what prey categories make the most sense? 
 
 ## VAST models
@@ -640,7 +641,7 @@ DT::datatable(modselect.500.allsurvs, rownames = FALSE,
 
 (The allsurvs model is a check that should be identical to wneamap, and it is. The _tilt model has extra axes from code below but is otherwise identical to the best fit model.)
 
-Including predator mean length and number of predator species seems to fit better than including either alone, vessel overdispersion parameters, or no covariates.
+All results are on [google drive](https://drive.google.com/drive/folders/1ns2VdOWWZmVKpvCJC3PZu2D-CHXXUIfJ). Including predator mean length and number of predator species fits better than including either alone, vessel overdispersion parameters, or no covariates.
 
 ## Realign center of gravity along/across NEUS coastline
 
@@ -854,9 +855,24 @@ springfit$input_args$extra_args$Z_gm
 ```
 
 
-Three options for different strata for derived quantities: 3 miles from shore, NEAMAP outer boundary, Albatross inshore strata boundary.
+Three options for different strata for derived quantities: 
+
+*   3 miles from shore, 
+*   NEAMAP outer boundary, 
+*   Albatross inshore strata boundary.
 
 In progress...
+
+## Questions for the WG on VAST models:
+
+1.  Look at other catchability or density covariates?
+1.  Other model selection work?
+1.  Recommended diagnostics/outputs to review?
+1.  Useful to have a multivariate model, or better to keep all prey aggregated?
+1.  Evaluate a model with only bluefish as predators? (Data are sparse)
+
+![Fall bluefish NEFSC](pyindextests/nefsc_data/allagg_fallbluefish/Data_by_year.png)
+
 
 
 ## References
