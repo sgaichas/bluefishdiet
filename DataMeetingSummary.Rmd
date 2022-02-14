@@ -946,5 +946,168 @@ saveRDS(bluepyagg_stn, here("fhdat/bluepyagg_stn_all.rds"))
 1.  Should we consider leaving out more dissimilar predators, especially really different life history types and habitat/foraging mode. First to go may be the winter skate which was in a different subgroup from bluefish. Second could be split out small bluefish and weakfish group from @garrison_dietary_2000.
 1.  If we consider a multivarite model, what prey categories make the most sense? 
 
+## VAST models
+
+After discussion with both the working group and Elizabeth Ng, we will limit the years to assessment years (1985 to present) and limit the areas to those north of Cape Hatteras due to problems with patchy southern sampling.
+
+Having built an initial dataset of haul-specific mean bluefish prey weight per stomach for piscivores, now we ran a few configurations to see if spatial and spatio-temporal random effects make sense to estimate the prey index in VAST.
+
+Again following what @ng_predator_2021 did for herring, but with 500 knots, estimated by k-means clustering of the data, to define the spatial dimensions of each seasonal model. We similarly apply a Poisson-link delta model to estimate expected prey mass per predator stomach.Model selection follows @ng_predator_2021 using REML. 
+
+I updated the script each time for index standardization model, using 500 knots to speed things up (run from script `VASTunivariate_bluefishprey.R`, *not* in rmd). This is the most recent version:
+
+```{r, code = readLines(here("VASTunivariate_bluefishprey.R")), eval=F}
+```
+
+We compared the AIC for the 500 knot models to see if including the spatial and spatio-temporal random effects in the first and second linear predictors improved the model fit. Model structures tested include with and without anistropy (2 fixed parameters), and with and without spatial and spatio-temporal random effects in the second linear predictor or both linear predictors. This follows the model selection process outlined in @ng_predator_2021. 
+
+Results [here](https://sgaichas.github.io/bluefishdiet/VASTmodsel.html) showed full models estimating spatial and spatio-temporal random effects with anistropy were best supported by the NEFSC data.
+
+**This analysis will be re-run with the full NEFSC+NEAMAP dataset**
+
+For the full dataset with both surveys, we evaluated whether vessel effects or catchability coeffients were supported by the data.
+
+We first explored the full dataset and compared different vessel effect parameterizations. Turning on the "Eta" parameters treats vessel differences as overdispersion in the first and or second linear predictor.
+
+Altenatively, adding predator length as a catchability covariate may more directly model vessel differences in predator catch that affect stomach contents than modeling a vessel catchability covariate direclty. This was the appropach taken by @ng_predator_2021. They found that predator length covariates were strongly supported as catchability covariates (larger predators being more likely to have more prey in stomachs).
+
+This script uses predator mean length as a catchability covariate, with the option to add number of distinct predator types.
+
+```{r, code = readLines(here("VASTunivariate_bfp_allsurvs_lencov.R")), eval=F}
+```
+
+The rationale for including number of predator species is that more species "sampling" the prey field may result in more prey in stomachs. Temperature could also be added.
+
+*It turns out including bottom temperature leaves out a lot of data, so for these initial runs I did not use temperature as a catchability covariate.* If the WG wants to explore this, we'll need to do runs with only the subset of data with temperature to compare with vessel effects, or use a different bottom temperature dataset like Charles Perretti did for summer flounder.  If we use it, the rationale for including bottom temperature is that predator metabolism and consumption changes with temperature, although this may not be linear depending on the temperature range. 
+
+Initial run with length and number of predators has a lower AIC than runs with overdispersion for vessel effects.
+
+We'll compare all runs with NEAMAP added and overdispersion vs catchability covariates here (using maximum likelihood to calculate AIC instead of REML because we are not changing the random effects):
+
+```{r}
+# from each output folder in pyindex, 
+outdir <- here("pyindex")
+moddirs <- list.dirs(outdir) 
+moddirs <- moddirs[-1]
+# keep folder name
+modnames <- list.dirs(outdir, full.names = FALSE)
+
+# function to apply extracting info
+getmodinfo <- function(d.name){
+  # read settings
+  modpath <- stringr::str_split(d.name, "/", simplify = TRUE)
+  modname <- modpath[length(modpath)]
+  
+  settings <- read.table(file.path(d.name, "settings.txt"), comment.char = "",
+    fill = TRUE, header = FALSE)
+  
+  n_x <- as.numeric(as.character(settings[(which(settings[,1]=="$n_x")+1),2]))
+  grid_size_km <- as.numeric(as.character(settings[(which(settings[,1]=="$grid_size_km")+1),2]))
+  max_cells <- as.numeric(as.character(settings[(which(settings[,1]=="$max_cells")+1),2]))
+  use_anisotropy <- as.character(settings[(which(settings[,1]=="$use_anisotropy")+1),2])
+  fine_scale <- as.character(settings[(which(settings[,1]=="$fine_scale")+1),2])
+  bias.correct <- as.character(settings[(which(settings[,1]=="$bias.correct")+1),2])
+  
+  #FieldConfig
+  if(settings[(which(settings[,1]=="$FieldConfig")+1),1]=="Component_1"){
+    omega1 <- as.character(settings[(which(settings[,1]=="$FieldConfig")+2),2])
+    omega2 <- as.character(settings[(which(settings[,1]=="$FieldConfig")+3),1])
+    epsilon1 <- as.character(settings[(which(settings[,1]=="$FieldConfig")+4),2])
+    epsilon2 <- as.character(settings[(which(settings[,1]=="$FieldConfig")+5),1])
+    beta1 <- as.character(settings[(which(settings[,1]=="$FieldConfig")+6),2])
+    beta2 <- as.character(settings[(which(settings[,1]=="$FieldConfig")+7),1])
+  }
+  
+  if(settings[(which(settings[,1]=="$FieldConfig")+1),1]=="Omega1"){
+    omega1 <- as.character(settings[(which(settings[,1]=="$FieldConfig")+3),1])
+    omega2 <- as.character(settings[(which(settings[,1]=="$FieldConfig")+4),1])
+    epsilon1 <- as.character(settings[(which(settings[,1]=="$FieldConfig")+3),2])
+    epsilon2 <- as.character(settings[(which(settings[,1]=="$FieldConfig")+4),2])
+    beta1 <- "IID"
+    beta2 <- "IID"
+  }
+  
+  
+  #RhoConfig
+  rho_beta1 <- as.numeric(as.character(settings[(which(settings[,1]=="$RhoConfig")+3),1]))
+  rho_beta2 <- as.numeric(as.character(settings[(which(settings[,1]=="$RhoConfig")+3),2]))
+  rho_epsilon1 <- as.numeric(as.character(settings[(which(settings[,1]=="$RhoConfig")+4),1]))
+  rho_epsilon2 <- as.numeric(as.character(settings[(which(settings[,1]=="$RhoConfig")+4),2]))
+  
+  # read parameter estimates, object is called parameter_Estimates
+  load(file.path(d.name, "parameter_estimates.RData"))
+  
+  AIC <- parameter_estimates$AIC[1]  
+  converged <- parameter_estimates$Convergence_check[1]
+  fixedcoeff <- unname(parameter_estimates$number_of_coefficients[2])
+  randomcoeff <- unname(parameter_estimates$number_of_coefficients[3])
+  
+  
+  # return model atributes as a dataframe
+  out <- data.frame(modname = modname,
+                    n_x = n_x,
+                    grid_size_km = grid_size_km,
+                    max_cells = max_cells,
+                    use_anisotropy = use_anisotropy,
+                    fine_scale =  fine_scale,
+                    bias.correct = bias.correct,
+                    omega1 = omega1,
+                    omega2 = omega2,
+                    epsilon1 = epsilon1,
+                    epsilon2 = epsilon2,
+                    beta1 = beta1,
+                    beta2 = beta2,
+                    rho_epsilon1 = rho_epsilon1,
+                    rho_epsilon2 = rho_epsilon2,
+                    rho_beta1 = rho_beta1,
+                    rho_beta2 = rho_beta2,
+                    AIC = AIC,
+                    converged = converged,
+                    fixedcoeff = fixedcoeff,
+                    randomcoeff = randomcoeff
+  )
+  	
+	return(out)
+
+}
+
+# combine into one table for comparison
+
+modselect <- purrr::map_dfr(moddirs, getmodinfo)
+
+
+```
+
+Compare different vessel effects and catchability coeffients with combined NEFSC and NEAMAP data:
+
+```{r}
+
+# only compare AIC for the 500 knot models with neamap included
+modselect.500.allsurvs <- modselect %>%
+  filter(n_x == 500) %>%
+  filter(str_detect(modname, c("wneamap|allsurvs"))) %>%
+  mutate(season = case_when(str_detect(modname, "fall") ~ "Fall",
+                            str_detect(modname, "spring") ~ "Spring",
+                            TRUE ~ as.character(NA))) %>%
+  mutate(converged2 = case_when(str_detect(converged, "no evidence") ~ "likely",
+                                str_detect(converged, "is likely not") ~ "unlikely",
+                                TRUE ~ as.character(NA))) %>%
+  group_by(season) %>%
+  mutate(deltaAIC = AIC-min(AIC)) %>%
+  arrange(AIC) %>%
+  dplyr::select(modname, season, deltaAIC, fixedcoeff,
+         randomcoeff, use_anisotropy,
+         omega1, omega2, epsilon1, epsilon2,
+         beta1, beta2, AIC, converged2)
+
+DT::datatable(modselect.500.allsurvs, rownames = FALSE, 
+              options= list(pageLength = 25, scrollX = TRUE))
+```
+
+(The allsurvs model is a check that should be identical to wneamap, and it is.)
+
+Including predator mean length and number of predator species seems to fit better than including either alone, vessel overdispersion parameters, or no covariates.
+
+
 
 ## References
