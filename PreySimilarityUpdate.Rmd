@@ -84,7 +84,53 @@ predn <- allfh %>%
 datatable(predn)
 ```
 
+There is a table on they [NEFSC shiny app](https://fwdp.shinyapps.io/tm2020/#4_DIET_OVERLAP_AND_TROPHIC_GUILDS) that updates feeding guilds based on 50 predators, including striped bass, so perhaps we can use that instead of re-doing this whole analysis.
 
+```{r}
+dietoverlap <- read_csv(here("datfromshiny/tgmat.2022-02-15.csv"))
+```
+ This can be input into a cluster analysis:
+ 
+```{r, fig.height=10}
+# follows example here https://cran.r-project.org/web/packages/dendextend/vignettes/Cluster_Analysis.html
+
+library(dendextend)
+
+d_dietoverlap <- dist(dietoverlap)
+
+guilds <- hclust(d_dietoverlap)
+
+#plot(guilds)
+
+dend <- as.dendrogram(guilds)
+
+dend <- rotate(dend, 1:136)
+
+dend <- color_branches(dend, k=9)
+
+labels(dend) <- paste(as.character(names(dietoverlap[-1]))[order.dendrogram(dend)],
+                           "(",labels(dend),")", 
+                           sep = "")
+
+dend <- hang.dendrogram(dend,hang_height=0.1)
+
+# reduce the size of the labels:
+# dend <- assign_values_to_leaves_nodePar(dend, 0.5, "lab.cex")
+dend <- set(dend, "labels_cex", 0.5)
+# And plot:
+par(mar = c(3,3,3,7))
+plot(dend, 
+     main = "Clustered NEFSC diet data
+     (the labels give the predator species/size)", 
+     horiz =  TRUE,  nodePar = list(cex = .007))
+#legend("topleft", legend = iris_species, fill = rainbow_hcl(3))
+```
+ 
+Another visualization
+```{r}
+par(mar = rep(0,4))
+circlize_dendrogram(dend)
+```
 
 ### Results
 
