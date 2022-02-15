@@ -106,7 +106,7 @@ dend <- as.dendrogram(guilds)
 
 dend <- rotate(dend, 1:136)
 
-dend <- color_branches(dend, k=9)
+dend <- color_branches(dend, k=5)
 
 labels(dend) <- paste(as.character(names(dietoverlap[-1]))[order.dendrogram(dend)],
                            "(",labels(dend),")", 
@@ -132,8 +132,73 @@ par(mar = rep(0,4))
 circlize_dendrogram(dend)
 ```
 
+How much difference does clustering method make?
+```{r}
+# again directly from https://cran.r-project.org/web/packages/dendextend/vignettes/Cluster_Analysis.html
+hclust_methods <- c("ward.D", "single", "complete", "average", "mcquitty", 
+        "median", "centroid", "ward.D2")
+diet_dendlist <- dendlist()
+for(i in seq_along(hclust_methods)) {
+   hc_diet <- hclust(d_dietoverlap, method = hclust_methods[i])   
+   diet_dendlist <- dendlist(diet_dendlist, as.dendrogram(hc_diet))
+}
+names(diet_dendlist) <- hclust_methods
+#diet_dendlist
+```
+
+Correlations between clustering methods
+```{r}
+diet_dendlist_cor <- cor.dendlist(diet_dendlist)
+#diet_dendlist_cor
+corrplot::corrplot(diet_dendlist_cor, "pie", "lower")
+```
+
+Comparison of clusters
+```{r, fig.height=10}
+par(mfrow = c(4,2))
+for(i in 1:8) {
+   diet_dendlist[[i]] %>% set("branches_k_color", k=5) %>% plot(axes = FALSE, horiz = TRUE)
+   title(names(diet_dendlist)[i])
+}
+```
+
+Compare complete (default) and average
+```{r}
+diet_dendlist %>% dendlist(which = c(3,4)) %>% ladderize %>% 
+   untangle(method = "step1side", k_seq = 2:6) %>%
+   set("branches_k_color", k=5) %>% 
+   tanglegram(faster = TRUE) # 
+   #tanglegram(common_subtrees_color_branches = TRUE)
+```
+Compare complete and mcquitty
+```{r}
+diet_dendlist %>% dendlist(which = c(3,5)) %>% ladderize %>% 
+   untangle(method = "step1side", k_seq = 2:6) %>%
+   set("branches_k_color", k=5) %>% 
+   tanglegram(faster = TRUE) # 
+```
+Compare complete and wardD
+```{r}
+diet_dendlist %>% dendlist(which = c(3,1)) %>% ladderize %>% 
+   untangle(method = "step1side", k_seq = 2:6) %>%
+   set("branches_k_color", k=5) %>% 
+   tanglegram(faster = TRUE) # 
+```
+See about common nodes between methods, looks better
+
+```{r}
+diet_dendlist_cor2 <- cor.dendlist(diet_dendlist, method = "common")
+#iris_dendlist_cor2
+corrplot::corrplot(diet_dendlist_cor2, "pie", "lower")
+
+```
+
 ### Results
 
+If we trim the dendogram down we can better see the distinctions within piscivores:
+```{r}
+
+```
 
 
 
