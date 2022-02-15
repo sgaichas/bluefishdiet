@@ -67,10 +67,22 @@ preycats <- read_csv(here("fhdat/prey_categories.csv"))
 
 The mean proportions were presumably taken over the entire time period 1973-1997 for the entire Northeast US shelf (survey area) and did not distinguish between seasons.
 
-
-
 We could try to reproduce the original time period, add all years up to recent, do only 1997-recent, or some combination.
 
+Also, we may want to include a different list of predators based on sample size. How many of each predator were observed in the earlier time period vs the later?
+
+```{r}
+predn <- allfh %>%
+  mutate(yearrange = case_when(year < 1998 ~ "early, 1973-1997",
+                               year > 1997 ~ "recent, 1998-2020",
+                               TRUE ~ as.character(NA))) %>%
+  select(yearrange, pdcomnam) %>%
+  group_by(yearrange, pdcomnam) %>%
+  summarise(count = n()) %>%
+  pivot_wider(names_from = yearrange, values_from = count)
+
+datatable(predn)
+```
 
 
 
