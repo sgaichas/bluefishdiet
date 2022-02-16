@@ -120,7 +120,7 @@ dend <- set(dend, "labels_cex", 0.5)
 # And plot:
 par(mar = c(3,3,3,7))
 plot(dend, 
-     main = "Clustered NEFSC diet data
+     main = "Clustered NEFSC diet data, (complete)
      (the labels give the predator species/size)", 
      horiz =  TRUE,  nodePar = list(cex = .007))
 #legend("topleft", legend = iris_species, fill = rainbow_hcl(3))
@@ -132,13 +132,25 @@ par(mar = rep(0,4))
 circlize_dendrogram(dend)
 ```
 
-List of "piscivores" (should be the same as shiny app): 
+Find bluefish in clusters, and write list of "piscivores" (should be the same as shiny app): 
 ```{r}
 #dend %>% get_nodes_attr("members")
-# number of members by node 
-dend %>% get_nodes_attr("members", id = c(2,44)) #2 is first major node, 44 separates "piscivores"
+# from https://talgalili.github.io/dendextend/reference/noded_with_condition.html
+has_any_labels <- function(sub_dend, the_labels) any(labels(sub_dend) %in% the_labels)
 
-partition_leaves(dend)[[44]]
+# cols <- noded_with_condition(dend, has_any_labels,
+#   the_labels = c("Bluefish..S(37)", "Bluefish..M(36)", "Bluefish..L(35)")
+# ) %>%
+#   ifelse(2, 1)
+# set(dend, "branches_col", cols) %>% plot(horiz =  TRUE,  nodePar = list(cex = .007))
+
+# number of members by node 
+#dend %>% get_nodes_attr("members", id = c(2,44)) #2 is first major node, 44 separates "piscivores"
+
+# list of species in node with all three bluefish sizes
+partition_leaves(dend)[[
+which_node(dend, c("Bluefish..S(37)", "Bluefish..M(36)", "Bluefish..L(35)"))
+]]
 ```
 
 
@@ -230,33 +242,63 @@ dend <- set(dend, "labels_cex", 0.5)
 # And plot:
 par(mar = c(3,3,3,7))
 plot(dend, 
-     main = "Clustered NEFSC diet data
+     main = "Clustered NEFSC diet data (ward.D)
      (the labels give the predator species/size)", 
      horiz =  TRUE,  nodePar = list(cex = .007))
 ```
 
-List of "piscivores" from ward.D (this adds pelagic feeders I would not consider piscivores): 
+Find bluefish in clusters, and list of "piscivores" from ward.D (this adds pelagic feeders I would not consider piscivores): 
 ```{r}
 #dend %>% get_nodes_attr("members")
+# from https://talgalili.github.io/dendextend/reference/noded_with_condition.html
+has_any_labels <- function(sub_dend, the_labels) any(labels(sub_dend) %in% the_labels)
+
+# cols <- noded_with_condition(dend, has_any_labels,
+#   the_labels = c("Bluefish..S(37)", "Bluefish..M(36)", "Bluefish..L(35)")
+# ) %>%
+#   ifelse(2, 1)
+# set(dend, "branches_col", cols) %>% plot(horiz =  TRUE,  nodePar = list(cex = .007))
+
 # number of members by node 
-dend %>% get_nodes_attr("members", id = c(2,36)) #2 is first major node, 36 separates "piscivores"
+#dend %>% get_nodes_attr("members", id = c(2,36)) #2 is first major node, 36 separates "piscivores"
 
 partition_leaves(dend)[[36]]
 ```
 
 Node 68 in this tree contains all bluefish sizes, perhaps closer to "pelagic piscivores":
 ```{r}
-partition_leaves(dend)[[68]]
+partition_leaves(dend)[[
+which_node(dend, c("Bluefish..S(37)", "Bluefish..M(36)", "Bluefish..L(35)"))
+]]
 ```
 
 
-Alternatively, break out the "piscivores" from all of the options and see how different they really are.
+Alternatively, break out the nodes with all three bluefish sizes from all of the clustering options and see how different they really are.
+
+```{r}
+
+preds <- list()
+
+for(i in 1:8) {
+  dendi <- diet_dendlist[[i]]
+  namei <- names(diet_dendlist)[i]
+  labels(dendi) <- paste(as.character(names(dietoverlap[-1]))[order.dendrogram(dendi)],
+                           "(",labels(dendi),")", 
+                           sep = "")
+  #preds[[namei]] <- partition_leaves(dendi)[[which_node(dendi, c("35", "36", "37"))]]
+  preds[[namei]] <- partition_leaves(dendi)[[which_node(dendi, c("Bluefish..S(37)", "Bluefish..M(36)", "Bluefish..L(35)"))]]
+
+}
+
+preds
+```
+
 
 ### Results
 
-If we trim the dendogram down we can better see the distinctions within piscivores (not done yet):
+Common to all nodes across methods:
 ```{r}
-
+Reduce(intersect, preds)
 ```
 
 
