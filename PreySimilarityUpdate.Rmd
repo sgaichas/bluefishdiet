@@ -132,6 +132,16 @@ par(mar = rep(0,4))
 circlize_dendrogram(dend)
 ```
 
+List of "piscivores" (should be the same as shiny app): 
+```{r}
+#dend %>% get_nodes_attr("members")
+# number of members by node 
+dend %>% get_nodes_attr("members", id = c(2,44)) #2 is first major node, 44 separates "piscivores"
+
+partition_leaves(dend)[[44]]
+```
+
+
 How much difference does clustering method make?
 ```{r}
 # again directly from https://cran.r-project.org/web/packages/dendextend/vignettes/Cluster_Analysis.html
@@ -223,6 +233,20 @@ plot(dend,
      main = "Clustered NEFSC diet data
      (the labels give the predator species/size)", 
      horiz =  TRUE,  nodePar = list(cex = .007))
+```
+
+List of "piscivores" from ward.D (this adds pelagic feeders I would not consider piscivores): 
+```{r}
+#dend %>% get_nodes_attr("members")
+# number of members by node 
+dend %>% get_nodes_attr("members", id = c(2,36)) #2 is first major node, 36 separates "piscivores"
+
+partition_leaves(dend)[[36]]
+```
+
+Node 68 in this tree contains all bluefish sizes, perhaps closer to "pelagic piscivores":
+```{r}
+partition_leaves(dend)[[68]]
 ```
 
 
