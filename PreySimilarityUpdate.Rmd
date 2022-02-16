@@ -194,11 +194,11 @@ corrplot::corrplot(diet_dendlist_cor2, "pie", "lower")
 
 ```
 
-Maybe we go with ward.D2 which seems most consistent across methods?
+Maybe we go with ward.D which seems most consistent across methods?
 ```{r, fig.height=10}
 d_dietoverlap <- dist(dietoverlap)
 
-guilds <- hclust(d_dietoverlap, method = "ward.D2")
+guilds <- hclust(d_dietoverlap, method = "ward.D")
 
 #plot(guilds)
 
@@ -225,9 +225,12 @@ plot(dend,
      horiz =  TRUE,  nodePar = list(cex = .007))
 ```
 
+
+Alternatively, break out the "piscivores" from all of the options and see how different they really are.
+
 ### Results
 
-If we trim the dendogram down we can better see the distinctions within piscivores:
+If we trim the dendogram down we can better see the distinctions within piscivores (not done yet):
 ```{r}
 
 ```
