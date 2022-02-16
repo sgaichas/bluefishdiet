@@ -1,6 +1,6 @@
 ---
 title: "Prey Similarlity Update"
-author: "Sarah Gaichas"
+author: "Sarah Gaichas and Brian Smith"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output:
   html_document:
@@ -106,7 +106,7 @@ dend <- as.dendrogram(guilds)
 
 dend <- rotate(dend, 1:136)
 
-dend <- color_branches(dend, k=5)
+dend <- color_branches(dend, k=6)
 
 labels(dend) <- paste(as.character(names(dietoverlap[-1]))[order.dendrogram(dend)],
                            "(",labels(dend),")", 
@@ -157,7 +157,7 @@ Comparison of clusters
 ```{r, fig.height=10}
 par(mfrow = c(4,2))
 for(i in 1:8) {
-   diet_dendlist[[i]] %>% set("branches_k_color", k=5) %>% plot(axes = FALSE, horiz = TRUE)
+   diet_dendlist[[i]] %>% set("branches_k_color", k=6) %>% plot(axes = FALSE, horiz = TRUE)
    title(names(diet_dendlist)[i])
 }
 ```
@@ -166,7 +166,7 @@ Compare complete (default) and average
 ```{r}
 diet_dendlist %>% dendlist(which = c(3,4)) %>% ladderize %>% 
    untangle(method = "step1side", k_seq = 2:6) %>%
-   set("branches_k_color", k=5) %>% 
+   set("branches_k_color", k=6) %>% 
    tanglegram(faster = TRUE) # 
    #tanglegram(common_subtrees_color_branches = TRUE)
 ```
@@ -174,14 +174,14 @@ Compare complete and mcquitty
 ```{r}
 diet_dendlist %>% dendlist(which = c(3,5)) %>% ladderize %>% 
    untangle(method = "step1side", k_seq = 2:6) %>%
-   set("branches_k_color", k=5) %>% 
+   set("branches_k_color", k=6) %>% 
    tanglegram(faster = TRUE) # 
 ```
 Compare complete and wardD
 ```{r}
 diet_dendlist %>% dendlist(which = c(3,1)) %>% ladderize %>% 
    untangle(method = "step1side", k_seq = 2:6) %>%
-   set("branches_k_color", k=5) %>% 
+   set("branches_k_color", k=6) %>% 
    tanglegram(faster = TRUE) # 
 ```
 
@@ -206,7 +206,7 @@ dend <- as.dendrogram(guilds)
 
 dend <- rotate(dend, 1:136)
 
-dend <- color_branches(dend, k=5)
+dend <- color_branches(dend, k=6)
 
 labels(dend) <- paste(as.character(names(dietoverlap[-1]))[order.dendrogram(dend)],
                            "(",labels(dend),")", 
