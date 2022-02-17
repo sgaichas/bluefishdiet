@@ -5,6 +5,8 @@ date: "`r format(Sys.time(), '%d %B, %Y')`"
 output:
   html_document:
     code_fold: hide
+    toc: true
+    toc_float: true
 link-citations: yes
 csl: ices-journal-of-marine-science.csl
 bibliography: FishDiet_EcoIndicators.bib
@@ -296,11 +298,232 @@ preds
 
 ### Results
 
-Common to all nodes across methods:
+Common to all bluefish-containing nodes across clustering methods with updated data:
 ```{r}
-Reduce(intersect, preds)
+shortlist <- Reduce(intersect, preds)
+shortlist
 ```
 
+Full piscivore list with updated data from "complete" method:
+```{r}
+  dendi <- diet_dendlist$complete
 
+  labels(dendi) <- paste(as.character(names(dietoverlap[-1]))[order.dendrogram(dendi)],
+                           "(",labels(dendi),")", 
+                           sep = "")
+  
+  pisccomplete <- partition_leaves(dendi)[[which_node(dendi, c("Bluefish..S(37)", "Bluefish..M(36)", "Bluefish..L(35)"))]]
+  
+  pisccomplete
+
+```
+
+Former piscivore list from @garrison_dietary_2000, which I think we can agree is dated and used less refined prey categories:
+```{r}
+garlink2000 <- ecodata::species_groupings %>%
+  select(COMNAME, SizeCat, Garrison.Link) %>%
+  filter(!is.na(Garrison.Link),
+         Garrison.Link == "Piscivores") %>%
+  mutate(PiscGuild = case_when(COMNAME == "WINTER SKATE" ~ "c",
+                               COMNAME == "WEAKFISH" ~ "b", 
+                               COMNAME == "BLUEFISH" & SizeCat == "S" ~ "b",
+                               TRUE ~ "a")) %>%
+  distinct()
+
+garlink2000
+```
+
+## Discussion/recommendation
+
+We are still filtering the prey list after this to match top prey for bluefish, so the choice of predators is largely intended to balance increasing sample size for modeling bluefish prey with using predators likely to be foraging similarly to bluefish.
+
+One extreme assumption would be to include only bluefish as predators, but there are relatively few bluefish samples due to incomplete availability to bottom trawl surveys. This would miss prey available to bluefish because we have not sampled bluefish adequately.
+
+The opposite extreme assumption would be to include all stomachs that contain any of the top bluefish prey, regardless of which species ate the prey. This would include predators that do not forage similarly to bluefish and might therefore "count" prey that are not actually available to bluefish due to habitat differences.
+
+The intermediate approach which selects a group of piscivores that forage similarly to bluefish both increases sample size and screens out the most dissimilar predators to bluefish. The three possibilities above represent different piscivore groupings. We can compare differences in number of stomachs overall from these three groupings to get an idea of potential sample size tradeoffs among the choices:
+
+```{r}
+fh.nefsc.pisc.garlink2000 <- allfh %>%
+  #filter(pynam != "EMPTY") %>%
+  left_join(garlink2000, by = c("pdcomnam" = "COMNAME",
+                               "sizecat" = "SizeCat")) %>%
+  filter(!is.na(Garrison.Link))
+
+ preycount.garlink2000  <- fh.nefsc.pisc.garlink2000 %>%
+   #group_by(year, season, pdcomnam, pynam) %>%
+   group_by(pdcomnam, pynam) %>%
+   summarise(count = n()) %>%
+   #arrange(desc(count))
+   pivot_wider(names_from = pdcomnam, values_from = count)
+ 
+ shortlistdf <- data.frame("COMNAME" = toupper(str_remove(shortlist, "\\..*")),
+                                "SizeCat" = str_remove(str_extract(shortlist, "\\..*[:upper:]+"), "\\.."),
+                                "feedguild" = "shortlist")
+
+ 
+ fh.nefsc.pisc.shortlist <- allfh %>%
+  #filter(pynam != "EMPTY") %>%
+  left_join(shortlistdf, by = c("pdcomnam" = "COMNAME",
+                               "sizecat" = "SizeCat")) %>%
+  filter(!is.na(feedguild))
+ 
+ pisccompletedf <- data.frame("COMNAME" = toupper(str_remove(pisccomplete, "\\..*")),
+                              "SizeCat" = str_remove(str_extract(pisccomplete, "\\..*[:upper:]+"), "\\.."),
+                              "feedguild" = "pisccomplete")
+ 
+ fh.nefsc.pisc.pisccomplete <- allfh %>%
+  #filter(pynam != "EMPTY") %>%
+  left_join(pisccompletedf, by = c("pdcomnam" = "COMNAME",
+                               "sizecat" = "SizeCat")) %>%
+  filter(!is.na(feedguild))
+ 
+```
+
+Which species are considered in each group, and how does this affect overall sample size 1985-2020?
+
+### Predator inclusion 
+```{r}
+garlink2000df <- garlink2000 %>% 
+  mutate(feedguild = "garlink2000") %>%
+  select(COMNAME, SizeCat, feedguild)
+
+pisctable <- rbind(garlink2000df, shortlistdf, pisccompletedf) %>%
+  mutate(included = 1) %>%
+  pivot_wider(names_from = feedguild, values_from = included)
+
+datatable(pisctable)
+```
+
+### Sample sizes
+
+Overall number of stomachs in each dataset (does not consider presence of bluefish prey):
+
+*  Garrison Link 2000: `r dim(fh.nefsc.pisc.garlink2000)[1]`
+
+*  Piscivores from full time series, complete algorithm: `r dim(fh.nefsc.pisc.pisccomplete)[1]`
+
+*  Shortlist across all clustering algorithms: `r dim(fh.nefsc.pisc.shortlist)[1]`
+
+Number of stomachs from years 1985-2020:
+
+```{r}
+gl85on <- fh.nefsc.pisc.garlink2000 %>%
+  filter(year>1984)
+
+short85on <- fh.nefsc.pisc.shortlist %>%
+  filter(year>1984)
+
+pisccom85on <- fh.nefsc.pisc.pisccomplete %>%
+  filter(year>1984)
+```
+
+*  Garrison Link 2000: `r dim(gl85on)[1]`
+
+*  Piscivores from full time series, complete algorithm: `r dim(pisccom85on)[1]`
+
+*  Shortlist across all clustering algorithms: `r dim(short85on)[1]`
+
+### Stations sampled and those with bluefish prey
+
+```{r}
+gencomlist <- allfh %>%
+  select(pynam, gencom2) %>%
+  distinct()
+
+blueprey <- preycount.garlink2000 %>% #this still contains all bluefish prey just like the other two
+  filter(BLUEFISH > 9) %>%
+  filter(!pynam %in% c("EMPTY", "BLOWN",
+                       "FISH", "OSTEICHTHYES",
+                       "ANIMAL REMAINS",
+                       "FISH SCALES")) %>%
+  #filter(!str_detect(pynam, "SHRIMP|CRAB")) %>%
+  left_join(gencomlist) %>%
+  filter(!gencom2 %in% c("ARTHROPODA", "ANNELIDA",
+                         "CNIDARIA", "UROCHORDATA",
+                         "ECHINODERMATA", "WORMS",
+                         "BRACHIOPODA", "COMB JELLIES",
+                         "BRYOZOA", "SPONGES",
+                         "MISCELLANEOUS", "OTHER"))
+
+#tally for garlink (already done)
+fh.nefsc.pisc.garlink2000.blueprey <- fh.nefsc.pisc.garlink2000 %>%
+  mutate(blueprey = case_when(pynam %in% blueprey$pynam ~ "blueprey",
+                              TRUE ~ "othprey"))
+
+preystn.garlink2000 <- fh.nefsc.pisc.garlink2000.blueprey %>%
+  group_by(year, season, station) %>%
+  count(blueprey) %>%
+  pivot_wider(names_from = blueprey, values_from = n) %>%
+  filter(year>1984)
+
+#dim(preystn)[1]
+
+bluepreystn.garlink2000 <- preystn.garlink2000 %>% 
+  arrange(desc(blueprey)) %>%
+  filter(!is.na(blueprey))
+
+#dim(bluepreystn)[1]
+
+# tally for shortlist
+fh.nefsc.pisc.shortlist.blueprey <- fh.nefsc.pisc.shortlist %>%
+  mutate(blueprey = case_when(pynam %in% blueprey$pynam ~ "blueprey",
+                              TRUE ~ "othprey"))
+
+preystn.shortlist <- fh.nefsc.pisc.shortlist.blueprey %>%
+  group_by(year, season, station) %>%
+  count(blueprey) %>%
+  pivot_wider(names_from = blueprey, values_from = n)  %>%
+  filter(year>1984)
+
+#dim(preystn)[1]
+
+bluepreystn.shortlist <- preystn.shortlist %>% 
+  arrange(desc(blueprey)) %>%
+  filter(!is.na(blueprey))
+
+#dim(bluepreystn)[1]
+
+# tally for pisccomplete
+fh.nefsc.pisc.pisccomplete.blueprey <- fh.nefsc.pisc.pisccomplete %>%
+  mutate(blueprey = case_when(pynam %in% blueprey$pynam ~ "blueprey",
+                              TRUE ~ "othprey"))
+
+preystn.pisccomplete <- fh.nefsc.pisc.pisccomplete.blueprey %>%
+  group_by(year, season, station) %>%
+  count(blueprey) %>%
+  pivot_wider(names_from = blueprey, values_from = n) %>%
+  filter(year>1984)
+
+#dim(preystn)[1]
+
+bluepreystn.pisccomplete <- preystn.pisccomplete %>% 
+  arrange(desc(blueprey)) %>%
+  filter(!is.na(blueprey))
+
+#dim(bluepreystn)[1]
+
+```
+
+Our previous dataset using @garrison_dietary_2000 piscivores, 1985 on had:  
+
+*  `r dim(preystn.garlink2000)[1]` total stations, `r dim(bluepreystn.garlink2000)[1]` with bluefish prey.  
+*  Proportion of stations with bluefish prey: `r dim(bluepreystn.garlink2000)[1]/dim(preystn.garlink2000)[1]`  
+
+The piscivores complete, 1985 on has: 
+
+*  `r dim(preystn.pisccomplete)[1]` total stations, `r dim(bluepreystn.pisccomplete)[1]` with bluefish prey.  
+*  Proportion of stations with bluefish prey: `r dim(bluepreystn.pisccomplete)[1]/dim(preystn.pisccomplete)[1]`  
+
+The shortlist dataset, 1985 on has:   
+
+*  `r dim(preystn.shortlist)[1]` total stations, `r dim(bluepreystn.shortlist)[1]` with bluefish prey.  
+*  Proportion of stations with bluefish prey: `r dim(bluepreystn.shortlist)[1]/dim(preystn.shortlist)[1]`   
+
+### Recommendation
+
+The piscivores complete dataset using Brian's updated diet similarity matrix seems to better capture predators that feed similarly to bluefish (e.g. striped bass as noted by the WG), and has a higher proportion of stations with bluefish prey than our original dataset. While the shortlist dataset keeps only the predators that always cluster with bluefish no matter what clustering algorithm is applied, it misses predators highlighted by the WG (striped bass) and results in fewer overall stations than the original dataset and a lower proportion of stations with bluefish prey.
+
+My choice would be to use the piscivores complete dataset.
 
 ## References
