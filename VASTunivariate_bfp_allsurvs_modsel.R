@@ -99,8 +99,8 @@ FieldConfig <- c(
 # _noaniso                  FieldConfig default (all IID) and use_anistropy = FALSE
 # _noomeps2                 FieldConfig 0 for Omega2, Epsilon2
 # _noomeps2_noaniso         FieldConfig 0 for Omega2, Epsilon2 and use_anistropy = FALSE
-# _noomeps2_noeps1          FieldConfig 0 for Omega2, Epsilon2, Omega1
-# _noomeps2_noeps1_noaniso  FieldConfig 0 for Omega2, Epsilon2, Omega1 and use_anistropy = FALSE
+# _noomeps2_noeps1          FieldConfig 0 for Omega2, Epsilon2, Epsilon1
+# _noomeps2_noeps1_noaniso  FieldConfig 0 for Omega2, Epsilon2, Epsilon1 and use_anistropy = FALSE
 # _noomeps12                FieldConfig all 0
 # _noomeps12_noaniso        FieldConfig all 0 and use_anistropy = FALSE
 
@@ -128,9 +128,9 @@ settings = make_settings( n_x = 500,
                           strata.limits = strata.limits,
                           purpose = "index2", 
                           bias.correct = FALSE,
-                          #use_anisotropy = FALSE,
+                          use_anisotropy = FALSE,
                           #fine_scale = FALSE,
-                          #FieldConfig = FieldConfig,
+                          FieldConfig = FieldConfig,
                           #RhoConfig = RhoConfig,
                           #OverdispersionConfig = OverdispersionConfig
                           )
@@ -139,7 +139,7 @@ settings = make_settings( n_x = 500,
 
 #########################################################
 # Run model fall
-season <- c("fall_500")
+season <- c("fall_500_noomeps12_noaniso")
 
 working_dir <- here::here(sprintf("pyindex/allagg_%s/", season))
 
@@ -165,7 +165,7 @@ plot( fit,
 ######################################################
 # Run model spring
 
-season <- c("spring_500")
+season <- c("spring_500_noomeps12_noaniso")
 
 working_dir <- here::here(sprintf("pyindex/allagg_%s/", season))
 
