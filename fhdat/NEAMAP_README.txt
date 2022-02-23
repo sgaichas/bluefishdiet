@@ -1,3 +1,24 @@
+Added for predator update 02/22/2022 (or better 22 02 2022)
+
+The updated dataset is attached. All of the variable names are the same (and represent the same info as before!), and the prey list hasn’t changed. I did change a few things based on our conversations:
+
+ 
+
+    Dataset runs through 2021 now since the 2021 diet data are available. We weren’t quite done in mid-Jan, and I didn’t want to send you a partial dataset back then.
+    I eliminated both smooth dogfish and winter skate diet info from the datasets.
+    The predators included are as follows:
+        Summer Flounder 21-70 cm
+        Silver Hake 21-76 cm
+        Weakfish 26-50 cm
+        Atlantic Cod 81-150 cm (we actually had some!)
+        Bluefish 3 – 118 cm
+        Striped Bass 31 – 120 cm
+        Spanish Mackerel 10 – 33.5 cm (everything we had)
+        Spotted Sea Trout 15.5 – 34 cm (again, everything we had)
+        Spiny Dogfish 36 – 117 cm
+        Goosefish 5 – 124 cm
+
+
 The ‘NEAMAP_Mean stomach weights_Bluefish prey.csv’ file provides tow-level data, and I believe is similar to the input file that you have been using for the Center’s data in VAST. A few things on that file:
 
  
