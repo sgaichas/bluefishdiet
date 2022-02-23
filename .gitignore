@@ -51,5 +51,6 @@ vignettes/*.pdf
 /bottemp_data
 /vast_example
 /pyindextests
+/pyindex_old
 
 vast_example.zip

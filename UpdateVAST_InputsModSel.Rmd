@@ -1,0 +1,263 @@
+---
+title: "Updated VAST Input Data and Model Selection"
+author: "Sarah Gaichas, Jim Gartland, Brian Smith, Bluefish WG"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    code_fold: hide
+    toc: true
+    toc_float: true
+link-citations: yes
+csl: ices-journal-of-marine-science.csl
+bibliography: FishDiet_EcoIndicators.bib
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      message = FALSE,
+                      warning = FALSE)
+
+library(tidyverse)
+library(here)
+library(DT)
+
+```
+
+
+## Update Input Data
+
+Working group decision after the February 2022 Data Meeting was to update the predator list based on the most recent diet similarity matrix by Smith posted on the [NEFSC shiny app](https://fwdp.shinyapps.io/tm2020/#4_DIET_OVERLAP_AND_TROPHIC_GUILDS), which results in a new Piscivore guild relative to our initial models based on @garrison_dietary_2000. 
+
+We investigated alternative cluster algorithms [here](https://sgaichas.github.io/bluefishdiet/PreySimilarityUpdate.html). 
+
+Input NEFSC food habits overlap matrix:
+```{r}
+dietoverlap <- read_csv(here("datfromshiny/tgmat.2022-02-15.csv"))
+```
+
+Get NEFSC food habits data:
+```{r}
+# object is called `allfh`
+load(url("https://github.com/Laurels1/Condition/raw/master/data/allfh.RData"))
+```
+
+Generate the Piscivore list based on clustering with the "complete" algorithm. Identify which species cluster with all 3 sizes of bluefish:
+```{r}
+# follows example here https://cran.r-project.org/web/packages/dendextend/vignettes/Cluster_Analysis.html
+
+library(dendextend)
+
+d_dietoverlap <- dist(dietoverlap)
+
+guilds <- hclust(d_dietoverlap)
+
+#plot(guilds)
+
+dend <- as.dendrogram(guilds)
+
+dend <- rotate(dend, 1:136)
+
+dend <- color_branches(dend, k=6) # Brian uses 6 categories
+
+labels(dend) <- paste(as.character(names(dietoverlap[-1]))[order.dendrogram(dend)],
+                           "(",labels(dend),")", 
+                           sep = "")
+
+dend <- hang.dendrogram(dend,hang_height=0.1)
+
+# reduce the size of the labels:
+# dend <- assign_values_to_leaves_nodePar(dend, 0.5, "lab.cex")
+dend <- set(dend, "labels_cex", 0.5)
+# And plot:
+par(mar = c(3,3,3,7))
+plot(dend, 
+     main = "Clustered NEFSC diet data, (complete)
+     (the labels give the predator species/size)", 
+     horiz =  TRUE,  nodePar = list(cex = .007))
+#legend("topleft", legend = iris_species, fill = rainbow_hcl(3))
+
+# list of species in node with all three bluefish sizes
+partition_leaves(dend)[[
+which_node(dend, c("Bluefish..S(37)", "Bluefish..M(36)", "Bluefish..L(35)"))
+]]
+```
+
+This is the list of predators and sizes:
+```{r}
+# list of species in node with all three bluefish sizes
+pisccomplete <- partition_leaves(dend)[[
+  which_node(dend, c("Bluefish..S(37)", "Bluefish..M(36)", "Bluefish..L(35)"))
+]]
+
+pisccomplete
+```
+
+### Create the NEFSC input dataset.
+
+First filter to the predators and identify the bluefish prey:  
+```{r}
+pisccompletedf <- data.frame("COMNAME" = toupper(str_remove(pisccomplete, "\\..*")),
+                              "SizeCat" = str_remove(str_extract(pisccomplete, "\\..*[:upper:]+"), "\\.."),
+                              "feedguild" = "pisccomplete")
+ 
+ fh.nefsc.pisc.pisccomplete <- allfh %>%
+  #filter(pynam != "EMPTY") %>%
+  left_join(pisccompletedf, by = c("pdcomnam" = "COMNAME",
+                               "sizecat" = "SizeCat")) %>%
+  filter(!is.na(feedguild))
+ 
+preycount  <- fh.nefsc.pisc.pisccomplete %>%
+   #group_by(year, season, pdcomnam, pynam) %>%
+   group_by(pdcomnam, pynam) %>%
+   summarise(count = n()) %>%
+   #arrange(desc(count))
+   pivot_wider(names_from = pdcomnam, values_from = count)
+
+ 
+gencomlist <- allfh %>%
+  select(pynam, gencom2) %>%
+  distinct()
+
+blueprey <- preycount %>% 
+  filter(BLUEFISH > 9) %>%
+  filter(!pynam %in% c("EMPTY", "BLOWN",
+                       "FISH", "OSTEICHTHYES",
+                       "ANIMAL REMAINS",
+                       "FISH SCALES")) %>%
+  #filter(!str_detect(pynam, "SHRIMP|CRAB")) %>%
+  left_join(gencomlist) %>%
+  filter(!gencom2 %in% c("ARTHROPODA", "ANNELIDA",
+                         "CNIDARIA", "UROCHORDATA",
+                         "ECHINODERMATA", "WORMS",
+                         "BRACHIOPODA", "COMB JELLIES",
+                         "BRYOZOA", "SPONGES",
+                         "MISCELLANEOUS", "OTHER"))
+
+fh.nefsc.pisc.pisccomplete.blueprey <- fh.nefsc.pisc.pisccomplete %>%
+  mutate(blueprey = case_when(pynam %in% blueprey$pynam ~ "blueprey",
+                              TRUE ~ "othprey"))
+
+preystn.pisccomplete <- fh.nefsc.pisc.pisccomplete.blueprey %>%
+  group_by(year, season, station) %>%
+  count(blueprey) %>%
+  pivot_wider(names_from = blueprey, values_from = n) %>%
+  filter(year>1984)
+
+#dim(preystn)[1]
+
+bluepreystn.pisccomplete <- preystn.pisccomplete %>% 
+  arrange(desc(blueprey)) %>%
+  filter(!is.na(blueprey))
+
+#dim(bluepreystn)[1]
+
+```
+
+Assign station id, change the months for spring and fall to align with the assessment, and calculate mean bluefish prey per station in NEFSC:  
+```{r}
+bluepyall_stn <- fh.nefsc.pisc.pisccomplete.blueprey %>%
+  #create id linking cruise6_station
+  #create season_ng spring and fall Spring=Jan-May, Fall=June-Dec
+  mutate(id = paste0(cruise6, "_", station),
+         year = as.numeric(year),
+         month = as.numeric(month),
+         season_ng = case_when(month <= 6 ~ "SPRING",
+                               month >= 7 ~ "FALL",
+                               TRUE ~ as.character(NA))
+         ) %>%
+  select(year, season_ng, id, 
+         pynam, pyamtw, pywgti, pyvoli, blueprey, 
+         pdcomnam, pdid, PiscGuild, pdlen, pdsvol, pdswgt, 
+         beglat, beglon, declat, declon, 
+         bottemp, surftemp, setdepth) %>%
+  group_by(id) %>%
+  #mean blueprey g per stomach per tow: sum all blueprey g/n stomachs in tow
+  mutate(bluepywt = case_when(blueprey == "blueprey" ~ pyamtw,
+                               TRUE ~ 0.0),
+         bluepynam = case_when(blueprey == "blueprey" ~ pynam,
+                               TRUE ~ NA_character_)) 
+
+stndat <- bluepyall_stn %>%
+  select(year, season_ng, id, 
+         beglat, beglon, declat, declon, 
+         bottemp, surftemp, setdepth) %>%
+  distinct()
+
+#pisc stomachs in tow count pdid for each pred and sum
+piscstom <- bluepyall_stn %>%
+  group_by(id, pdcomnam) %>%
+  summarise(nstompd = n_distinct(pdid)) %>%
+  group_by(id) %>%
+  summarise(nstomtot = sum(nstompd))
+
+#mean and var pred length per tow
+pisclen <- bluepyall_stn %>%
+  summarise(meanpisclen = mean(pdlen),
+            varpisclen = var(pdlen))
+
+bluepyagg_stn <- bluepyall_stn %>%
+  summarise(sumbluepywt = sum(bluepywt),
+            nbluepysp = n_distinct(bluepynam, na.rm = T),
+            npreysp = n_distinct(pynam),
+            npiscsp = n_distinct(pdcomnam)) %>%
+  left_join(piscstom) %>%
+  mutate(meanbluepywt = sumbluepywt/nstomtot) %>%
+  left_join(pisclen) %>%
+  left_join(stndat)
+
+# save at same stage as before, writing over old file
+saveRDS(bluepyagg_stn, here("fhdat/bluepyagg_stn.rds"))
+
+# current dataset, fix declon, add vessel
+nefsc_bluepyagg_stn <- readRDS(here("fhdat/bluepyagg_stn.rds")) %>%
+  mutate(declon = -declon,
+         vessel = case_when(year<2009 ~ "AL",
+                            year>=2009 ~ "HB", 
+                            TRUE ~ as.character(NA)))
+
+
+```
+
+### Combine with NEAMAP
+
+NEAMAP inputs were similarly updated based on this predator size category list. NEAMAP includes the following predators, adding two not captured by the NEFSC survey offshore and leaving out those from NEFSC not captured inshore:
+
++  Summer Flounder 21-70 cm
++  Silver Hake 21-76 cm
++  Weakfish 26-50 cm
++  Atlantic Cod 81-150 cm (we actually had some!)
++  Bluefish 3 – 118 cm
++  Striped Bass 31 – 120 cm
++  Spanish Mackerel 10 – 33.5 cm (everything we had)
++  Spotted Sea Trout 15.5 – 34 cm (again, everything we had)
++  Spiny Dogfish 36 – 117 cm
++  Goosefish 5 – 124 cm
+
+
+Read in new inputs, align columns, merge datasets, and save:  
+```{r}
+neamap_bluepreyagg_stn <- read_csv(here("fhdat/NEAMAP_Mean stomach weights_Bluefish PreyWQ2.csv")) %>%
+  mutate(vessel = "NEAMAP") %>%
+  rename(id = station,
+         sumbluepywt = sumbluepreywt,
+         nbluepysp = nbfpreyspp,
+         #npreysp = ,
+         npiscsp = npiscspp,
+         nstomtot = nstomtot, 
+         meanbluepywt = meanbluepreywt,
+         meanpisclen = meanpisclen.simple, 
+         #varpisclen = ,
+         season_ng = season,
+         declat  = lat,
+         declon = lon,
+         bottemp = bWT,
+         #surftemp = , 
+         setdepth = depthm) 
+  
+  
+# combine  
+bluepyagg_stn <-  nefsc_bluepyagg_stn %>%
+  bind_rows(neamap_bluepreyagg_stn) 
+
+saveRDS(bluepyagg_stn, here("fhdat/bluepyagg_stn_all.rds"))
+```
