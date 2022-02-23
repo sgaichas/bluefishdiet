@@ -1,12 +1,10 @@
 ---
-title: "Updated VAST Input Data and Model Selection"
+title: "Updated VAST Input Data"
 author: "Sarah Gaichas, Jim Gartland, Brian Smith, Bluefish WG"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output:
   html_document:
     code_fold: hide
-    toc: true
-    toc_float: true
 link-citations: yes
 csl: ices-journal-of-marine-science.csl
 bibliography: FishDiet_EcoIndicators.bib
@@ -42,7 +40,7 @@ load(url("https://github.com/Laurels1/Condition/raw/master/data/allfh.RData"))
 ```
 
 Generate the Piscivore list based on clustering with the "complete" algorithm. Identify which species cluster with all 3 sizes of bluefish:
-```{r}
+```{r, fig.height=12}
 # follows example here https://cran.r-project.org/web/packages/dendextend/vignettes/Cluster_Analysis.html
 
 library(dendextend)
@@ -76,10 +74,6 @@ plot(dend,
      horiz =  TRUE,  nodePar = list(cex = .007))
 #legend("topleft", legend = iris_species, fill = rainbow_hcl(3))
 
-# list of species in node with all three bluefish sizes
-partition_leaves(dend)[[
-which_node(dend, c("Bluefish..S(37)", "Bluefish..M(36)", "Bluefish..L(35)"))
-]]
 ```
 
 This is the list of predators and sizes:
@@ -167,7 +161,7 @@ bluepyall_stn <- fh.nefsc.pisc.pisccomplete.blueprey %>%
          ) %>%
   select(year, season_ng, id, 
          pynam, pyamtw, pywgti, pyvoli, blueprey, 
-         pdcomnam, pdid, PiscGuild, pdlen, pdsvol, pdswgt, 
+         pdcomnam, pdid, pdlen, pdsvol, pdswgt, 
          beglat, beglon, declat, declon, 
          bottemp, surftemp, setdepth) %>%
   group_by(id) %>%
@@ -261,3 +255,5 @@ bluepyagg_stn <-  nefsc_bluepyagg_stn %>%
 
 saveRDS(bluepyagg_stn, here("fhdat/bluepyagg_stn_all.rds"))
 ```
+
+## References

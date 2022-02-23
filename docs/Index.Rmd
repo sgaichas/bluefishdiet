@@ -26,3 +26,5 @@ output: html_document
 <a href="https://sgaichas.github.io/bluefishdiet/DataMeetingSummary.html" target="_blank"> Summary of progress for data meeting - February 14 2022 </a>
 
 <a href="https://sgaichas.github.io/bluefishdiet/PreySimilarityUpdate.html" target="_blank"> Update feeding guilds - February 15 2022 </a>
+
+<a href="https://sgaichas.github.io/bluefishdiet/UpdateVAST_Inputs.html" target="_blank"> Update VAST input dataset with new predator list - February 23 2022 </a>
