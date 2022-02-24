@@ -27,7 +27,7 @@ library(here)
 #library(VAST)
 ```
 
-Having built an initial dataset of haul-specific mean bluefish prey weight per stomach for the [updated piscivore list]() from both NEFSC and NEAMAP, now we'll run a few configurations to see if spatial and spatio-temporal random effects make sense to estimate the prey index in VAST.
+Having built an initial dataset of haul-specific mean bluefish prey weight per stomach for the [updated piscivore list](https://sgaichas.github.io/bluefishdiet/UpdateVAST_Inputs.html) from both NEFSC and NEAMAP, now we'll run a few configurations to see if spatial and spatio-temporal random effects make sense to estimate the prey index in VAST.
 
 Following what @ng_predator_2021 did for herring, we apply a Poisson-link delta model to estimate expected prey mass per predator stomach. However, we use 500 knots, estimated by k-means clustering of the data, to define the spatial dimensions of each seasonal model.   
 
@@ -162,9 +162,11 @@ DT::datatable(modselect.500, rownames = FALSE,
               options= list(pageLength = 25, scrollX = TRUE))
 ```
 
-All of the models converged.  
+All of the models converged. Similar to the preliminary run with only NEFSC diet data and the previous predator list, models with anistopy, spatial and spatio-temporal random effects are most supported by the data.
 
 ## Selected Model Results
+
+Note that these do not have catchability coefficients applied yet, so are not final models. 
 
 ### Fall Index
 
@@ -183,6 +185,6 @@ All of the models converged.
 ![Spring ln-density](pyindex/allagg_spring_500/ln_density-predicted.png)
 All results in the respective pyindex/allagg_fall_500 and allagg_spring_500 folders.
 
-The full results are on [google drive](https://drive.google.com/drive/folders/1ih-Yu2e6zwYbYe6YX_z4JNsY8cQycENB) rather than github to save space.
+The full results are on [google drive](https://drive.google.com/drive/folders/1mEu4wPBlLUf32C3DdV8lmYx4C4f4hra2) rather than github to save space.
 
 ## References
