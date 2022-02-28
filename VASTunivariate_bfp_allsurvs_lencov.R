@@ -8,6 +8,8 @@ library(VAST)
 
 #Read in data, separate spring and fall, and rename columns for VAST:
 
+# this dataset created in UpdateVAST_Inputs.Rmd
+
 bluepyagg_stn <- readRDS(here("fhdat/bluepyagg_stn_all.rds"))
 
 #bluepyagg_stn <- bluepyagg_pred_stn
@@ -101,16 +103,14 @@ FieldConfig <- c(
   "Epsilon2" = 0
 ) 
 
-# Model selection options, 
-# Season_knots + suffix below
-#                           FieldConfig default (all IID)
-# _noaniso                  FieldConfig default (all IID) and use_anistropy = FALSE
-# _noomeps2                 FieldConfig 0 for Omega2, Epsilon2
-# _noomeps2_noaniso         FieldConfig 0 for Omega2, Epsilon2 and use_anistropy = FALSE
-# _noomeps2_noeps1          FieldConfig 0 for Omega2, Epsilon2, Omega1
-# _noomeps2_noeps1_noaniso  FieldConfig 0 for Omega2, Epsilon2, Omega1 and use_anistropy = FALSE
-# _noomeps12                FieldConfig all 0
-# _noomeps12_noaniso        FieldConfig all 0 and use_anistropy = FALSE
+# Model selection options, FieldConfig default (all IID)
+# Season_knots + suffix below 
+# _base         No vessel overdispersion or length/number covariates  (ensure same dataset)  
+# _len          Predator mean length covariate
+# _no           Number of predator species covariate
+# _lenno        Predator mean length and number of predator species covariates
+# _eta10        Overdispersion (vessel effect) in first linear predictor (prey encounter)
+# _eta11        Overdispersion (vessel effect) in both linear predictors (prey wt)
 
 RhoConfig <- c(
   "Beta1" = 0,      # temporal structure on years (intercepts) 
@@ -143,17 +143,13 @@ settings = make_settings( n_x = 500,
                           OverdispersionConfig = OverdispersionConfig
                           )
 
- #Aniso=FALSE, #correct ln_H_input at bound
- #FieldConfig["Epsilon1"]=0, #correct L_epsilon1_z approaching 0  
- #FieldConfig["Epsilon2"]=0 #correct L_epsilon2_z approaching 0 
- #increase knots to address bounds for logkappa?
- # https://github.com/James-Thorson-NOAA/VAST/issues/300
- # or try finescale=FALSE
- # then Omegas hit bounds, had to turn then off too
 
 # select dataset and set directory for output
 
-season <- c("fall_500_allsurvs_no")
+#########################################################
+# Run model fall
+
+season <- c("fall_500_base")
 
 working_dir <- here::here(sprintf("pyindex/allagg_%s/", season))
 
@@ -161,14 +157,6 @@ if(!dir.exists(working_dir)) {
   dir.create(working_dir)
 }
 
-# Run model fall
-# fit = fit_model( settings = settings, 
-#                  Lat_i = bluepyagg_stn_fall[,'Lat'], 
-#                  Lon_i = bluepyagg_stn_fall[,'Lon'], 
-#                  t_i = bluepyagg_stn_fall[,'Year'], 
-#                  b_i = as_units(bluepyagg_stn_fall[,'Catch_g'], 'g'), 
-#                  a_i = as_units(bluepyagg_stn_fall[,'AreaSwept_km2'], 'km^2'),
-#                  working_dir = paste0(working_dir, "/"))
 
 fit <- fit_model(
   settings = settings, 
@@ -178,7 +166,7 @@ fit <- fit_model(
   b_i = as_units(bluepyagg_stn_fall[,'Catch_g'], 'g'),
   a_i = rep(1, nrow(bluepyagg_stn_fall)),
   v_i = bluepyagg_stn_fall$Vessel,
-  Q_ik = as.matrix(bluepyagg_stn_fall[,c("npiscsp")]),
+  #Q_ik = as.matrix(bluepyagg_stn_fall[,c("npiscsp")]),
   #Use_REML = TRUE,
   working_dir = paste0(working_dir, "/"))
 
@@ -186,9 +174,10 @@ fit <- fit_model(
 plot( fit,
       working_dir = paste0(working_dir, "/"))
 
+######################################################
 # Run model spring
 
-season <- c("spring_500_allsurvs_no")
+season <- c("spring_500_base")
 
 working_dir <- here::here(sprintf("pyindex/allagg_%s/", season))
 
@@ -204,7 +193,7 @@ fit = fit_model( settings = settings,
                  b_i = as_units(bluepyagg_stn_spring[,'Catch_g'], 'g'), 
                  a_i = rep(1, nrow(bluepyagg_stn_spring)),
                  v_i = bluepyagg_stn_spring$Vessel,
-                 Q_ik = as.matrix(bluepyagg_stn_spring[,c("npiscsp")]),
+                # Q_ik = as.matrix(bluepyagg_stn_spring[,c("npiscsp")]),
                 # Use_REML = TRUE,
                  working_dir = paste0(working_dir, "/"))
 
