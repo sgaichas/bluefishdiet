@@ -146,8 +146,9 @@ We have only NEAMAP data for 2020-2021 in Fall and for 2021 in Spring.
 ```{r}
 
 # only compare AIC for the 500 knot models
-modselect.500 <- modselect %>%
+modselect.cov <- modselect %>%
   filter(n_x == 500) %>%
+  filter(str_detect(modname, "base|eta|len|_no$")) %>%
   mutate(season = case_when(str_detect(modname, "fall") ~ "Fall",
                             str_detect(modname, "spring") ~ "Spring",
                             TRUE ~ as.character(NA))) %>%
@@ -162,33 +163,33 @@ modselect.500 <- modselect %>%
          beta1, beta2, AIC, converged2) %>%
   arrange(AIC)
 
-DT::datatable(modselect.500, rownames = FALSE, 
+DT::datatable(modselect.cov, rownames = FALSE, 
               options= list(pageLength = 25, scrollX = TRUE))
 ```
 
-
+All models converged. The models with predator attributes (mean length and number of predator species at a station) as catchability coefficients were better supported by the data than models with no catchability coefficients or with vessel effects as overdispersion parameters, similar to the findings of @ng_predator_2021, where predator mean length was selected.
 
 ## Selected Model Results
 
-Note that these do not have catchability coefficients applied yet, so are not final models. 
+These include catchability coefficients that were best supported by the data: mean predator length and number of predator species at each station. 
 
 ### Fall Index
 
-![Fall Index](pyindex/allagg_fall_500/Index.png)
+![Fall Index](pyindex/allagg_fall_500_lenno/Index.png)
 
 ### Spring Index
 
-![Spring Index](pyindex/allagg_spring_500/Index.png)
+![Spring Index](pyindex/allagg_spring_500_lenno/Index.png)
 
 ### Fall predicted ln-density
 
-![Fall ln-density](pyindex/allagg_fall_500/ln_density-predicted.png)
+![Fall ln-density](pyindex/allagg_fall_500_lenno/ln_density-predicted.png)
 
 ### Spring predicted ln-density
 
-![Spring ln-density](pyindex/allagg_spring_500/ln_density-predicted.png)
-All results in the respective pyindex/allagg_fall_500 and allagg_spring_500 folders.
+![Spring ln-density](pyindex/allagg_spring_500_lenno/ln_density-predicted.png)
+All results in the respective pyindex/allagg_fall_500_lenno and allagg_spring_500_lenno folders.
 
-The full results are on [google drive](https://drive.google.com/drive/folders/1mEu4wPBlLUf32C3DdV8lmYx4C4f4hra2) rather than github to save space.
+The full results are on [google drive](https://drive.google.com/drive/folders/1PsEk5hhQ7fR0Gq4NnYPvU4V59d4nIR8E) rather than github to save space.
 
 ## References

@@ -124,7 +124,7 @@ RhoConfig <- c(
 # 3 constant among years (fixed effect)
 # 4 AR1
 
-OverdispersionConfig	<- c("eta1"=0, "eta2"=0)
+OverdispersionConfig	<- c("eta1"=1, "eta2"=1)
 # eta1 = vessel effects on prey encounter rate
 # eta2 = vessel effects on prey weight
 
@@ -149,7 +149,7 @@ settings = make_settings( n_x = 500,
 #########################################################
 # Run model fall
 
-season <- c("fall_500_base")
+season <- c("fall_500_eta11")
 
 working_dir <- here::here(sprintf("pyindex/allagg_%s/", season))
 
@@ -166,7 +166,7 @@ fit <- fit_model(
   b_i = as_units(bluepyagg_stn_fall[,'Catch_g'], 'g'),
   a_i = rep(1, nrow(bluepyagg_stn_fall)),
   v_i = bluepyagg_stn_fall$Vessel,
-  #Q_ik = as.matrix(bluepyagg_stn_fall[,c("npiscsp")]),
+  #Q_ik = as.matrix(bluepyagg_stn_fall[,c("npiscsp", "meanpisclen")]),
   #Use_REML = TRUE,
   working_dir = paste0(working_dir, "/"))
 
@@ -177,7 +177,7 @@ plot( fit,
 ######################################################
 # Run model spring
 
-season <- c("spring_500_base")
+season <- c("spring_500_eta11")
 
 working_dir <- here::here(sprintf("pyindex/allagg_%s/", season))
 
@@ -193,7 +193,7 @@ fit = fit_model( settings = settings,
                  b_i = as_units(bluepyagg_stn_spring[,'Catch_g'], 'g'), 
                  a_i = rep(1, nrow(bluepyagg_stn_spring)),
                  v_i = bluepyagg_stn_spring$Vessel,
-                # Q_ik = as.matrix(bluepyagg_stn_spring[,c("npiscsp")]),
+                 #Q_ik = as.matrix(bluepyagg_stn_spring[,c("npiscsp", "meanpisclen")]),
                 # Use_REML = TRUE,
                  working_dir = paste0(working_dir, "/"))
 
