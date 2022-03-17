@@ -4,6 +4,9 @@
 # and sf documentation https://r-spatial.org/r/2018/10/25/ggplot2-sf-2.html
 
 library(ggplot2)
+
+theme_set(theme_bw())
+
 library(sf)
 library(rnaturalearth)
 library(rnaturalearthdata)
@@ -50,11 +53,19 @@ offshoregrid <- northwest_atlantic_grid %>%
 MABGBgrid <- northwest_atlantic_grid %>%
   filter(EPU %in% c("Mid_Atlantic_Bight", "Georges_Bank"))
 
-ggplot(data = ecodata::coast) + 
+#preset EPUs dont go all the way inshore, neeed to redefine
+
+bfoffshore <- c(1010, 1730, 1690, 1650, 1050, 1090, 1230)
+
+bfoffshoregrid <- northwest_atlantic_grid %>%
+  filter(stratum_number %in% bfoffshore)
+
+ggplot(data = ecodata::coast) +
   geom_sf() + 
-  geom_point(data = northwest_atlantic_grid, aes(x = Lon, y = Lat), size=0.05) +
+  geom_point(data = northwest_atlantic_grid, aes(x = Lon, y = Lat), size=0.05, alpha=0.1) +
   geom_point(data = offshoregrid, aes(x = Lon, y = Lat), size=0.05, colour = "orange") +
   geom_point(data = inshoregrid, aes(x = Lon, y = Lat), size=0.05, colour = "yellow") +
   geom_point(data = bfgrid, aes(x = Lon, y = Lat), size=0.05, colour = "blue") +
-  geom_point(data = MABGBgrid, aes(x = Lon, y = Lat), size=0.05, colour = "blue", alpha=0.1) +
-  coord_sf(xlim = c(-78, -66), ylim = c(35, 45), expand = FALSE)
+  geom_point(data = bfoffshoregrid, aes(x = Lon, y = Lat), size=0.05, colour = "blue", alpha=0.1) +
+  coord_sf(xlim = c(-78, -65.5), ylim = c(35, 45))
+  
