@@ -263,7 +263,7 @@ Here is example index output for the Fall (Option 2):
 
 ![Fall index split](pyindex/allagg_fall_500_lenno_split/Index.png)
 
-More readable as individual time series or as proportions.
+More readable as individual time series
 
 ```{r}
 splitoutput <- read.csv("pyindex/allagg_fall_500_lenno_split/Index.csv")
@@ -287,11 +287,77 @@ ggplot(splitoutput, aes(x=Time, y=Estimate, colour=Region)) +
 
 ```
 
+ or as proportions (here proportion of MABGB index).
 
 ```{r}
 MABGBprop <- splitoutput %>%
-  filter(Region != "AllEPU") %>%
-  mutate()
+  dplyr::filter(Region != "AllEPU") %>%
+  dplyr::select(Time, Region, Estimate) %>%
+  tidyr::pivot_wider(names_from = Region, values_from = Estimate) %>%
+  dplyr::mutate(MABGBinshoreprop = MABGBinshore/MABGB,
+                MABGBoffshoreprop = MABGBoffshore/MABGB,
+                Bluefishprop = Bluefish/MABGB) %>%
+  tidyr::pivot_longer(!Time, names_to = "Region", values_to = "Estimate") %>%
+  dplyr::filter(Region %in% c("MABGBinshoreprop", "MABGBoffshoreprop", "Bluefishprop"))
+  
+
+ggplot(MABGBprop, aes(x=Time, y=Estimate, colour = Region)) +
+  geom_point()+
+  geom_line()+
+  facet_wrap(~Region) #+ , scales = "free_y"
+  #theme(legend.position = c(1, 0),
+  #      legend.justification = c(1, 0))
+  
   
 ```
 
+Results for spring index
+
+![Spring index split](pyindex/allagg_spring_500_lenno_split/Index.png)
+Separate spring plots:
+
+```{r}
+splitoutput <- read.csv("pyindex/allagg_spring_500_lenno_split/Index.csv")
+
+splitoutput <- splitoutput %>%
+  mutate(Region = case_when(Stratum == "Stratum_1" ~ "AllEPU",
+                            Stratum == "Stratum_2" ~ "MABGB",
+                            Stratum == "Stratum_3" ~ "MABGBinshore",
+                            Stratum == "Stratum_4" ~ "MABGBoffshore",
+                            Stratum == "Stratum_5" ~ "Bluefish",
+                            
+  ))
+
+ggplot(splitoutput, aes(x=Time, y=Estimate, colour=Region)) +
+  geom_errorbar(aes(ymin=Estimate+Std..Error.for.Estimate, ymax=Estimate-Std..Error.for.Estimate))+
+  geom_point()+
+  geom_line()+
+  facet_wrap(~Region, scales = "free_y") +
+  theme(legend.position = c(1, 0),
+        legend.justification = c(1, 0))
+
+```
+
+and spring results as proportions (here proportion of MABGB index).
+
+```{r}
+MABGBprop <- splitoutput %>%
+  dplyr::filter(Region != "AllEPU") %>%
+  dplyr::select(Time, Region, Estimate) %>%
+  tidyr::pivot_wider(names_from = Region, values_from = Estimate) %>%
+  dplyr::mutate(MABGBinshoreprop = MABGBinshore/MABGB,
+                MABGBoffshoreprop = MABGBoffshore/MABGB,
+                Bluefishprop = Bluefish/MABGB) %>%
+  tidyr::pivot_longer(!Time, names_to = "Region", values_to = "Estimate") %>%
+  dplyr::filter(Region %in% c("MABGBinshoreprop", "MABGBoffshoreprop", "Bluefishprop"))
+  
+
+ggplot(MABGBprop, aes(x=Time, y=Estimate, colour = Region)) +
+  geom_point()+
+  geom_line()+
+  facet_wrap(~Region) #+ , scales = "free_y"
+  #theme(legend.position = c(1, 0),
+  #      legend.justification = c(1, 0))
+  
+  
+```
