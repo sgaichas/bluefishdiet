@@ -109,6 +109,14 @@ bfall <- northwest_atlantic_grid %>%
   select(stratum_number) %>% 
   distinct()
 
+MABGBalbinshore <- MABGBinshore %>%
+  filter(!(stratum_number %in% bfstrata)) %>%
+  distinct()
+
+MABGBoffshorebigin <- MABGB %>%
+  filter(!(stratum_number %in% MABGBalbinshore$stratum_number)) %>%
+  distinct()
+
 # configs
 FieldConfig <- c(
   "Omega1"   = 0,   # number of spatial variation factors (0, 1, AR1)
@@ -146,7 +154,9 @@ strata.limits <- as.list(c("AllEPU" = AllEPU,
                          "MABGB" = MABGB, 
                          "MABGBinshore" = MABGBinshore, 
                          "MABGBoffshore" = MABGBoffshore, 
-                         "bfall" = bfall))
+                         "bfall" = bfall,
+                         "MABGBalbinshore" = MABGBalbinshore,
+                         "MABGBoffshorebigin" = MABGBoffshorebigin))
 
 settings = make_settings( n_x = 500, 
                           Region = "northwest_atlantic",
