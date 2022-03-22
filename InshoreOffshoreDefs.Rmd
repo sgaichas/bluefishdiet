@@ -244,6 +244,15 @@ bfall <- northwest_atlantic_grid %>%
   filter(stratum_number %in% c(bfstrata, bfoffshore)) %>% 
   select(stratum_number) %>% 
   distinct()
+  
+MABGBalbinshore <- MABGBinshore %>%
+  filter(!(stratum_number %in% bfstrata)) %>%
+  distinct()
+
+MABGBoffshorebigin <- MABGB %>%
+  filter(!(stratum_number %in% MABGBalbinshore$stratum_number)) %>%
+  distinct()
+
 
 ```
 Then input to VAST looks like this
@@ -253,7 +262,9 @@ strata.limits <- as.list(c("AllEPU" = AllEPU,
                          "MABGB" = MABGB, 
                          "MABGBinshore" = MABGBinshore, 
                          "MABGBoffshore" = MABGBoffshore, 
-                         "bfall" = bfall))
+                         "bfall" = bfall,
+                         "MABGBalbinshore" = MABGBalbinshore,
+                         "MABGBoffshorebigin" = MABGBoffshorebigin))
 
 ```
 
@@ -274,7 +285,8 @@ splitoutput <- splitoutput %>%
                             Stratum == "Stratum_3" ~ "MABGBinshore",
                             Stratum == "Stratum_4" ~ "MABGBoffshore",
                             Stratum == "Stratum_5" ~ "Bluefish",
-                            
+                            Stratum == "Stratum_6" ~ "MABGBalbinshore",
+                            Stratum == "Stratum_7" ~ "MABGBoffshorebigin"
   ))
 
 ggplot(splitoutput, aes(x=Time, y=Estimate, colour=Region)) +
@@ -282,6 +294,7 @@ ggplot(splitoutput, aes(x=Time, y=Estimate, colour=Region)) +
   geom_point()+
   geom_line()+
   facet_wrap(~Region, scales = "free_y") +
+  guides(colour = guide_legend(ncol=2)) +
   theme(legend.position = c(1, 0),
         legend.justification = c(1, 0))
 
@@ -296,17 +309,20 @@ MABGBprop <- splitoutput %>%
   tidyr::pivot_wider(names_from = Region, values_from = Estimate) %>%
   dplyr::mutate(MABGBinshoreprop = MABGBinshore/MABGB,
                 MABGBoffshoreprop = MABGBoffshore/MABGB,
-                Bluefishprop = Bluefish/MABGB) %>%
+                Bluefishprop = Bluefish/MABGB,
+                MABGBalbinshoreprop = MABGBalbinshore/MABGB,
+                MABGBoffshorebiginprop = MABGBoffshorebigin/MABGB) %>%
   tidyr::pivot_longer(!Time, names_to = "Region", values_to = "Estimate") %>%
-  dplyr::filter(Region %in% c("MABGBinshoreprop", "MABGBoffshoreprop", "Bluefishprop"))
+  dplyr::filter(Region %in% c("MABGBinshoreprop", "MABGBoffshoreprop", "Bluefishprop",
+                              "MABGBalbinshoreprop", "MABGBoffshorebiginprop"))
   
 
 ggplot(MABGBprop, aes(x=Time, y=Estimate, colour = Region)) +
   geom_point()+
   geom_line()+
-  facet_wrap(~Region) #+ , scales = "free_y"
-  #theme(legend.position = c(1, 0),
-  #      legend.justification = c(1, 0))
+  facet_wrap(~Region) + #+ , scales = "free_y"
+  theme(legend.position = c(1, 0),
+        legend.justification = c(1, 0))
   
   
 ```
@@ -325,7 +341,8 @@ splitoutput <- splitoutput %>%
                             Stratum == "Stratum_3" ~ "MABGBinshore",
                             Stratum == "Stratum_4" ~ "MABGBoffshore",
                             Stratum == "Stratum_5" ~ "Bluefish",
-                            
+                            Stratum == "Stratum_6" ~ "MABGBalbinshore",
+                            Stratum == "Stratum_7" ~ "MABGBoffshorebigin"
   ))
 
 ggplot(splitoutput, aes(x=Time, y=Estimate, colour=Region)) +
@@ -333,6 +350,7 @@ ggplot(splitoutput, aes(x=Time, y=Estimate, colour=Region)) +
   geom_point()+
   geom_line()+
   facet_wrap(~Region, scales = "free_y") +
+  guides(colour = guide_legend(ncol=2)) +
   theme(legend.position = c(1, 0),
         legend.justification = c(1, 0))
 
@@ -347,17 +365,20 @@ MABGBprop <- splitoutput %>%
   tidyr::pivot_wider(names_from = Region, values_from = Estimate) %>%
   dplyr::mutate(MABGBinshoreprop = MABGBinshore/MABGB,
                 MABGBoffshoreprop = MABGBoffshore/MABGB,
-                Bluefishprop = Bluefish/MABGB) %>%
+                Bluefishprop = Bluefish/MABGB,
+                MABGBalbinshoreprop = MABGBalbinshore/MABGB,
+                MABGBoffshorebiginprop = MABGBoffshorebigin/MABGB) %>%
   tidyr::pivot_longer(!Time, names_to = "Region", values_to = "Estimate") %>%
-  dplyr::filter(Region %in% c("MABGBinshoreprop", "MABGBoffshoreprop", "Bluefishprop"))
+  dplyr::filter(Region %in% c("MABGBinshoreprop", "MABGBoffshoreprop", "Bluefishprop",
+                              "MABGBalbinshoreprop", "MABGBoffshorebiginprop"))
   
 
 ggplot(MABGBprop, aes(x=Time, y=Estimate, colour = Region)) +
   geom_point()+
   geom_line()+
-  facet_wrap(~Region) #+ , scales = "free_y"
-  #theme(legend.position = c(1, 0),
-  #      legend.justification = c(1, 0))
+  facet_wrap(~Region) + #+ , scales = "free_y"
+  theme(legend.position = c(1, 0),
+        legend.justification = c(1, 0))
   
   
 ```
