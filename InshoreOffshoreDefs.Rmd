@@ -268,9 +268,9 @@ strata.limits <- as.list(c("AllEPU" = AllEPU,
 
 ```
 
-Strata come out labeled in order as they are input 1:5 in this case.
+Strata come out labeled in order as they are input, 1:7 in this case.
 
-Here is example index output for the Fall (Option 2):
+## Results for Fall index
 
 ![Fall index split](pyindex/allagg_fall_500_lenno_split/Index.png)
 
@@ -327,7 +327,75 @@ ggplot(MABGBprop, aes(x=Time, y=Estimate, colour = Region)) +
   
 ```
 
-Results for spring index
+## Fall outputs by option
+
+Fall Option 1 map and indices:
+
+```{r, fig.show='hold', out.width="49%"}
+ggplot(data = ecodata::coast) +
+  geom_sf() + 
+  geom_point(data = northwest_atlantic_grid, aes(x = Lon, y = Lat), size=0.05, alpha=0.1) +
+  geom_point(data = MABGBalboffshoregrid, aes(x = Lon, y = Lat), size=0.05, colour = "orange", alpha=0.2) +
+  geom_point(data = MABGBalbinshoregrid, aes(x = Lon, y = Lat), size=0.05, colour = "yellow", alpha=0.2) +
+  coord_sf(xlim = c(-78, -65.5), ylim = c(35, 45))
+
+opt1index <- splitoutput %>%
+  dplyr::filter(Region %in% c("MABGBalbinshore", "MABGBoffshorebigin"))
+
+ggplot(opt1index, aes(x=Time, y=Estimate, colour=Region)) +
+  geom_errorbar(aes(ymin=Estimate+Std..Error.for.Estimate, ymax=Estimate-Std..Error.for.Estimate))+
+  geom_point()+
+  geom_line()+
+  facet_wrap(~Region, scales = "free_y") +
+  theme(legend.position="none")
+
+opt1prop <- MABGBprop %>%
+  dplyr::filter(Region %in% c("MABGBalbinshoreprop", "MABGBoffshorebiginprop"))
+
+ggplot(opt1prop, aes(x=Time, y=Estimate, colour = Region)) +
+  geom_point()+
+  geom_line()+
+  facet_wrap(~Region) +
+  theme(legend.position="none")
+
+
+```
+
+Fall Option 2 map and indices:
+
+```{r, fig.show='hold', out.width="49%"}
+ggplot(data = ecodata::coast) +
+  geom_sf() + 
+  geom_point(data = northwest_atlantic_grid, aes(x = Lon, y = Lat), size=0.05, alpha=0.1) +
+  geom_point(data = MABGBoffshoregrid, aes(x = Lon, y = Lat), size=0.05, colour = "orange", alpha=0.2) +
+  geom_point(data = MABGBinshoregrid, aes(x = Lon, y = Lat), size=0.05, colour = "yellow", alpha=0.2) +
+  coord_sf(xlim = c(-78, -65.5), ylim = c(35, 45))
+
+opt2index <- splitoutput %>%
+  dplyr::filter(Region %in% c("MABGBinshore", "MABGBoffshore"))
+
+ggplot(opt2index, aes(x=Time, y=Estimate, colour=Region)) +
+  geom_errorbar(aes(ymin=Estimate+Std..Error.for.Estimate, ymax=Estimate-Std..Error.for.Estimate))+
+  geom_point()+
+  geom_line()+
+  facet_wrap(~Region, scales = "free_y") +
+  theme(legend.position="none")
+
+opt2prop <- MABGBprop %>%
+  dplyr::filter(Region %in% c("MABGBinshoreprop", "MABGBoffshoreprop"))
+
+ggplot(opt2prop, aes(x=Time, y=Estimate, colour = Region)) +
+  geom_point()+
+  geom_line()+
+  facet_wrap(~Region) +
+  theme(legend.position="none")
+
+```
+
+
+
+
+## Results for spring index
 
 ![Spring index split](pyindex/allagg_spring_500_lenno_split/Index.png)
 Separate spring plots:
@@ -382,3 +450,69 @@ ggplot(MABGBprop, aes(x=Time, y=Estimate, colour = Region)) +
   
   
 ```
+
+## Spring outputs by option
+
+Spring Option 1 map and indices:
+
+```{r, fig.show='hold', out.width="49%"}
+ggplot(data = ecodata::coast) +
+  geom_sf() + 
+  geom_point(data = northwest_atlantic_grid, aes(x = Lon, y = Lat), size=0.05, alpha=0.1) +
+  geom_point(data = MABGBalboffshoregrid, aes(x = Lon, y = Lat), size=0.05, colour = "orange", alpha=0.2) +
+  geom_point(data = MABGBalbinshoregrid, aes(x = Lon, y = Lat), size=0.05, colour = "yellow", alpha=0.2) +
+  coord_sf(xlim = c(-78, -65.5), ylim = c(35, 45))
+
+opt1index <- splitoutput %>%
+  dplyr::filter(Region %in% c("MABGBalbinshore", "MABGBoffshorebigin"))
+
+ggplot(opt1index, aes(x=Time, y=Estimate, colour=Region)) +
+  geom_errorbar(aes(ymin=Estimate+Std..Error.for.Estimate, ymax=Estimate-Std..Error.for.Estimate))+
+  geom_point()+
+  geom_line()+
+  facet_wrap(~Region, scales = "free_y") +
+  theme(legend.position="none")
+
+opt1prop <- MABGBprop %>%
+  dplyr::filter(Region %in% c("MABGBalbinshoreprop", "MABGBoffshorebiginprop"))
+
+ggplot(opt1prop, aes(x=Time, y=Estimate, colour = Region)) +
+  geom_point()+
+  geom_line()+
+  facet_wrap(~Region) +
+  theme(legend.position="none")
+
+
+```
+
+Spring Option 2 map and indices:
+
+```{r, fig.show='hold', out.width="49%"}
+ggplot(data = ecodata::coast) +
+  geom_sf() + 
+  geom_point(data = northwest_atlantic_grid, aes(x = Lon, y = Lat), size=0.05, alpha=0.1) +
+  geom_point(data = MABGBoffshoregrid, aes(x = Lon, y = Lat), size=0.05, colour = "orange", alpha=0.2) +
+  geom_point(data = MABGBinshoregrid, aes(x = Lon, y = Lat), size=0.05, colour = "yellow", alpha=0.2) +
+  coord_sf(xlim = c(-78, -65.5), ylim = c(35, 45))
+
+opt2index <- splitoutput %>%
+  dplyr::filter(Region %in% c("MABGBinshore", "MABGBoffshore"))
+
+ggplot(opt2index, aes(x=Time, y=Estimate, colour=Region)) +
+  geom_errorbar(aes(ymin=Estimate+Std..Error.for.Estimate, ymax=Estimate-Std..Error.for.Estimate))+
+  geom_point()+
+  geom_line()+
+  facet_wrap(~Region, scales = "free_y") +
+  theme(legend.position="none")
+
+opt2prop <- MABGBprop %>%
+  dplyr::filter(Region %in% c("MABGBinshoreprop", "MABGBoffshoreprop"))
+
+ggplot(opt2prop, aes(x=Time, y=Estimate, colour = Region)) +
+  geom_point()+
+  geom_line()+
+  facet_wrap(~Region) +
+  theme(legend.position="none")
+
+```
+
