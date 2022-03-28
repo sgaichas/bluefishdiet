@@ -109,6 +109,31 @@ bfall <- northwest_atlantic_grid %>%
   select(stratum_number) %>% 
   distinct()
 
+bfallnot <- northwest_atlantic_grid %>%
+  filter(!(stratum_number %in% bfall)) %>%
+  select(stratum_number) %>% 
+  distinct()
+
+bfin <- northwest_atlantic_grid %>% 
+  filter(stratum_number %in% bfstrata) %>% 
+  select(stratum_number) %>% 
+  distinct()
+
+bfinnot <- northwest_atlantic_grid %>%
+  filter(!(stratum_number %in% bfin)) %>%
+  select(stratum_number) %>% 
+  distinct()
+
+bfoff <- northwest_atlantic_grid %>% 
+  filter(stratum_number %in% bfoffshore) %>% 
+  select(stratum_number) %>% 
+  distinct()
+
+bfoffnot <- northwest_atlantic_grid %>%
+  filter(!(stratum_number %in% bfoff)) %>%
+  select(stratum_number) %>% 
+  distinct()
+
 MABGBalbinshore <- MABGBinshore %>%
   filter(!(stratum_number %in% bfstrata)) %>%
   distinct()
@@ -155,6 +180,11 @@ strata.limits <- as.list(c("AllEPU" = AllEPU,
                          "MABGBinshore" = MABGBinshore, 
                          "MABGBoffshore" = MABGBoffshore, 
                          "bfall" = bfall,
+                         "bfallnot" = bfallnot,
+                         "bfin" = bfin,
+                         "bfinnot" = bfinnot,
+                         "bfoff" = bfoff,
+                         "bfoffnot" = bfoffnot,
                          "MABGBalbinshore" = MABGBalbinshore,
                          "MABGBoffshorebigin" = MABGBoffshorebigin))
 
