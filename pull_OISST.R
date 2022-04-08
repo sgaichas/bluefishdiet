@@ -56,7 +56,7 @@ nc_to_raster <- function(nc,
 
 # pull the data and store NEUS rasters
 
-years <- 2019:2021
+years <- 2019
 for(i in years) {
   name <- paste0(i, ".nc")
   dir.create(here::here("data-raw","gridded", "sst_data"), recursive = TRUE)
@@ -65,12 +65,16 @@ for(i in years) {
   download.file(url, destfile = name)
   
   text <- knitr::knit_expand(text = "nc <- ncdf4::nc_open(name)
-                                              test_{{year}} <- ecopull::nc_to_raster(nc = nc, varnum = 1)
+                                              test_{{year}} <- nc_to_raster(nc = nc, varnum = 1)
                                               raster::writeRaster(test_{{year}}, filename = filename, overwrite=TRUE)
                                               ncdf4::nc_close(nc)",
                              year = i)
   # print(text)
   try(eval(parse(text = text)))
-  unlink(name) # remove nc file to save space
-  print(paste("finished", i))
+  #unlink(name) # remove nc file to save space
+  print(paste("finished",i))
 }
+
+nc <- ncdf4::nc_open(name)
+test <- nc_to_raster(nc = nc, varname = 1)
+

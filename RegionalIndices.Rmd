@@ -1,0 +1,144 @@
+---
+title: "Index By Region"
+subtitle: "NEFSC and NEAMAP surveys, new predator list"
+author: "Sarah Gaichas"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    code_fold: hide
+link-citations: yes
+csl: ices-journal-of-marine-science.csl
+bibliography: FishDiet_EcoIndicators.bib
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(dplyr)
+library(purrr)
+library(ggplot2)
+theme_set(theme_bw())
+
+library(sf)
+library(ecodata)
+library(FishStatsUtils)
+```
+
+Now splitting the index into many parts.
+
+Make a lookup table:
+
+```{r}
+# strata.limits <- as.list(c("AllEPU" = AllEPU, 
+#                          "MABGB" = MABGB, 
+#                          "MABGBinshore" = MABGBinshore, 
+#                          "MABGBoffshore" = MABGBoffshore, 
+#                          "bfall" = bfall,
+#                          "bfallnot" = bfallnot,
+#                          "bfin" = bfin,
+#                          "bfinnot" = bfinnot,
+#                          "bfoff" = bfoff,
+#                          "bfoffnot" = bfoffnot,
+#                          "MABGBalbinshore" = MABGBalbinshore,
+#                          "MABGBoffshorebigin" = MABGBoffshorebigin))
+
+stratlook <- data.frame(Stratum = c("Stratum_1",
+                                      "Stratum_2",
+                                      "Stratum_3",
+                                      "Stratum_4",
+                                      "Stratum_5",
+                                      "Stratum_6",
+                                      "Stratum_7",
+                                      "Stratum_8",
+                                      "Stratum_9",
+                                      "Stratum_10",
+                                      "Stratum_11",
+                                      "Stratum_12"),
+                           Region  = c("AllEPU", 
+                                       "MABGB", 
+                                       "MABGBinshore", 
+                                       "MABGBoffshore", 
+                                       "bfall",
+                                       "bfallnot",
+                                       "bfin",
+                                       "bfinnot",
+                                       "bfoff",
+                                       "bfoffnot",
+                                       "MABGBalbinshore",
+                                       "MABGBoffshorebigin"))
+
+
+```
+
+
+Plot individual time series
+
+```{r}
+splitoutput <- read.csv("pyindex/allagg_fall_500_lenno_split/Index.csv")
+
+splitoutput <- splitoutput %>%
+  left_join(stratlook)
+
+ggplot(splitoutput, aes(x=Time, y=Estimate, colour=Region)) +
+  geom_errorbar(aes(ymin=Estimate+Std..Error.for.Estimate, ymax=Estimate-Std..Error.for.Estimate))+
+  geom_point()+
+  geom_line()+
+  facet_wrap(~Region, scales = "free_y") +
+  guides(colour = guide_legend(ncol=2)) +
+  #theme(legend.position = c(1, 0),
+   #     legend.justification = c(1, 0))
+  theme(legend.position="none")
+
+```
+
+ or just the indices from inshore (alb), inshore bluefish, offshore bluefish, and further out
+ 
+```{r}
+in2off <- splitoutput %>%
+  dplyr::select(Time, Region, Estimate) %>%
+  tidyr::pivot_wider(names_from = Region, values_from = Estimate) %>%
+  dplyr::mutate(AlbInshore = MABGBalbinshore,
+                BlueInshore = bfin,
+                BlueOffshore = bfoff,
+                OthOffshore = MABGB - (bfoff + bfin + MABGBalbinshore),
+                SumMABGB = AlbInshore + BlueInshore + BlueOffshore + OthOffshore) %>%
+  dplyr::select(Time, AlbInshore, BlueInshore, BlueOffshore, OthOffshore, SumMABGB, MABGB) %>%
+  tidyr::pivot_longer(!Time, names_to = "Region", values_to = "Estimate")
+
+ggplot(in2off, aes(x=Time, y=Estimate, colour = Region)) +
+  geom_point()+
+  geom_line()#+
+  #facet_wrap(~Region) + #+ , scales = "free_y"
+  #theme(legend.position = c(1, 0),
+  #      legend.justification = c(1, 0))
+
+
+```
+ 
+ 
+ or as proportions (here proportion of MABGB index).
+
+```{r}
+MABGBprop <- splitoutput %>%
+  dplyr::filter(Region != "AllEPU") %>%
+  dplyr::select(Time, Region, Estimate) %>%
+  tidyr::pivot_wider(names_from = Region, values_from = Estimate) %>%
+  dplyr::mutate(MABGBinshoreprop = MABGBinshore/MABGB,
+                MABGBoffshoreprop = MABGBoffshore/MABGB,
+                Bluefishprop = Bluefish/MABGB,
+                MABGBalbinshoreprop = MABGBalbinshore/MABGB,
+                MABGBoffshorebiginprop = MABGBoffshorebigin/MABGB) %>%
+  tidyr::pivot_longer(!Time, names_to = "Region", values_to = "Estimate") %>%
+  dplyr::filter(Region %in% c("MABGBinshoreprop", "MABGBoffshoreprop", "Bluefishprop",
+                              "MABGBalbinshoreprop", "MABGBoffshorebiginprop"))
+  
+
+ggplot(MABGBprop, aes(x=Time, y=Estimate, colour = Region)) +
+  geom_point()+
+  geom_line()+
+  facet_wrap(~Region) + #+ , scales = "free_y"
+  theme(legend.position = c(1, 0),
+        legend.justification = c(1, 0))
+  
+  
+```

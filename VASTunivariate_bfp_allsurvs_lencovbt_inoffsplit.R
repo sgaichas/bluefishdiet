@@ -207,7 +207,7 @@ settings = make_settings( n_x = 500,
 #########################################################
 # Run model fall
 
-season <- c("fall_500_lennobt_split")
+season <- c("fall_500_lennobtna_split")
 
 working_dir <- here::here(sprintf("pyindex/allagg_%s/", season))
 
@@ -237,7 +237,7 @@ plot( fit,
 ######################################################
 # Run model spring
 
-season <- c("spring_500_lennobt_split")
+season <- c("spring_500_lennobtna_split")
 
 working_dir <- here::here(sprintf("pyindex/allagg_%s/", season))
 
