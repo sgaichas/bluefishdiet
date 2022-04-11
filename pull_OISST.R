@@ -55,10 +55,11 @@ nc_to_raster <- function(nc,
 }
 
 # pull the data and store NEUS rasters
+# adapted from https://github.com/kimberly-bastille/ecopull/blob/main/.github/workflows/run_recent_years.yaml
 
 varname <- "sst"
 
-years <- 1985:2021
+years <- 1996:2021
 for(i in years) {
   name <- paste0(i, ".nc")
   dir.create(here::here("data-raw","gridded", "sst_data"), recursive = TRUE)
