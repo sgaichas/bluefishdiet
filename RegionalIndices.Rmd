@@ -70,6 +70,7 @@ stratlook <- data.frame(Stratum = c("Stratum_1",
 
 ```
 
+## Fall
 
 Plot individual time series
 
@@ -107,10 +108,11 @@ in2off <- splitoutput %>%
 
 ggplot(in2off, aes(x=Time, y=Estimate, colour = Region)) +
   geom_point()+
-  geom_line()#+
+  geom_line()+
   #facet_wrap(~Region) + #+ , scales = "free_y"
   #theme(legend.position = c(1, 0),
   #      legend.justification = c(1, 0))
+  ggtitle("Fall Prey Index, Mid-Atlantic and Georges Bank")
 
 
 ```
@@ -119,26 +121,100 @@ ggplot(in2off, aes(x=Time, y=Estimate, colour = Region)) +
  or as proportions (here proportion of MABGB index).
 
 ```{r}
-MABGBprop <- splitoutput %>%
-  dplyr::filter(Region != "AllEPU") %>%
+MABGBprop <- in2off %>%
+  #dplyr::filter(Region != "AllEPU") %>%
   dplyr::select(Time, Region, Estimate) %>%
   tidyr::pivot_wider(names_from = Region, values_from = Estimate) %>%
-  dplyr::mutate(MABGBinshoreprop = MABGBinshore/MABGB,
-                MABGBoffshoreprop = MABGBoffshore/MABGB,
-                Bluefishprop = Bluefish/MABGB,
-                MABGBalbinshoreprop = MABGBalbinshore/MABGB,
-                MABGBoffshorebiginprop = MABGBoffshorebigin/MABGB) %>%
+  dplyr::mutate(AlbInshoreprop = AlbInshore/MABGB,
+                BlueInshoreprop = BlueInshore/MABGB,
+                BlueOffshoreprop = BlueOffshore/MABGB,
+                OthOffshoreprop = OthOffshore/MABGB) %>%
   tidyr::pivot_longer(!Time, names_to = "Region", values_to = "Estimate") %>%
-  dplyr::filter(Region %in% c("MABGBinshoreprop", "MABGBoffshoreprop", "Bluefishprop",
-                              "MABGBalbinshoreprop", "MABGBoffshorebiginprop"))
+  dplyr::filter(Region %in% c("AlbInshoreprop", "BlueInshoreprop", "BlueOffshoreprop",
+                              "OthOffshoreprop"))
   
 
 ggplot(MABGBprop, aes(x=Time, y=Estimate, colour = Region)) +
   geom_point()+
   geom_line()+
-  facet_wrap(~Region) + #+ , scales = "free_y"
-  theme(legend.position = c(1, 0),
-        legend.justification = c(1, 0))
+  #facet_wrap(~Region) + #+ , scales = "free_y"
+  #theme(legend.position = c(1, 0),
+  #      legend.justification = c(1, 0))
+  ggtitle("Fall Prey Index as proportion of Mid-Atlantic and Georges Bank")
   
   
 ```
+## Spring
+
+Plot individual time series
+
+```{r}
+splitoutput <- read.csv("pyindex/allagg_spring_500_lenno_split/Index.csv")
+
+splitoutput <- splitoutput %>%
+  left_join(stratlook)
+
+ggplot(splitoutput, aes(x=Time, y=Estimate, colour=Region)) +
+  geom_errorbar(aes(ymin=Estimate+Std..Error.for.Estimate, ymax=Estimate-Std..Error.for.Estimate))+
+  geom_point()+
+  geom_line()+
+  facet_wrap(~Region, scales = "free_y") +
+  guides(colour = guide_legend(ncol=2)) +
+  #theme(legend.position = c(1, 0),
+   #     legend.justification = c(1, 0))
+  theme(legend.position="none")
+
+```
+
+ or just the indices from inshore (alb), inshore bluefish, offshore bluefish, and further out
+ 
+```{r}
+in2off <- splitoutput %>%
+  dplyr::select(Time, Region, Estimate) %>%
+  tidyr::pivot_wider(names_from = Region, values_from = Estimate) %>%
+  dplyr::mutate(AlbInshore = MABGBalbinshore,
+                BlueInshore = bfin,
+                BlueOffshore = bfoff,
+                OthOffshore = MABGB - (bfoff + bfin + MABGBalbinshore),
+                SumMABGB = AlbInshore + BlueInshore + BlueOffshore + OthOffshore) %>%
+  dplyr::select(Time, AlbInshore, BlueInshore, BlueOffshore, OthOffshore, SumMABGB, MABGB) %>%
+  tidyr::pivot_longer(!Time, names_to = "Region", values_to = "Estimate")
+
+ggplot(in2off, aes(x=Time, y=Estimate, colour = Region)) +
+  geom_point()+
+  geom_line()+
+  #facet_wrap(~Region) + #+ , scales = "free_y"
+  #theme(legend.position = c(1, 0),
+  #      legend.justification = c(1, 0))
+  ggtitle("Spring Prey Index, Mid-Atlantic and Georges Bank")
+
+
+```
+
+ or as proportions (here proportion of MABGB index).
+
+```{r}
+MABGBprop <- in2off %>%
+  #dplyr::filter(Region != "AllEPU") %>%
+  dplyr::select(Time, Region, Estimate) %>%
+  tidyr::pivot_wider(names_from = Region, values_from = Estimate) %>%
+  dplyr::mutate(AlbInshoreprop = AlbInshore/MABGB,
+                BlueInshoreprop = BlueInshore/MABGB,
+                BlueOffshoreprop = BlueOffshore/MABGB,
+                OthOffshoreprop = OthOffshore/MABGB) %>%
+  tidyr::pivot_longer(!Time, names_to = "Region", values_to = "Estimate") %>%
+  dplyr::filter(Region %in% c("AlbInshoreprop", "BlueInshoreprop", "BlueOffshoreprop",
+                              "OthOffshoreprop"))
+  
+
+ggplot(MABGBprop, aes(x=Time, y=Estimate, colour = Region)) +
+  geom_point()+
+  geom_line()+
+  #facet_wrap(~Region) + #+ , scales = "free_y"
+  #theme(legend.position = c(1, 0),
+  #      legend.justification = c(1, 0))
+  ggtitle("Spring Prey Index as proportion of Mid-Atlantic and Georges Bank")
+  
+  
+```
+
