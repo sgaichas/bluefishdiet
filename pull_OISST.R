@@ -56,7 +56,9 @@ nc_to_raster <- function(nc,
 
 # pull the data and store NEUS rasters
 
-years <- 2019
+varname <- "sst"
+
+years <- 1985:2021
 for(i in years) {
   name <- paste0(i, ".nc")
   dir.create(here::here("data-raw","gridded", "sst_data"), recursive = TRUE)
@@ -64,17 +66,12 @@ for(i in years) {
   url <- paste0("https://downloads.psl.noaa.gov/Datasets/noaa.oisst.v2.highres/sst.day.mean.", i, ".v2.nc")
   download.file(url, destfile = name)
   
-  text <- knitr::knit_expand(text = "nc <- ncdf4::nc_open(name)
-                                              test_{{year}} <- nc_to_raster(nc = nc, varnum = 1)
-                                              raster::writeRaster(test_{{year}}, filename = filename, overwrite=TRUE)
-                                              ncdf4::nc_close(nc)",
+  text <- knitr::knit_expand(text = "test_{{year}} <- nc_to_raster(nc = name, varname = varname)
+                                     raster::writeRaster(test_{{year}}, filename = filename, overwrite=TRUE)",
                              year = i)
-  # print(text)
+  print(text)
   try(eval(parse(text = text)))
-  #unlink(name) # remove nc file to save space
+  unlink(name) # remove nc file to save space
   print(paste("finished",i))
 }
-
-nc <- ncdf4::nc_open(name)
-test <- nc_to_raster(nc = nc, varname = 1)
 
