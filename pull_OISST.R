@@ -43,6 +43,7 @@ nc_to_raster <- function(nc,
   
   message("Cropping data...")
   ne_data <- raster::crop(r, crop)
+  #ne_data <- raster::rotate(ne_data) add here for future pulls
   
   if(show_images){
     raster::plot(ne_data, 1, sub = "Cropped dataset")
@@ -59,7 +60,7 @@ nc_to_raster <- function(nc,
 
 varname <- "sst"
 
-years <- 1996:2021
+years <- 2021
 for(i in years) {
   name <- paste0(i, ".nc")
   dir.create(here::here("data-raw","gridded", "sst_data"), recursive = TRUE)
@@ -75,4 +76,47 @@ for(i in years) {
   unlink(name) # remove nc file to save space
   print(paste("finished",i))
 }
+
+# function to make rasters into data frame for merge with survey
+# needs long df with date split to year, month, day, lat, lon, sst
+# crop to NEUS extent
+# from https://towardsdatascience.com/transforming-spatial-data-to-tabular-data-in-r-4dab139f311f
+
+raster_to_sstdf <- function(brick,
+                            rotate=TRUE){
+  
+  if(rotate) brick_r <- raster::rotate(brick)
+  brick_r <- raster::crop(brick_r, raster::extent(-77,-65,35,45))
+  sstdf <- as.data.frame(raster::rasterToPoints(brick_r, spatial = TRUE))
+  sstdf <- sstdf %>%
+    dplyr::rename(Lon = x,
+                  Lat = y) %>%
+    tidyr::pivot_longer(cols = starts_with("X"),
+                        names_to = c("year", "month", "day"),
+                        names_prefix = "X",
+                        names_sep = "\\.",
+                        values_to = "sst",
+    )
+  return(sstdf)
+}
+
+years <- 1985:2021
+for(i in years) {
+  name <- get(paste0("test_",i))
+  filename <- here::here("data-raw","gridded", "sst_data", paste0("sst", i, ".rds"))
+  text <- knitr::knit_expand(text = "sst{{year}} <- raster_to_sstdf(brick = name)
+                                     saveRDS(sst{{year}}, filename)",
+                             year = i)
+  print(text)
+  try(eval(parse(text = text)))
+}
+
+#visualize
+library(dplyr)
+library(ggplot2)
+library(FishStatsUtils)
+
+oneday <- sst2021[sst2021$month=="07" & sst2021$day=="04",] 
+
+
 
