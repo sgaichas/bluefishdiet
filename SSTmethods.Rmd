@@ -199,3 +199,5 @@ dailysstplot(jul15)
 dailysstplot(sep15)
 dailysstplot(nov15)
 ```
+
+Next, find set of unique year month day from diet dataset (including NEAMAP)
