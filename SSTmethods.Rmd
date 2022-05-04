@@ -200,4 +200,29 @@ dailysstplot(sep15)
 dailysstplot(nov15)
 ```
 
-Next, find set of unique year month day from diet dataset (including NEAMAP)
+Next, find set of unique year month day from diet dataset (including NEAMAP) to find the equivalent times in the SST data. BUT I didn't retain month and day in this dataset. The station id could be matched back to the full dataset instead.
+
+```{r}
+bluepyagg_stn_all <- readRDS(here("fhdat/bluepyagg_stn_all.rds"))
+
+diethauls <- bluepyagg_stn_all %>%
+  dplyr::select(id, declat, declon)
+
+# date already included in tow id for NEAMAP
+# need allfh to get the day and month for NEFSC trawl data
+load(url("https://github.com/Laurels1/Condition/raw/master/data/allfh.RData"))
+
+NEFSCstations <- allfh %>%
+  dplyr::mutate(id = paste0(cruise6, "_", station),
+         year = as.numeric(year),
+         month = as.numeric(month),
+         day = as.numeric(day),
+         declon = -declon) %>%
+  dplyr::select(id, year, month, day, declat, declon) %>%
+  dplyr::distinct()
+
+diethauls <- left_join(diethauls, NEFSCstations)
+
+```
+
+
