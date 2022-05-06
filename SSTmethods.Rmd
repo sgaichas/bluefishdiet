@@ -221,10 +221,35 @@ NEFSCstations <- allfh %>%
   dplyr::select(id, year, month, day, declat, declon) %>%
   dplyr::distinct()
 
-diethauls <- left_join(diethauls, NEFSCstations)
+#diethauls <- left_join(diethauls, NEFSCstations)
 
 ```
 
-Still need month and day columns for NEAMAP, coming soon...
+Still need month and day columns for NEAMAP; got 'em fast thanks to Jim Gartland!
 
+```{r}
+
+NEAMAPstationSST <- read.csv(here("fhdat/NEAMAP SST_2007_2021.csv"))
+
+NEAMAPstations <- NEAMAPstationSST %>%
+  dplyr::mutate(id = station,
+         year = as.numeric(year),
+         month = as.numeric(month),
+         day = as.numeric(day),
+         declat = latitude,
+         declon = longitude) %>%
+  dplyr::select(id, year, month, day, declat, declon) %>%
+  dplyr::distinct()
+
+```
+
+Now combine NEAMAP and NEFSC and join with dietstations
+
+```{r}
+
+Allstations <- bind_rows(NEFSCstations, NEAMAPstations)
+
+diethauls <- left_join(diethauls, Allstations)
+
+```
 
