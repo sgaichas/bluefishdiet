@@ -208,7 +208,7 @@ bluepyagg_stn_all <- readRDS(here("fhdat/bluepyagg_stn_all.rds"))
 diethauls <- bluepyagg_stn_all %>%
   dplyr::select(id, declat, declon)
 
-# date already included in tow id for NEAMAP
+# date already included in tow id for NEAMAP--nope, need this
 # need allfh to get the day and month for NEFSC trawl data
 load(url("https://github.com/Laurels1/Condition/raw/master/data/allfh.RData"))
 
@@ -224,5 +224,7 @@ NEFSCstations <- allfh %>%
 diethauls <- left_join(diethauls, NEFSCstations)
 
 ```
+
+Still need month and day columns for NEAMAP, coming soon...
 
 
