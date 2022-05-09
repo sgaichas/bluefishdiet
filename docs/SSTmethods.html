@@ -178,7 +178,7 @@ pre code {
 
 <h1 class="title toc-ignore">SST methods</h1>
 <h4 class="author">Sarah Gaichas</h4>
-<h4 class="date">06 May, 2022</h4>
+<h4 class="date">09 May, 2022</h4>
 
 </div>
 
@@ -352,8 +352,186 @@ NEFSCstations &lt;- allfh %&gt;%
   dplyr::select(id, year, month, day, declat, declon) %&gt;%
   dplyr::distinct()
 
-diethauls &lt;- left_join(diethauls, NEFSCstations)</code></pre>
-<p>Still need month and day columns for NEAMAP, coming soon…</p>
+#diethauls &lt;- left_join(diethauls, NEFSCstations)</code></pre>
+<p>Still need month and day columns for NEAMAP; got ’em fast thanks to Jim Gartland!</p>
+<pre class="r"><code>NEAMAPstationSST &lt;- read.csv(here(&quot;fhdat/NEAMAP SST_2007_2021.csv&quot;))
+
+NEAMAPstations &lt;- NEAMAPstationSST %&gt;%
+  dplyr::mutate(id = station,
+         year = as.numeric(year),
+         month = as.numeric(month),
+         day = as.numeric(day),
+         declat = latitude,
+         declon = longitude) %&gt;%
+  dplyr::select(id, year, month, day, declat, declon) %&gt;%
+  dplyr::distinct()</code></pre>
+<p>Now combine NEAMAP and NEFSC and join with diet stations</p>
+<pre class="r"><code>Allstations &lt;- bind_rows(NEFSCstations, NEAMAPstations)
+
+diethauls &lt;- left_join(diethauls, Allstations)</code></pre>
+<p>Check NA dates: 5 hauls in allfh have no station data, one made it to the bluefish diet database (201202_389) because it has piscivores sampled (cod) but no bluefish prey. I think dropping this one data point with no haul info will not alter the analysis outcome.</p>
+<pre class="r"><code>badhaulNEFSC &lt;- as.data.frame(filter(Allstations, is.na(month))) %&gt;%
+  tidyr::separate(id, c(&quot;cruise6&quot;, &quot;station&quot;)) %&gt;%
+  dplyr::select(cruise6, station) %&gt;%
+  dplyr::mutate(across(where(is.character), as.integer))
+
+badhaulNEFSCFH &lt;- badhaulNEFSC %&gt;%
+  left_join(allfh)
+
+badhaulall &lt;- as.data.frame(filter(diethauls, is.na(month)))
+
+badhaulNEFSCFH%&gt;%filter(station %in% 389)</code></pre>
+<pre><code>##   cruise6 station    obs            pynam        pyspp pyabbr modcat gencat
+## 1  201202     389 714227 CRUSTACEA SHRIMP 4.110000e+14 CRUSHR PELINV ARTHRO
+## 2  201202     389 714228 CANCER IRRORATUS 4.110204e+14 CANIRR BENINV ARTHRO
+## 3  201202     389 714229 CRUSTACEA SHRIMP 4.110000e+14 CRUSHR PELINV ARTHRO
+## 4  201202     389 714230     OSTEICHTHYES 8.230000e+14 OSTEIC OSTEIC   FISH
+## 5  201202     389 714231       PANDALIDAE 4.110224e+14 PANFAM PELINV ARTHRO
+## 6  201202     389 714232       PANDALIDAE 4.110224e+14 PANFAM PELINV ARTHRO
+## 7  201202     389 714233     EUPHAUSIIDAE 4.110501e+14 EUPFAM PELINV ARTHRO
+## 8  201202     389 714234            EMPTY 0.000000e+00  EMPTY  EMPTY  EMPTY
+##       gensci analcat      analsci collcat           collsci pdsex pdlen   pdid
+## 1 ARTHROPODA  CRUSTA    CRUSTACEA  CRUSHR CRUSTACEAN SHRIMP     1    42 190224
+## 2 ARTHROPODA  DECAPO     DECAPODA  CANFAM         CANCRIDAE     1    36 190237
+## 3 ARTHROPODA  CRUSTA    CRUSTACEA  CRUSHR CRUSTACEAN SHRIMP     1    36 190237
+## 4       FISH  OTHFIS   OTHER FISH  OSTEIC      OSTEICHTHYES     2    66 190186
+## 5 ARTHROPODA  DECAPO     DECAPODA  PANFAM        PANDALIDAE     1    22 190226
+## 6 ARTHROPODA  DECAPO     DECAPODA  PANFAM        PANDALIDAE     2    26 190218
+## 7 ARTHROPODA  EUPFAM EUPHAUSIACEA  EUPFAM      EUPHAUSIACEA     1    31 190247
+## 8      EMPTY   EMPTY        EMPTY   EMPTY             EMPTY     0    45 190143
+##   fhmat pdmat pdwgt pdsvol pdswgt fhdat cruise svspp catsex     cf sizecat
+## 1           I   630    0.3     NA     E   3202    73      0 0.8503       M
+## 2           I   455    5.0     NA     E   3202    73      0 0.9752       M
+## 3           I   455    5.0     NA     E   3202    73      0 0.9752       M
+## 4           T  2385    2.5     NA     E   3202    73      0 0.8296       L
+## 5           I   113    0.1     NA     E   3202    75      0 1.0612       M
+## 6           I   175    2.0     NA     E   3202    75      0 0.9957       M
+## 7           I   195   15.0     NA     E   3202    76      0 0.6546       M
+## 8           X   735    0.0     NA     E   3202    84      0 0.8066       M
+##   len10cat len5cat pdgutw pdgutv stratum ttime towdur setdepth airtemp surftemp
+## 1    41-50   41-45   0.33    0.3    1351            0       NA      NA       NA
+## 2    31-40   36-40   5.50    5.0    1351            0       NA      NA       NA
+## 3    31-40   36-40   5.50    5.0    1351            0       NA      NA       NA
+## 4    61-70   66-70   2.75    2.5    1351            0       NA      NA       NA
+## 5    21-30   21-25   0.11    0.1    1351            0       NA      NA       NA
+## 6    21-30   26-30   2.20    2.0    1351            0       NA      NA       NA
+## 7    31-40   31-35  16.50   15.0    1351            0       NA      NA       NA
+## 8    41-50   41-45   0.00    0.0    1351            0       NA      NA       NA
+##   bottemp svgear tow beglat beglon hour minute month day year haul gearcond
+## 1      NA     10   4     NA     NA   NA     NA    NA  NA   NA    4        7
+## 2      NA     10   4     NA     NA   NA     NA    NA  NA   NA    4        7
+## 3      NA     10   4     NA     NA   NA     NA    NA  NA   NA    4        7
+## 4      NA     10   4     NA     NA   NA     NA    NA  NA   NA    4        7
+## 5      NA     10   4     NA     NA   NA     NA    NA  NA   NA    4        7
+## 6      NA     10   4     NA     NA   NA     NA    NA  NA   NA    4        7
+## 7      NA     10   4     NA     NA   NA     NA    NA  NA   NA    4        7
+## 8      NA     10   4     NA     NA   NA     NA    NA  NA   NA    4        7
+##   area statype towtime purcode status_code season yr2block yr3block yr5block
+## 1   NA       1      NA      10          10 SPRING       NA       NA       NA
+## 2   NA       1      NA      10          10 SPRING       NA       NA       NA
+## 3   NA       1      NA      10          10 SPRING       NA       NA       NA
+## 4   NA       1      NA      10          10 SPRING       NA       NA       NA
+## 5   NA       1      NA      10          10 SPRING       NA       NA       NA
+## 6   NA       1      NA      10          10 SPRING       NA       NA       NA
+## 7   NA       1      NA      10          10 SPRING       NA       NA       NA
+## 8   NA       1      NA      10          10 SPRING       NA       NA       NA
+##   decade garea geoarea declat declon catwgt catnum numlen pynum pyperi pywgti
+## 1          ScS     ScS     NA     NA  4.051      4      1    NA    100     NA
+## 2          ScS     ScS     NA     NA  4.051      4      1    NA     70     NA
+## 3          ScS     ScS     NA     NA  4.051      4      1    NA     30     NA
+## 4          ScS     ScS     NA     NA  4.051      4      1    NA    100     NA
+## 5          ScS     ScS     NA     NA  0.414      3      1    NA    100     NA
+## 6          ScS     ScS     NA     NA  0.414      3      1    NA    100     NA
+## 7          ScS     ScS     NA     NA  0.541      2      1    NA    100     NA
+## 8          ScS     ScS     NA     NA  0.785      1      1    NA     NA     NA
+##   pyvoli pylen pyamtw pyamtv perpyv perpyw          pdscinam     pdcomnam
+## 1     NA    NA   0.33    0.3    100    100      GADUS MORHUA ATLANTIC COD
+## 2     NA    NA   3.85    3.5     70     70      GADUS MORHUA ATLANTIC COD
+## 3     NA    NA   1.65    1.5     30     30      GADUS MORHUA ATLANTIC COD
+## 4     NA    NA   2.75    2.5    100    100      GADUS MORHUA ATLANTIC COD
+## 5     NA    NA   0.11    0.1    100    100 POLLACHIUS VIRENS      POLLOCK
+## 6     NA    NA   2.20    2.0    100    100 POLLACHIUS VIRENS      POLLOCK
+## 7     NA    NA  16.50   15.0    100    100  UROPHYCIS TENUIS   WHITE HAKE
+## 8     NA    NA   0.00    0.0      0      0     BROSME BROSME         CUSK
+##   tot_tows_spp_stratum tot_catnum_stratum tot_catwgt_stratum stratum_area
+## 1                    3                 17             11.438          533
+## 2                    3                 17             11.438          533
+## 3                    3                 17             11.438          533
+## 4                    3                 17             11.438          533
+## 5                    3                 10              1.093          533
+## 6                    3                 10              1.093          533
+## 7                    3                  9              2.107          533
+## 8                    1                  1              0.785          533
+##            pycomnam2    gencom2   analcom3 collcom3
+## 1             SHRIMP ARTHROPODA  CRUSTACEA       NA
+## 2 ATLANTIC ROCK CRAB ARTHROPODA   DECAPODA       NA
+## 3             SHRIMP ARTHROPODA  CRUSTACEA       NA
+## 4        BONY FISHES       FISH OTHER FISH       NA
+## 5                    ARTHROPODA   DECAPODA       NA
+## 6                    ARTHROPODA   DECAPODA       NA
+## 7              KRILL ARTHROPODA      KRILL       NA
+## 8      EMPTY STOMACH      EMPTY      EMPTY       NA</code></pre>
+<p>NEAMAP has station data; 34 records don’t merge because latitude is different at the 8th decimal place. We can use the version of latitude that is recommended by the NEAMAP team.</p>
+<pre class="r"><code>mismatchNEAMAP &lt;- badhaulall %&gt;%
+  dplyr::filter(!is.na(declat)) %&gt;%
+  dplyr::select(id)
+
+mismatchNEAMAP</code></pre>
+<pre><code>##               id
+## 1  NM20100401031
+## 2  NM20100401040
+## 3  NM20100401055
+## 4  NM20100401083
+## 5  NM20100401104
+## 6  NM20100401118
+## 7  NM20100901043
+## 8  NM20100901117
+## 9  NM20110401004
+## 10 NM20110401007
+## 11 NM20110401021
+## 12 NM20110401031
+## 13 NM20110401062
+## 14 NM20110401080
+## 15 NM20110401084
+## 16 NM20110401091
+## 17 NM20110401097
+## 18 NM20110901009
+## 19 NM20110901025
+## 20 NM20110901029
+## 21 NM20110901041
+## 22 NM20110901046
+## 23 NM20110901077
+## 24 NM20120401053
+## 25 NM20120401079
+## 26 NM20120401107
+## 27 NM20120401110
+## 28 NM20120401143
+## 29 NM20120901013
+## 30 NM20120901051
+## 31 NM20120901053
+## 32 NM20120901078
+## 33 NM20120901094
+## 34 NM20120901110</code></pre>
+<pre class="r"><code>mismatchNEAMAPstn &lt;- mismatchNEAMAP %&gt;%
+  left_join(NEAMAPstations)
+
+print(mismatchNEAMAPstn$declat, digits=16)</code></pre>
+<pre><code>##  [1] 39.30713333 39.17200000 38.57066670 37.95318337 36.64870002 36.44311667
+##  [7] 39.04311667 36.35713333 40.85816670 40.92843336 40.53061667 39.29614999
+## [13] 38.67098332 37.92976666 37.72395001 37.19603334 37.12333334 40.80999998
+## [19] 39.99693337 39.44700000 38.91448333 39.03868334 37.64598332 38.76903153
+## [25] 37.88811112 36.77193070 36.69512940 41.25775147 40.60349999 38.84566670
+## [31] 38.87849999 37.56593336 37.43601666 36.89693337</code></pre>
+<pre class="r"><code>mismatchNEAMAPfh &lt;- mismatchNEAMAP %&gt;%
+  left_join(bluepyagg_stn_all)
+
+print(mismatchNEAMAPfh$declat, digits=16)</code></pre>
+<pre><code>##  [1] 39.30713332 39.17199999 38.57066669 37.95318336 36.64870001 36.44311666
+##  [7] 39.04311666 36.35713332 40.85816669 40.92843335 40.53061666 39.29614998
+## [13] 38.67098331 37.92976665 37.72395000 37.19603333 37.12333333 40.80999997
+## [19] 39.99693336 39.44699999 38.91448332 39.03868333 37.64598331 38.76903152
+## [25] 37.88811111 36.77193069 36.69512939 41.25775146 40.60349998 38.84566669
+## [31] 38.87849998 37.56593335 37.43601665 36.89693336</code></pre>
 </div>
 
 

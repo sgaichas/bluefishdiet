@@ -243,7 +243,7 @@ NEAMAPstations <- NEAMAPstationSST %>%
 
 ```
 
-Now combine NEAMAP and NEFSC and join with dietstations
+Now combine NEAMAP and NEFSC and join with diet stations
 
 ```{r}
 
@@ -252,4 +252,45 @@ Allstations <- bind_rows(NEFSCstations, NEAMAPstations)
 diethauls <- left_join(diethauls, Allstations)
 
 ```
+
+Check NA dates: 5 hauls in allfh have no station data, one made it to the bluefish diet database (201202_389) because it has piscivores sampled (cod) but no bluefish prey. I think dropping this one data point with no haul info will not alter the analysis outcome.
+
+```{r}
+
+badhaulNEFSC <- as.data.frame(filter(Allstations, is.na(month))) %>%
+  tidyr::separate(id, c("cruise6", "station")) %>%
+  dplyr::select(cruise6, station) %>%
+  dplyr::mutate(across(where(is.character), as.integer))
+
+badhaulNEFSCFH <- badhaulNEFSC %>%
+  left_join(allfh)
+
+badhaulall <- as.data.frame(filter(diethauls, is.na(month)))
+
+badhaulNEFSCFH%>%filter(station %in% 389)
+
+```
+
+NEAMAP has station data; 34 records don't merge because latitude is different at the 8th decimal place. We can use the version of latitude that is recommended by the NEAMAP team.
+
+```{r}
+
+mismatchNEAMAP <- badhaulall %>%
+  dplyr::filter(!is.na(declat)) %>%
+  dplyr::select(id)
+
+mismatchNEAMAP
+
+mismatchNEAMAPstn <- mismatchNEAMAP %>%
+  left_join(NEAMAPstations)
+
+print(mismatchNEAMAPstn$declat, digits=16)
+
+mismatchNEAMAPfh <- mismatchNEAMAP %>%
+  left_join(bluepyagg_stn_all)
+
+print(mismatchNEAMAPfh$declat, digits=16)
+
+```
+
 
