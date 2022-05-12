@@ -338,6 +338,38 @@ In this new dataset, the majority of missing surftemp observations are from NEFS
 
 Now to get OISST data for each day/month/year/station location.
 
+Process: 
 
+for each year, 
+read in raster brick file or dataframe for that year
+find dates with survey hauls
+get SST for survey haul date and position (nearest neighbor)
+save year month day position OISST
+close the raster brick (df)
+bind_rows into single dataframe over all years
+merge with diet dataframe
+
+```{r}
+#read in diet data with month day fields
+bluepyagg_stn_all <- readRDS(here("fhdat/bluepyagg_stn_all.rds"))
+
+#list of SST dataframes
+SSTdfs <- list.files(here("data-raw/gridded/sst_data/"), pattern = "*.rds")
+
+dietwithOISST <- tibble()
+
+library(nngeo)
+
+for(df in SSTdfs){
+  sstdf <- readRDS(paste0(here("data-raw/gridded/sst_data/", df)))
+  yrdietOISST <- inner_join(bluepyagg_stn_all, sstdf, by=c(month, day)) %>%
+    #nearest neighbor match to lat lon
+    st_nn
+                   
+}
+
+
+
+```
 
 
