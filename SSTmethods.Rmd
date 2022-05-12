@@ -202,7 +202,9 @@ dailysstplot(nov15)
 
 Next, find set of unique year month day from diet dataset (including NEAMAP) to find the equivalent times in the SST data. BUT I didn't retain month and day in this dataset. The station id could be matched back to the full dataset instead.
 
-```{r}
+This shows the work of getting the dataset with day, month, and recorded surface temp for NEAMAP along with some quality assurance, but the dataset has been saved and this code is not run live.
+
+```{r, eval=FALSE}
 bluepyagg_stn_all <- readRDS(here("fhdat/bluepyagg_stn_all.rds"))
 
 diethauls <- bluepyagg_stn_all %>%
@@ -227,7 +229,7 @@ NEFSCstations <- allfh %>%
 
 Still need month and day columns for NEAMAP; got 'em fast thanks to Jim Gartland!
 
-```{r}
+```{r, eval=FALSE}
 
 NEAMAPstationSST <- read.csv(here("fhdat/NEAMAP SST_2007_2021.csv"))
 
@@ -245,7 +247,7 @@ NEAMAPstations <- NEAMAPstationSST %>%
 
 Now combine NEAMAP and NEFSC and join with diet stations
 
-```{r}
+```{r, eval=FALSE}
 
 Allstations <- bind_rows(NEFSCstations, NEAMAPstations)
 
@@ -253,9 +255,9 @@ diethauls <- left_join(diethauls, Allstations)
 
 ```
 
-Check NA dates: 5 hauls in allfh have no station data, one made it to the bluefish diet database (201202_389) because it has piscivores sampled (cod) but no bluefish prey. I think dropping this one data point with no haul info will not alter the analysis outcome.
+Check NA dates: 5 hauls in allfh have no station data, one made it to the bluefish diet database (201202_389) because it has piscivores sampled (cod) but no bluefish prey. It has no spatial information so has not been included in analysis, and it is on the Scotial Shelf.
 
-```{r}
+```{r, eval=FALSE}
 
 badhaulNEFSC <- as.data.frame(filter(Allstations, is.na(month))) %>%
   tidyr::separate(id, c("cruise6", "station")) %>%
@@ -271,9 +273,9 @@ badhaulNEFSCFH%>%filter(station %in% 389)
 
 ```
 
-NEAMAP has station data; 34 records don't merge because latitude is different at the 8th decimal place. We can use the version of latitude that is recommended by the NEAMAP team.
+NEAMAP has station data; 34 records don't merge because latitude is different at the 8th decimal place. Jim Gartland confirmed that this is due to conversions between different software during data processing. We will use the version of latitude that is recommended by the NEAMAP team, whch is the original entries in the food habits data.
 
-```{r}
+```{r, eval=FALSE}
 
 mismatchNEAMAP <- badhaulall %>%
   dplyr::filter(!is.na(declat)) %>%
@@ -292,5 +294,50 @@ mismatchNEAMAPfh <- mismatchNEAMAP %>%
 print(mismatchNEAMAPfh$declat, digits=16)
 
 ```
+
+Since we know the NEAMAP lat and lon in the original diet dataset are correct, we will merge only the station id number, day, month, year, and surface temperature into the diet dataset to avoid the mismatch with 34 stations. We will also add the SST field as surftemp to be in the same column as in-situ measured temperature for the NEFSC survey.
+
+```{r, eval=FALSE}
+
+NEAMAPstations <- NEAMAPstationSST %>%
+  dplyr::mutate(id = station,
+         year = as.numeric(year),
+         month = as.numeric(month),
+         day = as.numeric(day)) %>%
+  dplyr::select(id, year, month, day) %>%
+  dplyr::distinct()
+
+# remake diethauls
+diethauls <- bluepyagg_stn_all %>%
+  dplyr::select(id, declat, declon)
+
+NEFSCstations <- dplyr::select(NEFSCstations, c(-declat, -declon))
+
+Allstations <- bind_rows(NEFSCstations, NEAMAPstations)
+
+#station id, lat lon, year month day
+diethauls <- left_join(diethauls, Allstations)
+
+#add year month day to diet data
+bluepyagg_stn_all <- left_join(bluepyagg_stn_all, diethauls)
+
+# add NEAMAP SST to surftemp field
+NEAMAPidSST <- NEAMAPstationSST %>%
+  mutate(id = station) %>%
+  dplyr::select(id, SST)
+  
+bluepyagg_stn_all <- left_join(bluepyagg_stn_all, NEAMAPidSST, by="id") %>%
+  mutate(surftemp = coalesce(surftemp, SST)) %>%
+  dplyr::select(-SST)
+
+# save merged dataset with day, month, and NEAMAP surftemp, same name
+saveRDS(bluepyagg_stn_all, here("fhdat/bluepyagg_stn_all.rds"))
+```
+
+In this new dataset, the majority of missing surftemp observations are from NEFSC (3073), but thre are still 45 NEAMAP stations missing surftemp as well that we can fill with the OISST temperature.
+
+Now to get OISST data for each day/month/year/station location.
+
+
 
 
