@@ -353,19 +353,48 @@ merge with diet dataframe
 #read in diet data with month day fields
 bluepyagg_stn_all <- readRDS(here("fhdat/bluepyagg_stn_all.rds"))
 
+stations <- bluepyagg_stn_all %>%
+  dplyr::mutate(yrmody = paste0(year, month, day)) %>%
+  dplyr::select(id, declon, declat, yrmody) %>%
+  na.omit() %>%
+  sf::st_as_sf(coords=c("declon","declat"), crs=4326, remove=FALSE) 
+
 #list of SST dataframes
 SSTdfs <- list.files(here("data-raw/gridded/sst_data/"), pattern = "*.rds")
 
 dietwithOISST <- tibble()
 
 library(nngeo)
+library(sf)
 
 for(df in SSTdfs){
   sstdf <- readRDS(paste0(here("data-raw/gridded/sst_data/", df)))
-  yrdietOISST <- inner_join(bluepyagg_stn_all, sstdf, by=c(month, day)) %>%
+  
+  # keep only sst days in bluefish dataset
+  sstdf_survdays <- sstdf %>%
+    dplyr::mutate(yrmody = paste0(year, month, day)) %>%
+    dplyr::filter(yrmody %in% stations$yrmody) %>%
+    dplyr::mutate(year = as.numeric(year),
+           month = as.numeric(month),
+           day = as.numeric(day),
+           declon = Lon,
+           declat = Lat) %>%
+    dplyr::select(-Lon, -Lat) %>%
+    sf::st_as_sf(coords=c("declon","declat"), crs=4326, remove=FALSE)  
+  
+  
+  # find nearest SST to survey locations
+  #nearest_sst <- st_nn(stations, sstdf_survdays, returnDist = T, k = 1, progress = FALSE)
+
+    
+  yrdietOISST <- inner_join(bluepyagg_stn_all, sstdf_survdays) %>%
     #nearest neighbor match to lat lon
-    st_nn
-                   
+    
+  #https://stackoverflow.com/questions/71959927/spatial-join-two-data-frames-by-nearest-feature-and-date-in-r                 
+    res <- do.call('rbind', lapply(split(df1, 1:nrow(df1)), function(x) {
+  st_join(x, df2[df2$daydate == unique(x$daydate),], join = st_nearest_feature)
+}))
+  
 }
 
 
