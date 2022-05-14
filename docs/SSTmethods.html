@@ -178,7 +178,7 @@ pre code {
 
 <h1 class="title toc-ignore">SST methods</h1>
 <h4 class="author">Sarah Gaichas</h4>
-<h4 class="date">12 May, 2022</h4>
+<h4 class="date">13 May, 2022</h4>
 
 </div>
 
@@ -434,6 +434,69 @@ bluepyagg_stn_all &lt;- left_join(bluepyagg_stn_all, NEAMAPidSST, by=&quot;id&qu
 saveRDS(bluepyagg_stn_all, here(&quot;fhdat/bluepyagg_stn_all.rds&quot;))</code></pre>
 <p>In this new dataset, the majority of missing surftemp observations are from NEFSC (3073), but thre are still 45 NEAMAP stations missing surftemp as well that we can fill with the OISST temperature.</p>
 <p>Now to get OISST data for each day/month/year/station location.</p>
+<p>Process:</p>
+<p>for each year, read in raster brick file or dataframe for that year find dates with survey hauls get SST for survey haul date and position (nearest neighbor) save year month day position OISST close the raster brick (df) bind_rows into single dataframe over all years (look at the matches and see if ok) merge with diet dataframe</p>
+<pre class="r"><code>#read in diet data with month day fields
+bluepyagg_stn_all &lt;- readRDS(here(&quot;fhdat/bluepyagg_stn_all.rds&quot;))
+
+stations &lt;- bluepyagg_stn_all %&gt;%
+  dplyr::mutate(day = str_pad(day, 2, pad=&#39;0&#39;),
+                month = str_pad(month, 2, pad=&#39;0&#39;),
+                yrmody = as.numeric(paste0(year, month, day))) %&gt;%
+  dplyr::select(id, declon, declat, year, yrmody) %&gt;%
+  na.omit() %&gt;%
+  sf::st_as_sf(coords=c(&quot;declon&quot;,&quot;declat&quot;), crs=4326, remove=FALSE) 
+
+#list of SST dataframes
+SSTdfs &lt;- list.files(here(&quot;data-raw/gridded/sst_data/&quot;), pattern = &quot;*.rds&quot;)
+
+dietstn_OISST &lt;- tibble()
+
+
+for(df in SSTdfs[35:37]){
+  sstdf &lt;- readRDS(paste0(here(&quot;data-raw/gridded/sst_data/&quot;, df)))
+  
+  # keep only bluefish dates in SST year
+  stationsyr &lt;- stations %&gt;%
+    filter(year == unique(sstdf$year))
+  
+  # keep only sst days in bluefish dataset
+  sstdf_survdays &lt;- sstdf %&gt;%
+    dplyr::mutate(yrmody = as.numeric(paste0(year, month, day)) )%&gt;%
+    dplyr::filter(yrmody %in% unique(stationsyr$yrmody)) %&gt;%
+    dplyr::mutate(year = as.numeric(year),
+           month = as.numeric(month),
+           day = as.numeric(day),
+           declon = Lon,
+           declat = Lat) %&gt;%
+    dplyr::select(-Lon, -Lat) %&gt;%
+    sf::st_as_sf(coords=c(&quot;declon&quot;,&quot;declat&quot;), crs=4326, remove=FALSE)  
+  
+  # now join by nearest neighbor and date
+    
+#https://stackoverflow.com/questions/71959927/spatial-join-two-data-frames-by-nearest-feature-and-date-in-r      
+  
+yrdietOISST &lt;- do.call(&#39;rbind&#39;, lapply(split(stationsyr, 1:nrow(stationsyr)), function(x) {
+   st_join(x, sstdf_survdays[sstdf_survdays$yrmody == unique(x$yrmody),], 
+           #join = st_nearest_feature
+           join = st_nn, k = 1, progress = FALSE
+           )
+ }))
+  
+#   #datatable solution--works but doesnt seem faster?
+#   df1 &lt;- data.table(stationsyr)
+#   
+# .nearest_samedate &lt;- function(x) {
+#   st_join(st_as_sf(x), sstdf_survdays[sstdf_survdays$yrmody == unique(x$yrmody),], join = st_nearest_feature)
+# }
+# 
+# yrdietOISST &lt;- df1[, .nearest_samedate(.SD), by = list(1:nrow(df1))]
+
+dietstn_OISST &lt;- rbind(dietstn_OISST, yrdietOISST)
+
+}
+
+saveRDS(dietstn_OISST, here(&quot;data-raw/dietstn_OISST2&quot;))</code></pre>
 </div>
 
 

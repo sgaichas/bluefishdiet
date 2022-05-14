@@ -21,6 +21,8 @@ library(DT)
 library(FishStatsUtils)
 library(sf)
 library(raster)
+library(nngeo)
+#library(data.table)
 
 
 ```
@@ -347,33 +349,38 @@ get SST for survey haul date and position (nearest neighbor)
 save year month day position OISST
 close the raster brick (df)
 bind_rows into single dataframe over all years
+(look at the matches and see if ok)
 merge with diet dataframe
 
-```{r}
+```{r, eval=FALSE}
 #read in diet data with month day fields
 bluepyagg_stn_all <- readRDS(here("fhdat/bluepyagg_stn_all.rds"))
 
 stations <- bluepyagg_stn_all %>%
-  dplyr::mutate(yrmody = paste0(year, month, day)) %>%
-  dplyr::select(id, declon, declat, yrmody) %>%
+  dplyr::mutate(day = str_pad(day, 2, pad='0'),
+                month = str_pad(month, 2, pad='0'),
+                yrmody = as.numeric(paste0(year, month, day))) %>%
+  dplyr::select(id, declon, declat, year, yrmody) %>%
   na.omit() %>%
   sf::st_as_sf(coords=c("declon","declat"), crs=4326, remove=FALSE) 
 
 #list of SST dataframes
 SSTdfs <- list.files(here("data-raw/gridded/sst_data/"), pattern = "*.rds")
 
-dietwithOISST <- tibble()
+dietstn_OISST <- tibble()
 
-library(nngeo)
-library(sf)
 
-for(df in SSTdfs){
+for(df in SSTdfs[35:37]){
   sstdf <- readRDS(paste0(here("data-raw/gridded/sst_data/", df)))
+  
+  # keep only bluefish dates in SST year
+  stationsyr <- stations %>%
+    filter(year == unique(sstdf$year))
   
   # keep only sst days in bluefish dataset
   sstdf_survdays <- sstdf %>%
-    dplyr::mutate(yrmody = paste0(year, month, day)) %>%
-    dplyr::filter(yrmody %in% stations$yrmody) %>%
+    dplyr::mutate(yrmody = as.numeric(paste0(year, month, day)) )%>%
+    dplyr::filter(yrmody %in% unique(stationsyr$yrmody)) %>%
     dplyr::mutate(year = as.numeric(year),
            month = as.numeric(month),
            day = as.numeric(day),
@@ -382,22 +389,31 @@ for(df in SSTdfs){
     dplyr::select(-Lon, -Lat) %>%
     sf::st_as_sf(coords=c("declon","declat"), crs=4326, remove=FALSE)  
   
+  # now join by nearest neighbor and date
+    
+#https://stackoverflow.com/questions/71959927/spatial-join-two-data-frames-by-nearest-feature-and-date-in-r      
   
-  # find nearest SST to survey locations
-  #nearest_sst <- st_nn(stations, sstdf_survdays, returnDist = T, k = 1, progress = FALSE)
+yrdietOISST <- do.call('rbind', lapply(split(stationsyr, 1:nrow(stationsyr)), function(x) {
+   st_join(x, sstdf_survdays[sstdf_survdays$yrmody == unique(x$yrmody),], 
+           #join = st_nearest_feature
+           join = st_nn, k = 1, progress = FALSE
+           )
+ }))
+  
+#   #datatable solution--works but doesnt seem faster?
+#   df1 <- data.table(stationsyr)
+#   
+# .nearest_samedate <- function(x) {
+#   st_join(st_as_sf(x), sstdf_survdays[sstdf_survdays$yrmody == unique(x$yrmody),], join = st_nearest_feature)
+# }
+# 
+# yrdietOISST <- df1[, .nearest_samedate(.SD), by = list(1:nrow(df1))]
 
-    
-  yrdietOISST <- inner_join(bluepyagg_stn_all, sstdf_survdays) %>%
-    #nearest neighbor match to lat lon
-    
-  #https://stackoverflow.com/questions/71959927/spatial-join-two-data-frames-by-nearest-feature-and-date-in-r                 
-    res <- do.call('rbind', lapply(split(df1, 1:nrow(df1)), function(x) {
-  st_join(x, df2[df2$daydate == unique(x$daydate),], join = st_nearest_feature)
-}))
-  
+dietstn_OISST <- rbind(dietstn_OISST, yrdietOISST)
+
 }
 
-
+saveRDS(dietstn_OISST, here("data-raw/dietstn_OISST2"))
 
 ```
 
