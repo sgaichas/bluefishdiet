@@ -22,7 +22,7 @@ library(FishStatsUtils)
 library(sf)
 library(raster)
 library(nngeo)
-#library(data.table)
+library(data.table)
 
 
 ```
@@ -370,7 +370,7 @@ SSTdfs <- list.files(here("data-raw/gridded/sst_data/"), pattern = "*.rds")
 dietstn_OISST <- tibble()
 
 
-for(df in SSTdfs[35:37]){
+for(df in SSTdfs){
   sstdf <- readRDS(paste0(here("data-raw/gridded/sst_data/", df)))
   
   # keep only bluefish dates in SST year
@@ -394,26 +394,26 @@ for(df in SSTdfs[35:37]){
 #https://stackoverflow.com/questions/71959927/spatial-join-two-data-frames-by-nearest-feature-and-date-in-r      
   
 yrdietOISST <- do.call('rbind', lapply(split(stationsyr, 1:nrow(stationsyr)), function(x) {
-   st_join(x, sstdf_survdays[sstdf_survdays$yrmody == unique(x$yrmody),], 
+   st_join(x, sstdf_survdays[sstdf_survdays$yrmody == unique(x$yrmody),],
            #join = st_nearest_feature
            join = st_nn, k = 1, progress = FALSE
            )
  }))
   
 #   #datatable solution--works but doesnt seem faster?
-#   df1 <- data.table(stationsyr)
+#    df1 <- data.table(stationsyr)
 #   
-# .nearest_samedate <- function(x) {
-#   st_join(st_as_sf(x), sstdf_survdays[sstdf_survdays$yrmody == unique(x$yrmody),], join = st_nearest_feature)
-# }
-# 
-# yrdietOISST <- df1[, .nearest_samedate(.SD), by = list(1:nrow(df1))]
+#  .nearest_samedate <- function(x) {
+#    st_join(st_as_sf(x), sstdf_survdays[sstdf_survdays$yrmody == unique(x$yrmody),], join = st_nearest_feature)
+#  }
+# # 
+#  yrdietOISST <- df1[, .nearest_samedate(.SD), by = list(1:nrow(df1))]
 
 dietstn_OISST <- rbind(dietstn_OISST, yrdietOISST)
 
 }
 
-saveRDS(dietstn_OISST, here("data-raw/dietstn_OISST2"))
+saveRDS(dietstn_OISST, here("data-raw/dietstn_OISST.rds"))
 
 ```
 
