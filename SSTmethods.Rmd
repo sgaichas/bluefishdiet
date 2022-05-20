@@ -417,4 +417,39 @@ saveRDS(dietstn_OISST, here("data-raw/dietstn_OISST.rds"))
 
 ```
 
+Now join the OISST dataset with the bluefish prey data (1985-):
+
+```{r}
+
+#read in diet data and station-OISST
+
+bluepyagg_stn_all <- readRDS(here("fhdat/bluepyagg_stn_all.rds"))
+dietstn_OISST <- readRDS(here("data-raw/dietstn_OISST.rds"))
+
+dietstn_OISST_merge <- dietstn_OISST %>%
+  dplyr::rename(declon = declon.x,
+         declat = declat.x,
+         year = year.x,
+         oisst = sst) %>%
+  dplyr::select(id, oisst) %>%
+  sf::st_drop_geometry()
+
+bluepyagg_stn_all_OISST <- left_join(bluepyagg_stn_all, dietstn_OISST_merge)
+
+saveRDS(bluepyagg_stn_all_OISST, here("fhdat/bluepyagg_stn_all_OISST.rds"))
+```
+
+Compare the in situ surface temperatures with OISST where there are both
+
+```{r}
+comparesst <- bluepyagg_stn_all_OISST %>%
+  dplyr::filter(year>1984)%>%
+  dplyr::select(surftemp, oisst) %>%
+  na.omit()
+
+ggplot2::ggplot(comparesst, aes(x=surftemp, y=oisst)) +
+  geom_point(color="blue", alpha=0.1)+
+  geom_abline(intercept = 0, slope = 1) +
+  theme_bw() 
+```
 
