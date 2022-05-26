@@ -202,6 +202,8 @@ dailysstplot(sep15)
 dailysstplot(nov15)
 ```
 
+## SST merge with diet data
+
 Next, find set of unique year month day from diet dataset (including NEAMAP) to find the equivalent times in the SST data. BUT I didn't retain month and day in this dataset. The station id could be matched back to the full dataset instead.
 
 This shows the work of getting the dataset with day, month, and recorded surface temp for NEAMAP along with some quality assurance, but the dataset has been saved and this code is not run live.
@@ -439,6 +441,8 @@ bluepyagg_stn_all_OISST <- left_join(bluepyagg_stn_all, dietstn_OISST_merge)
 saveRDS(bluepyagg_stn_all_OISST, here("fhdat/bluepyagg_stn_all_OISST.rds"))
 ```
 
+## SST comparisons trawl vs OISST
+
 Compare the in situ surface temperatures with OISST where there are both
 
 ```{r}
@@ -452,7 +456,7 @@ ggplot2::ggplot(comparesst, aes(x=surftemp, y=oisst)) +
   geom_abline(intercept = 0, slope = 1) +
   theme_bw() 
 ```
-Map stations by SST match/mismatch for each year. Yellow is missing data that would be filled by OISST.
+
 
 ```{r}
 mapsst <- bluepyagg_stn_all_OISST %>%
@@ -478,12 +482,22 @@ yrmap <- function(mapyr){
 
 ### SST mismatch by year {.tabset}
 
-```{r}
+Map stations by SST match/mismatch for each year. Yellow is missing data that would be filled by OISST, and the color range shows how different SST is for stations with both values.
+
+```{r,  results='asis'}
 for(mapyr in 1985:2021){
+  
     cat("  \n####",  as.character(mapyr),"  \n")
     print(yrmap(mapyr)) 
     cat("  \n")   
+    
   }
 ```
 
 ### {-}
+
+Following up on other temperature sources:
+
+Continusous seawater source for Bigelow only
+
+Net sensors
