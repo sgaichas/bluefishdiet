@@ -27,7 +27,7 @@ library(data.table)
 
 ```
 
-## SST source
+## SST source 1: OISST
 
 We are using the same source data as SOE, at https://psl.noaa.gov/data/gridded/data.noaa.oisst.v2.highres.html 
 
@@ -498,6 +498,92 @@ for(mapyr in 1985:2021){
 
 Following up on other temperature sources:
 
-Continusous seawater source for Bigelow only
+Continusous seawater source for Bigelow only (2009-)
 
-Net sensors
+Net sensors?
+
+Higher resolution satellite products: [AVHRR Pathfinder SST](https://www.ncei.noaa.gov/products/avhrr-pathfinder-sst)  
+*  1981-present
+*  Input to the OISST
+*  4 km instead of 25 km 
+
+## SST source 2: AVHRR
+
+This is higher resolution source data than used in the SOE, https://www.ncei.noaa.gov/products/avhrr-pathfinder-sst
+ 
+ "These data were provided by GHRSST and the NOAA National Centers 
+  for Environmental Information."
+
+ "Saha, Korak; Zhao, Xuepeng; Zhang, Huai-min; Casey, Kenneth S.; Zhang, Dexin; 
+  Baker-Yeboah, Sheekela; Kilpatrick, Katherine A.; Evans, Robert H.; Ryan, Thomas; 
+  Relph, John M. (2018). AVHRR Pathfinder version 5.3 level 3 collated (L3C) 
+  global 4km sea surface temperature for 1981-Present. [indicate subset used]. 
+  NOAA National Centers for Environmental Information. Dataset. 
+  https://doi.org/10.7289/v52j68xx. Accessed [date].
+
+AVHRR data is organized into year/data folders with 2 nc files for each date, one day and one night.
+
+Downloading all of this will be too much so instead select only dates in months matching survey data.
+
+There may be missing SSTs for a given day and area due to clouds. Can try borrowing from the nearest date but limit to one day earlier or later? 
+
+Will need to first get a list of filenames for the year from the website  
+Split the filenames to dates and times  
+Match dates to dates (year month) in the survey diet dataset  
+Download only filenames matching those dates (month level in case we need to fill)  
+Crop to NE shelf  
+Save as dataframe, one for each year?  
+
+Can I go right from daily nc to dataframe?
+
+```{r}
+#read in diet data with month day fields
+bluepyagg_stn_all <- readRDS(here("fhdat/bluepyagg_stn_all.rds"))
+
+stations <- bluepyagg_stn_all %>%
+  dplyr::mutate(day = str_pad(day, 2, pad='0'),
+                month = str_pad(month, 2, pad='0'),
+                yrmody = as.numeric(paste0(year, month, day))) %>%
+  dplyr::select(id, declon, declat, year, yrmody) %>%
+  na.omit() %>%
+  sf::st_as_sf(coords=c("declon","declat"), crs=4326, remove=FALSE) 
+
+#full list of filenames to filter by survey dates
+# get a list from https server R: https://stackoverflow.com/questions/67695769/list-files-on-https-server-using-r
+
+allfiles <- list()
+years <- 1985:2021
+for(i in years) {
+  url <- paste0("https://www.ncei.noaa.gov/data/oceans/pathfinder/Version5.3/L3C/", i, "/data/")
+  page <- rvest::read_html(url)
+  #list of SST AVHRR files in each year folder
+  yrfiles <- rvest::html_elements(page, xpath= ".//a[contains(@href, '.nc')]") %>%
+    rvest::html_text()
+  
+  # keep only bluefish dates in SST year, +/- 2 days for borrowing
+  datesyr <- stations %>%
+    sf::st_drop_geometry() %>%
+    dplyr::filter(year == i) %>%
+    dplyr::select(yrmody) %>%
+    dplyr::distinct() %>%
+    dplyr::mutate(p1 = yrmody + 1,
+                  p2 = yrmody + 2,
+                  m1 = yrmody - 1,
+                  m2 = yrmody - 2) %>%
+    tidyr::pivot_longer(everything(), values_to = "yrmody") %>%
+    dplyr::select(yrmody) %>%
+    dplyr::distinct() 
+  
+  datesyr <- lubridate::parse_date_time(datesyr$yrmody, "%y%m%d") %>%
+    na.omit()
+    
+
+    
+
+  #one big list of year month matches
+  allfiles <- bind_rows(allfiles, yrfiles)
+}
+
+
+```
+
