@@ -551,9 +551,10 @@ stations <- bluepyagg_stn_all %>%
 #full list of filenames to filter by survey dates
 # get a list from https server R: https://stackoverflow.com/questions/67695769/list-files-on-https-server-using-r
 
-allfiles <- list()
+
 years <- 1985:2021
 for(i in years) {
+  sstyrdf <- data.frame()
   url <- paste0("https://www.ncei.noaa.gov/data/oceans/pathfinder/Version5.3/L3C/", i, "/data/")
   page <- rvest::read_html(url)
   #list of SST AVHRR files in each year folder
@@ -583,28 +584,41 @@ for(i in years) {
   yrfiles <- yrfiles[stringr::str_starts(yrfiles, paste(datesyrch, collapse = "|"))]
     
   # get data from all files
-  name <- paste0(stringr::str_extract(yrfiles[1], "^.{14}"), ".nc")
-  download.file(paste0(url, yrfiles[1]), destfile = name)
+  for(d in length(yrfiles)){
+    name <- paste0(stringr::str_extract(yrfiles[d], "^.{14}"), ".nc")
+    download.file(paste0(url, yrfiles[d]), destfile = name)
+    
+    r <- terra::rast(name, c("sea_surface_temperature",
+                             "quality_level"))
+    rcrop <- terra::crop(r, c(-77,-65,35,45))
+    sstdaydf <- terra::as.data.frame(rcrop, xy=TRUE) %>% 
+      dplyr::mutate(sst = sea_surface_temperature - 273.15) %>%
+      dplyr::filter(quality_level > 0) %>%
+      dplyr::mutate(date = unique(terra::time(rcrop)))
+    
+    unlink(name) # remove nc file to save space
+    
+    sstyrdf <- bind_rows(sstyrdf, sstdaydf)
+    
+  }# end yrfiles within a year
+
+  #save each year's sst dataframe for survey dates +-2
+  filename <- here::here("data-raw","gridded", "sst_data", paste0("AVHRRsst_", i, ".rds"))
+  saveRDS(sstyrdf, filename)
   
-  r <- terra::rast(name, "sea_surface_temperature")
-  rcrop <- terra::crop(r, c(-77,-65,35,45))
-  sstdf <- terra::as.data.frame(rcrop, xy=TRUE) %>% 
-    mutate(sst = sea_surface_temperature - 273.15) %>%
-    filter(sst > -3)
+} # end years
 
-  #one big list of year month matches
-  allfiles <- bind_rows(allfiles, yrfiles)
-}
-
-
-ggplot() +
-    geom_tile(data = sstdf, aes(x = x, y = y, fill = sst)) +
+plotAVHRR <- function(sstdfdat){
+  ggplot() +
+    geom_tile(data = sstdfdat, aes(x = x, y = y, fill = sst)) +
     geom_sf(data = ecodata::coast) +
     scale_fill_gradientn(name = "Temp C",
                          limits = c(0.5, 31),
                          colours = c(scales::muted("blue"), "white",
                                      scales::muted("red"), "black")) +
-    coord_sf(xlim = c(-77, -65), ylim = c(35, 45)) 
+    coord_sf(xlim = c(-77, -65), ylim = c(35, 45)) +
+    ggtitle(paste("SST, AVHRR", unique(sstdfdat$date), sep = " "))
+}
 
 
 ```
