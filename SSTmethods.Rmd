@@ -21,6 +21,7 @@ library(DT)
 library(FishStatsUtils)
 library(sf)
 library(raster)
+library(terra)
 library(nngeo)
 library(data.table)
 
@@ -584,7 +585,7 @@ for(i in years) {
   yrfiles <- yrfiles[stringr::str_starts(yrfiles, paste(datesyrch, collapse = "|"))]
     
   # get data from all files
-  for(d in length(yrfiles)){
+  for(d in 1:length(yrfiles)){
     name <- paste0(stringr::str_extract(yrfiles[d], "^.{14}"), ".nc")
     download.file(paste0(url, yrfiles[d]), destfile = name)
     
