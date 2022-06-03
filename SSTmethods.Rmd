@@ -535,9 +535,9 @@ Download only filenames matching those dates (month level in case we need to fil
 Crop to NE shelf  
 Save as dataframe, one for each year?  
 
-Can I go right from daily nc to dataframe?
+Can I go right from daily nc to dataframe? Yes, making annual dfs here:
 
-```{r}
+```{r, eval=FALSE}
 #read in diet data with month day fields
 bluepyagg_stn_all <- readRDS(here("fhdat/bluepyagg_stn_all.rds"))
 
@@ -554,6 +554,7 @@ stations <- bluepyagg_stn_all %>%
 
 
 years <- 1985:2021
+#years <- 2011:2021 #this was because I had to stop downloading, would have done all
 for(i in years) {
   sstyrdf <- data.frame()
   url <- paste0("https://www.ncei.noaa.gov/data/oceans/pathfinder/Version5.3/L3C/", i, "/data/")
@@ -609,6 +610,13 @@ for(i in years) {
   
 } # end years
 
+```
+
+That took 7 hours for 1985-2010 plus another 3 hours for 2011-2021.
+
+All sst files have been uploaded to [this google folder](https://drive.google.com/drive/folders/1daZT_Zx4io1aEnLIfZX2pdlwLOHchJqs). 
+
+```{r}
 plotAVHRR <- function(sstdfdat){
   ggplot() +
     geom_tile(data = sstdfdat, aes(x = x, y = y, fill = sst)) +
@@ -618,9 +626,37 @@ plotAVHRR <- function(sstdfdat){
                          colours = c(scales::muted("blue"), "white",
                                      scales::muted("red"), "black")) +
     coord_sf(xlim = c(-77, -65), ylim = c(35, 45)) +
-    ggtitle(paste("SST, AVHRR", unique(sstdfdat$date), sep = " "))
+    #ggtitle(paste("SST, AVHRR", unique(sstdfdat$date), sep = " ")) +
+    facet_wrap(~as.character(date))
 }
 
 
 ```
 
+Here is some data plotted for 2021, illustrating both resolution and cloud issues. Data have been filtered for quality 3 and above as suggested by Kim Hyde. Gray is everything below 0.5 C. Night and day are shown as facets.
+
+### SST AVHRR 2021 survey dates {.tabset}
+
+```{r,  results='asis'}
+
+sstyrdf <- readRDS(here("data-raw/gridded/sst_data/AVHRRsst_2021.rds"))
+
+survdates <- unique(stringr::str_extract(sstyrdf$date, "^.{10}"))
+
+for(survday in survdates){
+  
+  mapday <- sstyrdf %>%
+    filter(quality_level>2, #Kim Hyde recommendation
+           str_detect(date, pattern = regex(paste0("\\b", survday))))
+  
+    cat("  \n####",  as.character(survday),"  \n")
+    print(plotAVHRR(mapday)) 
+    cat("  \n")   
+    
+  }
+```
+
+
+### {-}
+
+If we are going to use this we need a way to combine and fill holes. 
