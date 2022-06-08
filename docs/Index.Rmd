@@ -39,3 +39,6 @@ output: html_document
 
 <a href="https://sgaichas.github.io/bluefishdiet/SSTmethods.html" target="_blank"> Get OISST and merge with VAST input data - May 6 2022 </a>
 
+<a href="https://sgaichas.github.io/bluefishdiet/VASTcovariates_updatedPreds_sst.html" target="_blank"> Update VAST covariate selection with SST, both surveys, new predator list - June 8 2022 </a>
+
+

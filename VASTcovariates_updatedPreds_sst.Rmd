@@ -1,0 +1,400 @@
+---
+title: "VAST aggregate prey model covariate testing"
+subtitle: "NEFSC and NEAMAP surveys, new predator list, SST"
+author: "Sarah Gaichas"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    code_fold: hide
+link-citations: yes
+csl: ices-journal-of-marine-science.csl
+bibliography: FishDiet_EcoIndicators.bib
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      message = FALSE,
+                      warning = FALSE)
+
+library(tidyverse)
+library(here)
+#library(DT)
+#library(pdftools)
+#library(patchwork)
+#library(ggiraph)
+
+#library(ecodata)
+#library(VAST)
+```
+
+Having built an initial dataset of haul-specific mean bluefish prey weight per stomach for the [updated piscivore list](https://sgaichas.github.io/bluefishdiet/UpdateVAST_Inputs.html) from both NEFSC and NEAMAP, and having completed [initial model selection](https://sgaichas.github.io/bluefishdiet/VASTmodsel_updatedPreds.html) to see if spatial and spatio-temporal random effects make sense to estimate the prey index in VAST, now we'll evaluate which catchability covariates are best supported by the data.
+
+Following what @ng_predator_2021 did for herring, we apply a Poisson-link delta model to estimate expected prey mass per predator stomach. However, we use 500 knots, estimated by k-means clustering of the data, to define the spatial dimensions of each seasonal model.   
+
+We [previously compared](https://sgaichas.github.io/bluefishdiet/VASTcovariates_updatedPreds.html) all runs with NEAMAP added and overdispersion vs catchability covariates (using maximum likelihood to calculate AIC instead of REML because we are not changing the random effects).
+
+This work found that the models with predator attributes (mean length and number of predator species at a station) as catchability coefficients were better supported by the data than models with no catchability coefficients or with vessel effects as overdispersion parameters, similar to the findings of @ng_predator_2021, where predator mean length was selected.
+
+Adding the predator length covariate may more directly model vessel differences in predator catch that affect stomach contents than modeling a vessel catchability covariate direclty. This was the appropach taken by @ng_predator_2021. They found that predator length covariates were strongly supported as catchability covariates (larger predators being more likely to have more prey in stomachs).
+
+The rationale for including number of predator species is that more species "sampling" the prey field at a particular station may result in a higher encounter rate (more stations with positive bluefish prey in stomachs). 
+
+We are also interested in water temperature as a catchability covariate, because temperature affects predator feeding rate, but not all survey stations in the dataset had either surface or bottom temperature values. Rather than drop 10% of the observations (which reduced data significantly in several years), we explored different sources of surface water temperature to fill in for survey stations lacking this covariate.
+
+Our exploration of different [SST datasets](https://sgaichas.github.io/bluefishdiet/SSTmethods.html) found enuugh agreement with the OISST reanalysis product to use that as a first try to fill in missing data.
+
+Here we evaluate relative fit among all covariates, as all of these models have the same input data. The SST runs were completed with this script:
+
+```{r, code = readLines(here("VASTunivariate_bfp_allsurvs_lencovSST_inoffsplit.R")), eval=F}
+```
+
+We'll scrape the settings and parameter estimates from each folder to compare AICs:
+
+```{r}
+# from each output folder in pyindex, 
+outdir <- here("pyindex")
+moddirs <- list.dirs(outdir) 
+moddirs <- moddirs[-1]
+# keep folder name
+modnames <- list.dirs(outdir, full.names = FALSE)[-1]
+
+# function to apply extracting info
+getmodinfo <- function(d.name){
+  # read settings
+  modpath <- stringr::str_split(d.name, "/", simplify = TRUE)
+  modname <- modpath[length(modpath)]
+  
+  settings <- read.table(file.path(d.name, "settings.txt"), comment.char = "",
+    fill = TRUE, header = FALSE)
+  
+  n_x <- as.numeric(as.character(settings[(which(settings[,1]=="$n_x")+1),2]))
+  grid_size_km <- as.numeric(as.character(settings[(which(settings[,1]=="$grid_size_km")+1),2]))
+  max_cells <- as.numeric(as.character(settings[(which(settings[,1]=="$max_cells")+1),2]))
+  use_anisotropy <- as.character(settings[(which(settings[,1]=="$use_anisotropy")+1),2])
+  fine_scale <- as.character(settings[(which(settings[,1]=="$fine_scale")+1),2])
+  bias.correct <- as.character(settings[(which(settings[,1]=="$bias.correct")+1),2])
+  
+  #FieldConfig
+  if(settings[(which(settings[,1]=="$FieldConfig")+1),1]=="Component_1"){
+    omega1 <- as.character(settings[(which(settings[,1]=="$FieldConfig")+2),2])
+    omega2 <- as.character(settings[(which(settings[,1]=="$FieldConfig")+3),1])
+    epsilon1 <- as.character(settings[(which(settings[,1]=="$FieldConfig")+4),2])
+    epsilon2 <- as.character(settings[(which(settings[,1]=="$FieldConfig")+5),1])
+    beta1 <- as.character(settings[(which(settings[,1]=="$FieldConfig")+6),2])
+    beta2 <- as.character(settings[(which(settings[,1]=="$FieldConfig")+7),1])
+  }
+  
+  if(settings[(which(settings[,1]=="$FieldConfig")+1),1]=="Omega1"){
+    omega1 <- as.character(settings[(which(settings[,1]=="$FieldConfig")+3),1])
+    omega2 <- as.character(settings[(which(settings[,1]=="$FieldConfig")+4),1])
+    epsilon1 <- as.character(settings[(which(settings[,1]=="$FieldConfig")+3),2])
+    epsilon2 <- as.character(settings[(which(settings[,1]=="$FieldConfig")+4),2])
+    beta1 <- "IID"
+    beta2 <- "IID"
+  }
+  
+  
+  #RhoConfig
+  rho_beta1 <- as.numeric(as.character(settings[(which(settings[,1]=="$RhoConfig")+3),1]))
+  rho_beta2 <- as.numeric(as.character(settings[(which(settings[,1]=="$RhoConfig")+3),2]))
+  rho_epsilon1 <- as.numeric(as.character(settings[(which(settings[,1]=="$RhoConfig")+4),1]))
+  rho_epsilon2 <- as.numeric(as.character(settings[(which(settings[,1]=="$RhoConfig")+4),2]))
+  
+  # read parameter estimates, object is called parameter_Estimates
+  load(file.path(d.name, "parameter_estimates.RData"))
+  
+  AIC <- parameter_estimates$AIC[1]  
+  converged <- parameter_estimates$Convergence_check[1]
+  fixedcoeff <- unname(parameter_estimates$number_of_coefficients[2])
+  randomcoeff <- unname(parameter_estimates$number_of_coefficients[3])
+  
+  
+  # return model atributes as a dataframe
+  out <- data.frame(modname = modname,
+                    n_x = n_x,
+                    grid_size_km = grid_size_km,
+                    max_cells = max_cells,
+                    use_anisotropy = use_anisotropy,
+                    fine_scale =  fine_scale,
+                    bias.correct = bias.correct,
+                    omega1 = omega1,
+                    omega2 = omega2,
+                    epsilon1 = epsilon1,
+                    epsilon2 = epsilon2,
+                    beta1 = beta1,
+                    beta2 = beta2,
+                    rho_epsilon1 = rho_epsilon1,
+                    rho_epsilon2 = rho_epsilon2,
+                    rho_beta1 = rho_beta1,
+                    rho_beta2 = rho_beta2,
+                    AIC = AIC,
+                    converged = converged,
+                    fixedcoeff = fixedcoeff,
+                    randomcoeff = randomcoeff
+  )
+  	
+	return(out)
+
+}
+
+# combine into one table for comparison
+
+modselect <- purrr::map_dfr(moddirs, getmodinfo)
+
+
+
+```
+
+Now compare the AIC for the 500 knot models to see if including covariates or vessel effects improved the fit. This follows the model selection process outlined in @ng_predator_2021. 
+
+We have only NEAMAP data for 2020-2021 in Fall and for 2021 in Spring.
+
+```{r}
+
+# only compare AIC for the 500 knot models
+modselect.cov <- modselect %>%
+  filter(n_x == 500) %>%
+  #filter(str_detect(modname, "base|eta|len|_no$")) %>%
+  mutate(season = case_when(str_detect(modname, "fall") ~ "Fall",
+                            str_detect(modname, "spring") ~ "Spring",
+                            TRUE ~ as.character(NA))) %>%
+  mutate(converged2 = case_when(str_detect(converged, "no evidence") ~ "likely",
+                                str_detect(converged, "is likely not") ~ "unlikely",
+                                TRUE ~ as.character(NA))) %>%
+  group_by(season) %>%
+  mutate(deltaAIC = AIC-min(AIC)) %>%
+  select(modname, season, deltaAIC, fixedcoeff,
+         randomcoeff, use_anisotropy, 
+         omega1, omega2, epsilon1, epsilon2, 
+         beta1, beta2, AIC, converged2) %>%
+  arrange(AIC)
+
+DT::datatable(modselect.cov, rownames = FALSE, 
+              options= list(pageLength = 25, scrollX = TRUE))
+```
+
+All models converged. Models including SST, predator mean length, and number of predator species as covariates were best supported by the data according to AIC.SST made a bigger difference in spring than in the fall model.
+
+Below we have the results from the best fit models for each season. 
+
+## Selected Model Results
+
+Now splitting the index into many parts.
+
+Make a lookup table:
+
+```{r}
+# strata.limits <- as.list(c("AllEPU" = AllEPU, 
+#                          "MABGB" = MABGB, 
+#                          "MABGBinshore" = MABGBinshore, 
+#                          "MABGBoffshore" = MABGBoffshore, 
+#                          "bfall" = bfall,
+#                          "bfallnot" = bfallnot,
+#                          "bfin" = bfin,
+#                          "bfinnot" = bfinnot,
+#                          "bfoff" = bfoff,
+#                          "bfoffnot" = bfoffnot,
+#                          "MABGBalbinshore" = MABGBalbinshore,
+#                          "MABGBoffshorebigin" = MABGBoffshorebigin))
+
+stratlook <- data.frame(Stratum = c("Stratum_1",
+                                      "Stratum_2",
+                                      "Stratum_3",
+                                      "Stratum_4",
+                                      "Stratum_5",
+                                      "Stratum_6",
+                                      "Stratum_7",
+                                      "Stratum_8",
+                                      "Stratum_9",
+                                      "Stratum_10",
+                                      "Stratum_11",
+                                      "Stratum_12"),
+                           Region  = c("AllEPU", 
+                                       "MABGB", 
+                                       "MABGBinshore", 
+                                       "MABGBoffshore", 
+                                       "bfall",
+                                       "bfallnot",
+                                       "bfin",
+                                       "bfinnot",
+                                       "bfoff",
+                                       "bfoffnot",
+                                       "MABGBalbinshore",
+                                       "MABGBoffshorebigin"))
+
+
+```
+
+### Fall Index  
+
+Plot individual time series
+
+```{r}
+splitoutput <- read.csv("pyindex/allagg_fall_500_lennosst_split/Index.csv")
+
+splitoutput <- splitoutput %>%
+  left_join(stratlook)
+
+ggplot(splitoutput, aes(x=Time, y=Estimate, colour=Region)) +
+  geom_errorbar(aes(ymin=Estimate+Std..Error.for.Estimate, ymax=Estimate-Std..Error.for.Estimate))+
+  geom_point()+
+  geom_line()+
+  facet_wrap(~Region, scales = "free_y") +
+  guides(colour = guide_legend(ncol=2)) +
+  #theme(legend.position = c(1, 0),
+   #     legend.justification = c(1, 0))
+  theme(legend.position="none")
+
+```
+
+ or just the indices from inshore (alb), inshore bluefish, offshore bluefish, and further out
+ 
+```{r}
+in2off <- splitoutput %>%
+  dplyr::select(Time, Region, Estimate) %>%
+  tidyr::pivot_wider(names_from = Region, values_from = Estimate) %>%
+  dplyr::mutate(AlbInshore = MABGBalbinshore,
+                BlueInshore = bfin,
+                BlueOffshore = bfoff,
+                OthOffshore = MABGB - (bfoff + bfin + MABGBalbinshore),
+                SumMABGB = AlbInshore + BlueInshore + BlueOffshore + OthOffshore) %>%
+  dplyr::select(Time, AlbInshore, BlueInshore, BlueOffshore, OthOffshore, SumMABGB, MABGB) %>%
+  tidyr::pivot_longer(!Time, names_to = "Region", values_to = "Estimate")
+
+ggplot(in2off, aes(x=Time, y=Estimate, colour = Region)) +
+  geom_point()+
+  geom_line()+
+  #facet_wrap(~Region) + #+ , scales = "free_y"
+  #theme(legend.position = c(1, 0),
+  #      legend.justification = c(1, 0))
+  ggtitle("Fall Prey Index, Mid-Atlantic and Georges Bank")
+
+
+```
+
+ or as proportions (here proportion of MABGB index).
+
+```{r}
+MABGBprop <- in2off %>%
+  #dplyr::filter(Region != "AllEPU") %>%
+  dplyr::select(Time, Region, Estimate) %>%
+  tidyr::pivot_wider(names_from = Region, values_from = Estimate) %>%
+  dplyr::mutate(AlbInshoreprop = AlbInshore/MABGB,
+                BlueInshoreprop = BlueInshore/MABGB,
+                BlueOffshoreprop = BlueOffshore/MABGB,
+                OthOffshoreprop = OthOffshore/MABGB) %>%
+  tidyr::pivot_longer(!Time, names_to = "Region", values_to = "Estimate") %>%
+  dplyr::filter(Region %in% c("AlbInshoreprop", "BlueInshoreprop", "BlueOffshoreprop",
+                              "OthOffshoreprop"))
+  
+
+ggplot(MABGBprop, aes(x=Time, y=Estimate, colour = Region)) +
+  geom_point()+
+  geom_line()+
+  #facet_wrap(~Region) + #+ , scales = "free_y"
+  #theme(legend.position = c(1, 0),
+  #      legend.justification = c(1, 0))
+  ggtitle("Fall Prey Index as proportion of Mid-Atlantic and Georges Bank")
+  
+  
+```
+
+### Fall predicted ln-density
+
+![Fall density maps with covariates](pyindex/allagg_fall_500_lennosst_split/ln_density-predicted.png)
+ 
+### Spring Index  
+
+Plot individual time series
+
+```{r}
+splitoutput <- read.csv("pyindex/allagg_spring_500_lennosst_split/Index.csv")
+
+splitoutput <- splitoutput %>%
+  left_join(stratlook)
+
+ggplot(splitoutput, aes(x=Time, y=Estimate, colour=Region)) +
+  geom_errorbar(aes(ymin=Estimate+Std..Error.for.Estimate, ymax=Estimate-Std..Error.for.Estimate))+
+  geom_point()+
+  geom_line()+
+  facet_wrap(~Region, scales = "free_y") +
+  guides(colour = guide_legend(ncol=2)) +
+  #theme(legend.position = c(1, 0),
+   #     legend.justification = c(1, 0))
+  theme(legend.position="none")
+
+```
+
+ or just the indices from inshore (alb), inshore bluefish, offshore bluefish, and further out
+ 
+```{r}
+in2off <- splitoutput %>%
+  dplyr::select(Time, Region, Estimate) %>%
+  tidyr::pivot_wider(names_from = Region, values_from = Estimate) %>%
+  dplyr::mutate(AlbInshore = MABGBalbinshore,
+                BlueInshore = bfin,
+                BlueOffshore = bfoff,
+                OthOffshore = MABGB - (bfoff + bfin + MABGBalbinshore),
+                SumMABGB = AlbInshore + BlueInshore + BlueOffshore + OthOffshore) %>%
+  dplyr::select(Time, AlbInshore, BlueInshore, BlueOffshore, OthOffshore, SumMABGB, MABGB) %>%
+  tidyr::pivot_longer(!Time, names_to = "Region", values_to = "Estimate")
+
+ggplot(in2off, aes(x=Time, y=Estimate, colour = Region)) +
+  geom_point()+
+  geom_line()+
+  #facet_wrap(~Region) + #+ , scales = "free_y"
+  #theme(legend.position = c(1, 0),
+  #      legend.justification = c(1, 0))
+  ggtitle("Spring Prey Index, Mid-Atlantic and Georges Bank")
+
+
+```
+
+ or as proportions (here proportion of MABGB index).
+
+```{r}
+MABGBprop <- in2off %>%
+  #dplyr::filter(Region != "AllEPU") %>%
+  dplyr::select(Time, Region, Estimate) %>%
+  tidyr::pivot_wider(names_from = Region, values_from = Estimate) %>%
+  dplyr::mutate(AlbInshoreprop = AlbInshore/MABGB,
+                BlueInshoreprop = BlueInshore/MABGB,
+                BlueOffshoreprop = BlueOffshore/MABGB,
+                OthOffshoreprop = OthOffshore/MABGB) %>%
+  tidyr::pivot_longer(!Time, names_to = "Region", values_to = "Estimate") %>%
+  dplyr::filter(Region %in% c("AlbInshoreprop", "BlueInshoreprop", "BlueOffshoreprop",
+                              "OthOffshoreprop"))
+  
+
+ggplot(MABGBprop, aes(x=Time, y=Estimate, colour = Region)) +
+  geom_point()+
+  geom_line()+
+  #facet_wrap(~Region) + #+ , scales = "free_y"
+  #theme(legend.position = c(1, 0),
+  #      legend.justification = c(1, 0))
+  ggtitle("Spring Prey Index as proportion of Mid-Atlantic and Georges Bank")
+  
+  
+```
+
+
+### Spring predicted ln-density
+
+![Spring density maps with covariates](pyindex/allagg_spring_500_lennosst_split/ln_density-predicted.png)
+
+All results in the respective pyindex/allagg_fall_500_lennosst_split and allagg_spring_500_lennsst_split folders.
+
+The full results are on [google drive](https://drive.google.com/drive/folders/1PsEk5hhQ7fR0Gq4NnYPvU4V59d4nIR8E) rather than github to save space.
+
+Still to do:
+
+*  index within 3 miles of shore and outside that (highest priority)
+
+*  investigate other SST filling sources if time  
+    +  CTD casts from survey not meeting criteria for proximity to station
+    +  underway measurements on Bigelow and possibly Albatross
+    +  AVHRR satellite data
+    
+
+
+## References
