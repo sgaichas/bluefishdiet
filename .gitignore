@@ -52,5 +52,8 @@ vignettes/*.pdf
 /vast_example
 /pyindextests
 /pyindex_old
+/data-raw
+/pyindex_newpreds
 
 vast_example.zip
+
