@@ -178,8 +178,7 @@ strata.limits <- as.list(c("AllEPU" = AllEPU,
                          "bfinshore" = bfinshore,
                          "bfoffshore" = bfoffshore,                         
                          "bfall" = bfall,
-                         "othoffshore" = othoffshore,
-                         
+                         "othoffshore" = othoffshore
                          ))
 
 settings = make_settings( n_x = 500, 

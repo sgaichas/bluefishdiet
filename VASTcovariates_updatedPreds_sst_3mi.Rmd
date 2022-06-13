@@ -248,6 +248,16 @@ Run this script
 ```{r, code = readLines(here("VASTunivariate_bfp_allsurvs_lencovSST_inoff3misplit.R")), eval=F}
 ```
 
+To actually use the state vs federal waters split, I need to make a user defined extrapolation grid that has these divisions as strata. So the model will be run twice, once with the standard grid and strata-based divisions, and once with the "new" grid that defines state vs federal waters as strata.
+
+Make the new grid:
+```{r}
+
+```
+
+
+This is the script for the second run with the new grid.
+
 
 ## Selected Model Results
 
