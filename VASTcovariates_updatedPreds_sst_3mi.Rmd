@@ -17,6 +17,7 @@ knitr::opts_chunk$set(echo = TRUE,
                       warning = FALSE)
 
 library(tidyverse)
+theme_set(theme_bw())
 library(here)
 #library(DT)
 #library(pdftools)
@@ -45,7 +46,7 @@ First we define a partition that is the MAB and GB areas only as the GOM is not 
     
 Survey strata definitions are built into VAST already.
 
-The area within and outside 3 miles of shore within MABGB needs to be defined. AT the moment, 3 nm is approximated as 5.556 km
+The area within and outside 3 miles of shore within MABGB needs to be defined. At the moment, 3 nm is approximated as 5.556 km
 
 ```{r}
 ## Northeast:
@@ -71,180 +72,182 @@ neuscoast <- usamap %>%
 
 #plot(neuscoast)
 
-# add a 5.556 km (3 mi) buffer around coastline
+# add a 5.556 km (3 nautical mi) buffer around coastline
 
 neuscoast_buff_3nm  <-  sf::st_buffer(neuscoast, dist = 5556)
 
 #plot(neuscoast_buff_3nm)
 
 # intersect buffer with the current FishStatsUtils::northwest_atlantic_grid
+# make northwest atlantic grid into sf object
 nwagrid_sf  <-  sf::st_as_sf(FishStatsUtils::northwest_atlantic_grid, coords = c("Lon","Lat")) %>%
   sf::st_set_crs(sf::st_crs(neuscoast))
 
-# save that intersection
-coast3nmbuff <- sf::st_intersection(nwagrid_sf, neuscoast_buff_5km)
+# intersect, rearrange in same format as nwatl grid, and save
+coast3nmbuff <- sf::st_intersection(nwagrid_sf,neuscoast_buff_3nm) %>%
+  dplyr::mutate(Lon = as.numeric(sf::st_coordinates(.)[,1]),
+                Lat = as.numeric(sf::st_coordinates(.)[,2])) %>%
+  sf::st_set_geometry(NULL) %>%
+  dplyr::select(-featurecla) %>%
+  dplyr::select(stratum_number, Lon, Lat, everything())
 
-# add as strata limit definition
+write_rds(coast3nmbuff, here("spatialdat","neus_coast3nmbuff.rds"))
 
-
-
-
-# if WG wants a different smooth, change below based on fig
-neus.smoothgeom <- neusmap %>% 
-  smoothr::smooth(method="ksmooth", smoothness=1) %>% # smoother was applied incrementally more until the Chesapeake went away 
-  as("Spatial") %>% 
-  raster::geom()
-
-neus.geomdists <- raster::pointDistance(neus.smoothgeom[-nrow(neus.smoothgeom), c("x", "y")], neus.smoothgeom[-1, c("x", "y")], lonlat=TRUE)
-neus.coastdistdat <- data.frame(neus.smoothgeom[, c('x','y')], seglength=c(0, neus.geomdists))
-neus.coastdistdat$lengthfromhere <- rev(cumsum(rev(neus.coastdistdat[,"seglength"])))
-# first row should match st_length(smoothmap)
-
-
-
-write_rds(neus.coastdistdat, here("spatialdat","neus_coastdistdat.rds"))
+fedwaters <- setdiff(FishStatsUtils::northwest_atlantic_grid, coast3nmbuff)
 
 ```
 
-Various online maps are available for state waters, if I can't draw my own.
+Plot the 3 mile grid locations
+
+```{r}
+ggplot(data = ecodata::coast) +
+  geom_sf() + 
+  geom_point(data = FishStatsUtils::northwest_atlantic_grid, aes(x = Lon, y = Lat), size=0.05, alpha=0.1) +
+  geom_point(data = coast3nmbuff, aes(x = Lon, y = Lat), size=0.05, colour = "green",  alpha=0.1) +
+  coord_sf(xlim = c(-78, -65.5), ylim = c(35, 45))+
+  ggtitle("State waters (3 nm)")
+```
+
+
+Plot the fed waters outside 3 miles
+```{r}
+ggplot(data = ecodata::coast) +
+  geom_sf() + 
+  geom_point(data = FishStatsUtils::northwest_atlantic_grid, aes(x = Lon, y = Lat), size=0.05, alpha=0.1) +
+  geom_point(data = fedwaters, aes(x = Lon, y = Lat), size=0.05, colour = "green",  alpha=0.1) +
+  coord_sf(xlim = c(-78, -65.5), ylim = c(35, 45))+
+  ggtitle("Federal waters")
+```
+
+Zoom in
+
+```{r}
+ggplot(data = ecodata::coast) +
+  geom_sf() + 
+  geom_point(data = FishStatsUtils::northwest_atlantic_grid, aes(x = Lon, y = Lat), size=0.05, alpha=0.1) +
+  geom_point(data = coast3nmbuff, aes(x = Lon, y = Lat), size=0.05, colour = "green",  alpha=0.1) +
+  #coord_sf(xlim = c(-78, -65.5), ylim = c(35, 45))
+  coord_sf(xlim = c(-74.5, -69), ylim = c(38.5, 42.5)) +
+  ggtitle("Zoomed State waters (3 nm)")
+
+```
+
+```{r}
+ggplot(data = ecodata::coast) +
+  geom_sf() + 
+  geom_point(data = FishStatsUtils::northwest_atlantic_grid, aes(x = Lon, y = Lat), size=0.05, alpha=0.1) +
+  geom_point(data = fedwaters, aes(x = Lon, y = Lat), size=0.05, colour = "green",  alpha=0.1) +
+  #coord_sf(xlim = c(-78, -65.5), ylim = c(35, 45))
+  coord_sf(xlim = c(-74.5, -69), ylim = c(38.5, 42.5))+
+  ggtitle("Zoomed federal waters")
+```
+
+
+
+Definitions for strata:
 
 ```{r}
 
+#current bluefish assessment strata are all Bigelow inshore strata MAB-GB
+bfinshore <- c(3020, 3050, 3080, 3110, 3140, 3170, 3200, 3230, 
+              3260, 3290, 3320, 3350, 3380, 3410, 3440, 3450, 3460)
+
+bfinshoregrid <-  FishStatsUtils::northwest_atlantic_grid %>%
+  filter(stratum_number %in% bfinshore)
+  
+  
+# from Tony's 8 March presentation, minus the inshore in CCBay
+bfoffshore <- c(1010, 1730, 1690, 1650, 1050, 1060, 1090, 1100, 1250, 1200, 1190, 1610)
+
+bfoffshoregrid <-  FishStatsUtils::northwest_atlantic_grid %>%
+  filter(stratum_number %in% bfoffshore)
+
+#from mskeyrun vignette, EPU based on survey strata, replace built in VAST EPU
+#https://noaa-edab.github.io/ms-keyrun/articles/GBSurveySet.html
+
+MAB <- c(1010:1080, 1100:1120, 1600:1750, 3010:3450, 3470, 3500, 3510)
+GB  <- c(1090, 1130:1210, 1230, 1250, 3460, 3480, 3490, 3520:3550)
+
+MABGBgrid <-  FishStatsUtils::northwest_atlantic_grid %>%
+  filter(stratum_number %in% c(MAB, GB))
+
+albinshoregrid <- MABGBgrid %>%
+  filter(stratum_number>2999 & stratum_number<3999) %>% #inshore
+  anti_join(bfinshoregrid)
+
+othoffshoregrid <- MABGBgrid %>%
+  anti_join(bind_rows(albinshoregrid, bfinshoregrid, bfoffshoregrid))
+
+statewatersgrid <- coast3nmbuff %>%
+  inner_join(MABGBgrid)
+
+fedwatersgrid <- fedwaters %>%
+  inner_join(MABGBgrid)
+ 
 
 ```
 
-
-```{r, code = readLines(here("VASTunivariate_bfp_allsurvs_lencovSST_inoffsplit.R")), eval=F}
-```
-
-We'll scrape the settings and parameter estimates from each folder to compare AICs:
+Plot areas
 
 ```{r}
-# from each output folder in pyindex, 
-outdir <- here("pyindex")
-moddirs <- list.dirs(outdir) 
-moddirs <- moddirs[-1]
-# keep folder name
-modnames <- list.dirs(outdir, full.names = FALSE)[-1]
-
-# function to apply extracting info
-getmodinfo <- function(d.name){
-  # read settings
-  modpath <- stringr::str_split(d.name, "/", simplify = TRUE)
-  modname <- modpath[length(modpath)]
-  
-  settings <- read.table(file.path(d.name, "settings.txt"), comment.char = "",
-    fill = TRUE, header = FALSE)
-  
-  n_x <- as.numeric(as.character(settings[(which(settings[,1]=="$n_x")+1),2]))
-  grid_size_km <- as.numeric(as.character(settings[(which(settings[,1]=="$grid_size_km")+1),2]))
-  max_cells <- as.numeric(as.character(settings[(which(settings[,1]=="$max_cells")+1),2]))
-  use_anisotropy <- as.character(settings[(which(settings[,1]=="$use_anisotropy")+1),2])
-  fine_scale <- as.character(settings[(which(settings[,1]=="$fine_scale")+1),2])
-  bias.correct <- as.character(settings[(which(settings[,1]=="$bias.correct")+1),2])
-  
-  #FieldConfig
-  if(settings[(which(settings[,1]=="$FieldConfig")+1),1]=="Component_1"){
-    omega1 <- as.character(settings[(which(settings[,1]=="$FieldConfig")+2),2])
-    omega2 <- as.character(settings[(which(settings[,1]=="$FieldConfig")+3),1])
-    epsilon1 <- as.character(settings[(which(settings[,1]=="$FieldConfig")+4),2])
-    epsilon2 <- as.character(settings[(which(settings[,1]=="$FieldConfig")+5),1])
-    beta1 <- as.character(settings[(which(settings[,1]=="$FieldConfig")+6),2])
-    beta2 <- as.character(settings[(which(settings[,1]=="$FieldConfig")+7),1])
-  }
-  
-  if(settings[(which(settings[,1]=="$FieldConfig")+1),1]=="Omega1"){
-    omega1 <- as.character(settings[(which(settings[,1]=="$FieldConfig")+3),1])
-    omega2 <- as.character(settings[(which(settings[,1]=="$FieldConfig")+4),1])
-    epsilon1 <- as.character(settings[(which(settings[,1]=="$FieldConfig")+3),2])
-    epsilon2 <- as.character(settings[(which(settings[,1]=="$FieldConfig")+4),2])
-    beta1 <- "IID"
-    beta2 <- "IID"
-  }
-  
-  
-  #RhoConfig
-  rho_beta1 <- as.numeric(as.character(settings[(which(settings[,1]=="$RhoConfig")+3),1]))
-  rho_beta2 <- as.numeric(as.character(settings[(which(settings[,1]=="$RhoConfig")+3),2]))
-  rho_epsilon1 <- as.numeric(as.character(settings[(which(settings[,1]=="$RhoConfig")+4),1]))
-  rho_epsilon2 <- as.numeric(as.character(settings[(which(settings[,1]=="$RhoConfig")+4),2]))
-  
-  # read parameter estimates, object is called parameter_Estimates
-  load(file.path(d.name, "parameter_estimates.RData"))
-  
-  AIC <- parameter_estimates$AIC[1]  
-  converged <- parameter_estimates$Convergence_check[1]
-  fixedcoeff <- unname(parameter_estimates$number_of_coefficients[2])
-  randomcoeff <- unname(parameter_estimates$number_of_coefficients[3])
-  
-  
-  # return model atributes as a dataframe
-  out <- data.frame(modname = modname,
-                    n_x = n_x,
-                    grid_size_km = grid_size_km,
-                    max_cells = max_cells,
-                    use_anisotropy = use_anisotropy,
-                    fine_scale =  fine_scale,
-                    bias.correct = bias.correct,
-                    omega1 = omega1,
-                    omega2 = omega2,
-                    epsilon1 = epsilon1,
-                    epsilon2 = epsilon2,
-                    beta1 = beta1,
-                    beta2 = beta2,
-                    rho_epsilon1 = rho_epsilon1,
-                    rho_epsilon2 = rho_epsilon2,
-                    rho_beta1 = rho_beta1,
-                    rho_beta2 = rho_beta2,
-                    AIC = AIC,
-                    converged = converged,
-                    fixedcoeff = fixedcoeff,
-                    randomcoeff = randomcoeff
-  )
-  	
-	return(out)
-
-}
-
-# combine into one table for comparison
-
-modselect <- purrr::map_dfr(moddirs, getmodinfo)
-
-
-
+ggplot(data = ecodata::coast) +
+  geom_sf() + 
+  geom_point(data = FishStatsUtils::northwest_atlantic_grid, aes(x = Lon, y = Lat), size=0.05, alpha=0.1) +
+  geom_point(data = albinshoregrid, aes(x = Lon, y = Lat), size=0.05, colour = "green",  alpha=0.1) +
+  coord_sf(xlim = c(-78, -65.5), ylim = c(35, 45)) +
+  ggtitle("Albatross inshore strata")
 ```
-
-Now compare the AIC for the 500 knot models to see if including covariates or vessel effects improved the fit. This follows the model selection process outlined in @ng_predator_2021. 
-
-We have only NEAMAP data for 2020-2021 in Fall and for 2021 in Spring.
 
 ```{r}
-
-# only compare AIC for the 500 knot models
-modselect.cov <- modselect %>%
-  filter(n_x == 500) %>%
-  #filter(str_detect(modname, "base|eta|len|_no$")) %>%
-  mutate(season = case_when(str_detect(modname, "fall") ~ "Fall",
-                            str_detect(modname, "spring") ~ "Spring",
-                            TRUE ~ as.character(NA))) %>%
-  mutate(converged2 = case_when(str_detect(converged, "no evidence") ~ "likely",
-                                str_detect(converged, "is likely not") ~ "unlikely",
-                                TRUE ~ as.character(NA))) %>%
-  group_by(season) %>%
-  mutate(deltaAIC = AIC-min(AIC)) %>%
-  select(modname, season, deltaAIC, fixedcoeff,
-         randomcoeff, use_anisotropy, 
-         omega1, omega2, epsilon1, epsilon2, 
-         beta1, beta2, AIC, converged2) %>%
-  arrange(AIC)
-
-DT::datatable(modselect.cov, rownames = FALSE, 
-              options= list(pageLength = 25, scrollX = TRUE))
+ggplot(data = ecodata::coast) +
+  geom_sf() + 
+  geom_point(data = FishStatsUtils::northwest_atlantic_grid, aes(x = Lon, y = Lat), size=0.05, alpha=0.1) +
+  geom_point(data = bfinshoregrid, aes(x = Lon, y = Lat), size=0.05, colour = "green",  alpha=0.1) +
+  coord_sf(xlim = c(-78, -65.5), ylim = c(35, 45)) +
+  ggtitle("Bluefish inshore survey strata")
 ```
 
-All models converged. Models including SST, predator mean length, and number of predator species as covariates were best supported by the data according to AIC.SST made a bigger difference in spring than in the fall model.
+```{r}
+ggplot(data = ecodata::coast) +
+  geom_sf() + 
+  geom_point(data = FishStatsUtils::northwest_atlantic_grid, aes(x = Lon, y = Lat), size=0.05, alpha=0.1) +
+  geom_point(data = bfoffshoregrid, aes(x = Lon, y = Lat), size=0.05, colour = "green",  alpha=0.1) +
+  coord_sf(xlim = c(-78, -65.5), ylim = c(35, 45)) +
+  ggtitle("Bluefish offshore survey strata")
+```
 
-Below we have the results from the best fit models for each season. 
+```{r}
+ggplot(data = ecodata::coast) +
+  geom_sf() + 
+  geom_point(data = FishStatsUtils::northwest_atlantic_grid, aes(x = Lon, y = Lat), size=0.05, alpha=0.1) +
+  geom_point(data = othoffshoregrid, aes(x = Lon, y = Lat), size=0.05, colour = "green",  alpha=0.1) +
+  coord_sf(xlim = c(-78, -65.5), ylim = c(35, 45)) +
+  ggtitle("Other offshore strata")
+```
+
+```{r}
+ggplot(data = ecodata::coast) +
+  geom_sf() + 
+  geom_point(data = FishStatsUtils::northwest_atlantic_grid, aes(x = Lon, y = Lat), size=0.05, alpha=0.1) +
+  geom_point(data =statewatersgrid, aes(x = Lon, y = Lat), size=0.05, colour = "green",  alpha=0.1) +
+  coord_sf(xlim = c(-78, -65.5), ylim = c(35, 45)) +
+  ggtitle("State waters")
+```
+
+```{r}
+ggplot(data = ecodata::coast) +
+  geom_sf() + 
+  geom_point(data = FishStatsUtils::northwest_atlantic_grid, aes(x = Lon, y = Lat), size=0.05, alpha=0.1) +
+  geom_point(data = fedwatersgrid, aes(x = Lon, y = Lat), size=0.05, colour = "green",  alpha=0.1) +
+  coord_sf(xlim = c(-78, -65.5), ylim = c(35, 45)) +
+  ggtitle("Federal waters")
+```
+
+Run this script
+
+```{r, code = readLines(here("VASTunivariate_bfp_allsurvs_lencovSST_inoff3misplit.R")), eval=F}
+```
+
 
 ## Selected Model Results
 
