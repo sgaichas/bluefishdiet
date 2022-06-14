@@ -272,9 +272,7 @@ This is the script for the second run with the new grid.
 ```{r, code = readLines(here("VASTunivariate_bfp_allsurvs_lennoSST_3misplit.R")), eval=F}
 ```
 
-## Selected Model Results
-
-Now splitting the index into many parts.
+## Selected Model Results: 3 mi split
 
 Make a lookup table:
 
@@ -293,29 +291,9 @@ Make a lookup table:
 #                          "MABGBoffshorebigin" = MABGBoffshorebigin))
 
 stratlook <- data.frame(Stratum = c("Stratum_1",
-                                      "Stratum_2",
-                                      "Stratum_3",
-                                      "Stratum_4",
-                                      "Stratum_5",
-                                      "Stratum_6",
-                                      "Stratum_7",
-                                      "Stratum_8",
-                                      "Stratum_9",
-                                      "Stratum_10",
-                                      "Stratum_11",
-                                      "Stratum_12"),
-                           Region  = c("AllEPU", 
-                                       "MABGB", 
-                                       "MABGBinshore", 
-                                       "MABGBoffshore", 
-                                       "bfall",
-                                       "bfallnot",
-                                       "bfin",
-                                       "bfinnot",
-                                       "bfoff",
-                                       "bfoffnot",
-                                       "MABGBalbinshore",
-                                       "MABGBoffshorebigin"))
+                                      "Stratum_2"),
+                           Region  = c("state", 
+                                       "federal"))
 
 
 ```
@@ -325,7 +303,7 @@ stratlook <- data.frame(Stratum = c("Stratum_1",
 Plot individual time series
 
 ```{r}
-splitoutput <- read.csv("pyindex/allagg_fall_500_lennosst_split/Index.csv")
+splitoutput <- read.csv("pyindex/allagg_fall_500_lennosst_3mi/Index.csv")
 
 splitoutput <- splitoutput %>%
   left_join(stratlook)
@@ -342,9 +320,9 @@ ggplot(splitoutput, aes(x=Time, y=Estimate, colour=Region)) +
 
 ```
 
- or just the indices from inshore (alb), inshore bluefish, offshore bluefish, and further out
+
  
-```{r}
+```{r, eval=F}
 in2off <- splitoutput %>%
   dplyr::select(Time, Region, Estimate) %>%
   tidyr::pivot_wider(names_from = Region, values_from = Estimate) %>%
@@ -369,7 +347,7 @@ ggplot(in2off, aes(x=Time, y=Estimate, colour = Region)) +
 
  or as proportions (here proportion of MABGB index).
 
-```{r}
+```{r, eval=FALSE}
 MABGBprop <- in2off %>%
   #dplyr::filter(Region != "AllEPU") %>%
   dplyr::select(Time, Region, Estimate) %>%
@@ -396,14 +374,14 @@ ggplot(MABGBprop, aes(x=Time, y=Estimate, colour = Region)) +
 
 ### Fall predicted ln-density
 
-![Fall density maps with covariates](pyindex/allagg_fall_500_lennosst_split/ln_density-predicted.png)
+![Fall density maps with covariates](pyindex/allagg_fall_500_lennosst_3mi/ln_density-predicted.png)
  
 ### Spring Index  
 
 Plot individual time series
 
 ```{r}
-splitoutput <- read.csv("pyindex/allagg_spring_500_lennosst_split/Index.csv")
+splitoutput <- read.csv("pyindex/allagg_spring_500_lennosst_3mi/Index.csv")
 
 splitoutput <- splitoutput %>%
   left_join(stratlook)
@@ -422,7 +400,7 @@ ggplot(splitoutput, aes(x=Time, y=Estimate, colour=Region)) +
 
  or just the indices from inshore (alb), inshore bluefish, offshore bluefish, and further out
  
-```{r}
+```{r, eval=FALSE}
 in2off <- splitoutput %>%
   dplyr::select(Time, Region, Estimate) %>%
   tidyr::pivot_wider(names_from = Region, values_from = Estimate) %>%
@@ -447,7 +425,7 @@ ggplot(in2off, aes(x=Time, y=Estimate, colour = Region)) +
 
  or as proportions (here proportion of MABGB index).
 
-```{r}
+```{r, eval=FALSE}
 MABGBprop <- in2off %>%
   #dplyr::filter(Region != "AllEPU") %>%
   dplyr::select(Time, Region, Estimate) %>%
@@ -475,7 +453,7 @@ ggplot(MABGBprop, aes(x=Time, y=Estimate, colour = Region)) +
 
 ### Spring predicted ln-density
 
-![Spring density maps with covariates](pyindex/allagg_spring_500_lennosst_split/ln_density-predicted.png)
+![Spring density maps with covariates](pyindex/allagg_spring_500_lennosst_3mi/ln_density-predicted.png)
 
 All results in the respective pyindex/allagg_fall_500_lennosst_split and allagg_spring_500_lennsst_split folders.
 
@@ -483,7 +461,7 @@ The full results are on [google drive](https://drive.google.com/drive/folders/1P
 
 Still to do:
 
-*  index within 3 miles of shore and outside that (highest priority)
+*  fix index within 3 miles of shore and outside that (highest priority)
 
 *  investigate other SST filling sources if time  
     +  CTD casts from survey not meeting criteria for proximity to station
