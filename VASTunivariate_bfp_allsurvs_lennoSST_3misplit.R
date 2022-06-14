@@ -75,6 +75,7 @@ bluepyagg_stn_spring <- bluepyagg_stn %>%
 # NEFSC strata limits https://github.com/James-Thorson-NOAA/VAST/issues/302
 
 user_region <- readRDS(here::here("spatialdat/user_region.rds"))
+names(user_region)[4] <- "Area_km2"
 
 MABGBstate <- 1
 MABGBfed <- 2
@@ -113,9 +114,9 @@ OverdispersionConfig	<- c("eta1"=0, "eta2"=0)
 # eta1 = vessel effects on prey encounter rate
 # eta2 = vessel effects on prey weight
 
-strata.limits <- as.list(c("MABGB" = MABGB, 
-                         "MABGBstate" = MABGBstate, 
-                         "MABGBfed" = MABGBfed))
+strata.limits <- data.frame('STRATA' = c("MABGBstate", "MABGBfed"),
+                  "stratum_number" = c(1, 2))
+                            
 
 settings = make_settings( n_x = 500, 
                           Region = "User",
