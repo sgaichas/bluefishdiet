@@ -41,4 +41,5 @@ output: html_document
 
 <a href="https://sgaichas.github.io/bluefishdiet/VASTcovariates_updatedPreds_sst.html" target="_blank"> Update VAST covariate selection with SST, both surveys, new predator list - June 8 2022 </a>
 
+<a href="https://sgaichas.github.io/bluefishdiet/VASTcovariates_updatedPreds_sst_3mi.html" target="_blank"> Update VAST spatial splits with state waters/federal waters - June 13 2022 </a>
 
