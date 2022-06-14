@@ -245,19 +245,32 @@ ggplot(data = ecodata::coast) +
 
 Run this script
 
-```{r, code = readLines(here("VASTunivariate_bfp_allsurvs_lencovSST_inoff3misplit.R")), eval=F}
+```{r, code = readLines(here("VASTunivariate_bfp_allsurvs_lennoSST_inoff3misplit.R")), eval=F}
 ```
 
 To actually use the state vs federal waters split, I need to make a user defined extrapolation grid that has these divisions as strata. So the model will be run twice, once with the standard grid and strata-based divisions, and once with the "new" grid that defines state vs federal waters as strata.
 
 Make the new grid:
 ```{r}
+coast3nmbuff <- readRDS(here("spatialdat/neus_coast3nmbuff.rds"))
+
+coast3nmbuffst <- coast3nmbuff %>%
+  dplyr::mutate(strat2 = 1) %>% #state waters = 1
+  dplyr::right_join(FishStatsUtils::northwest_atlantic_grid) %>%
+  dplyr::mutate(strat2 = replace_na(strat2, 2)) %>% #replace NA with 2 for fed waters
+  dplyr::mutate(strat2 = case_when(!stratum_number %in% c(MAB, GB) ~ 0, #ignore outside MABGB
+                                   TRUE ~ strat2)) %>%
+  dplyr::mutate(stratum_number = strat2) %>%
+  dplyr::select(-strat2)
+  
+saveRDS(coast3nmbuffst, file = here("spatialdat/user_region.rds"))
 
 ```
 
 
 This is the script for the second run with the new grid.
-
+```{r, code = readLines(here("VASTunivariate_bfp_allsurvs_lennoSST_3misplit.R")), eval=F}
+```
 
 ## Selected Model Results
 
