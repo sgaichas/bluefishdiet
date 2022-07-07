@@ -46,7 +46,7 @@ First we define a partition that is the MAB and GB areas only as the GOM is not 
     
 Survey strata definitions are built into VAST already.
 
-The area within and outside 3 miles of shore within MABGB needs to be defined. At the moment, 3 nm is approximated as 5.556 km
+The area within and outside 3 miles of shore within MABGB needs to be defined. At the moment, 3 nm is approximated as 5.556 km which is used as a buffer from a high resolution coastline from the`rnaturalearth`package:
 
 ```{r}
 ## Northeast:
@@ -97,7 +97,33 @@ fedwaters <- setdiff(FishStatsUtils::northwest_atlantic_grid, coast3nmbuff)
 
 ```
 
-Plot the 3 mile grid locations
+Alternatively, I found shapefiles for the U.S. Coastal Zone Management Act that are out to 3 nm for our states (Gulf Coast Florida and Texas get more). From https://www.fisheries.noaa.gov/inport/item/53132 we can download this zip https://marinecadastre.gov/downloads/data/mc/CoastalZoneManagementActBoundary.zip and [then unzip the downloaded file and rezip just the .gdb directory within](https://gis.stackexchange.com/questions/426282/load-gdb-directory-into-r-using-simple-features-package), then convert it to a shapefile using R `sf`:
+
+**RABBIT HOLE WARNING** Lets not do this right now.
+
+```{r, eval=FALSE}
+# hints from https://gis.stackexchange.com/questions/426282/load-gdb-directory-into-r-using-simple-features-package
+
+sf::st_layers(here("spatialdat/CoastalZoneManagementActBoundary.gdb.zip"))
+
+czmboundary <- sf::st_read(here("spatialdat/CoastalZoneManagementActBoundary.gdb.zip"),
+                           layer = "CoastalZoneManagementActBoundary")
+                           #layer="CoastalZoneManagementActBoundary_NAD83")
+
+czmboundary.neus <- czmboundary %>%
+  sf::st_set_crs(sf::st_crs(neuscoast)) %>% 
+  sf::st_intersection(neus.bbox1)
+
+ggplot(data = ecodata::coast) +
+  geom_sf() + 
+  geom_point(data = FishStatsUtils::northwest_atlantic_grid, aes(x = Lon, y = Lat), size=0.05, alpha=0.1) +
+  geom_point(data = coast3nmbuff, aes(x = Lon, y = Lat), size=0.05, colour = "green",  alpha=0.1) +
+  coord_sf(xlim = c(-78, -65.5), ylim = c(35, 45))+
+  ggtitle("State waters (3 nm)")
+```
+
+
+Plot the 3 mile grid locations based on the `neus_coast3nmbuff.rds` saved file:
 
 ```{r}
 ggplot(data = ecodata::coast) +

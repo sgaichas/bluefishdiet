@@ -114,8 +114,14 @@ OverdispersionConfig	<- c("eta1"=0, "eta2"=0)
 # eta1 = vessel effects on prey encounter rate
 # eta2 = vessel effects on prey weight
 
+# right format for Prepare_User_Extrapolation_Data_Fn
+# which does not recognize stratum_number, only ranges of lat lon
 strata.limits <- data.frame('STRATA' = c("MABGBstate", "MABGBfed"),
                   "stratum_number" = c(1, 2))
+
+# works with Prepare_NWA_Extrapolation_Data_Fn
+strata.limits <- as.list(c("MABGBstate" = 1,
+                           "MABGBfed" = 2))
                             
 
 settings = make_settings( n_x = 500, 

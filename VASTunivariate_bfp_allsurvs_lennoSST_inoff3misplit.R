@@ -186,7 +186,7 @@ settings = make_settings( n_x = 500,
                           #strata.limits = list('All_areas' = 1:1e5), full area
                           strata.limits = strata.limits,
                           purpose = "index2", 
-                          bias.correct = FALSE,
+                          bias.correct = TRUE,
                           #use_anisotropy = FALSE,
                           #fine_scale = FALSE,
                           #FieldConfig = FieldConfig,
@@ -200,7 +200,7 @@ settings = make_settings( n_x = 500,
 #########################################################
 # Run model fall
 
-season <- c("fall_500_lennosst_split")
+season <- c("fall_500_lennosst_split_biascorrect")
 
 working_dir <- here::here(sprintf("pyindex/allagg_%s/", season))
 
@@ -231,7 +231,7 @@ plot( fit,
 ######################################################
 # Run model spring
 
-season <- c("spring_500_lennosst_split")
+season <- c("spring_500_lennosst_split_biascorrect")
 
 working_dir <- here::here(sprintf("pyindex/allagg_%s/", season))
 
