@@ -81,11 +81,19 @@ bfinshore <- c(3020, 3050, 3080, 3110, 3140, 3170, 3200, 3230,
 bfinshoregrid <-  FishStatsUtils::northwest_atlantic_grid %>%
   filter(stratum_number %in% bfinshore)
 
+bfin <- bfinshoregrid %>%
+  select(stratum_number) %>% 
+  distinct()
+
 # from Tony's 8 March presentation, minus the inshore in CCBay
 bfoffshore <- c(1010, 1730, 1690, 1650, 1050, 1060, 1090, 1100, 1250, 1200, 1190, 1610)
 
 bfoffshoregrid <-  FishStatsUtils::northwest_atlantic_grid %>%
   filter(stratum_number %in% bfoffshore)
+
+bfoff <- bfoffshoregrid %>%
+  select(stratum_number) %>% 
+  distinct()
 
 bfall <- northwest_atlantic_grid %>% 
   filter(stratum_number %in% c(bfinshore, bfoffshore)) %>% 
@@ -128,17 +136,6 @@ othoffshore <- othoffshoregrid %>%
   select(stratum_number) %>% 
   distinct() 
 
-coast3nmbuff <- readRDS(here("spatialdat/neus_coast3nmbuff.rds"))
-
-fedwaters <- setdiff(FishStatsUtils::northwest_atlantic_grid, coast3nmbuff)
-
-statewatersgrid <- coast3nmbuff %>%
-  inner_join(MABGBgrid)
-
-fedwatersgrid <- fedwaters %>%
-  inner_join(MABGBgrid)
-
-
 # configs
 FieldConfig <- c(
   "Omega1"   = 0,   # number of spatial variation factors (0, 1, AR1)
@@ -175,8 +172,8 @@ OverdispersionConfig	<- c("eta1"=0, "eta2"=0)
 strata.limits <- as.list(c("AllEPU" = AllEPU, 
                          "MABGB" = MABGB, 
                          "albinshore" = albinshore,
-                         "bfinshore" = bfinshore,
-                         "bfoffshore" = bfoffshore,                         
+                         "bfinshore" = bfin,
+                         "bfoffshore" = bfoff,                         
                          "bfall" = bfall,
                          "othoffshore" = othoffshore
                          ))
@@ -186,7 +183,7 @@ settings = make_settings( n_x = 500,
                           #strata.limits = list('All_areas' = 1:1e5), full area
                           strata.limits = strata.limits,
                           purpose = "index2", 
-                          bias.correct = TRUE,
+                          bias.correct = FALSE,
                           #use_anisotropy = FALSE,
                           #fine_scale = FALSE,
                           #FieldConfig = FieldConfig,
@@ -200,7 +197,7 @@ settings = make_settings( n_x = 500,
 #########################################################
 # Run model fall
 
-season <- c("fall_500_lennosst_split_biascorrect")
+season <- c("fall_500_lennosst_split_nobiascorrect")
 
 working_dir <- here::here(sprintf("pyindex/allagg_%s/", season))
 
@@ -224,14 +221,18 @@ fit <- fit_model(
   #Use_REML = TRUE,
   working_dir = paste0(working_dir, "/"))
 
+saveRDS(fit, file = paste0(working_dir, "/fit.rds"))
+
 # Plot results
 plot( fit,
       working_dir = paste0(working_dir, "/"))
 
+
+
 ######################################################
 # Run model spring
 
-season <- c("spring_500_lennosst_split_biascorrect")
+season <- c("spring_500_lennosst_split_nobiascorrect")
 
 working_dir <- here::here(sprintf("pyindex/allagg_%s/", season))
 
@@ -254,6 +255,10 @@ fit = fit_model( settings = settings,
                 # Use_REML = TRUE,
                  working_dir = paste0(working_dir, "/"))
 
+saveRDS(fit, file = paste0(working_dir, "/fit.rds"))
+
 # Plot results
 plot( fit,
       working_dir = paste0(working_dir, "/")) 
+
+
