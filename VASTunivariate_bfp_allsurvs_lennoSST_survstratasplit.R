@@ -78,20 +78,16 @@ bluepyagg_stn_spring <- bluepyagg_stn %>%
 bfinshore <- c(3020, 3050, 3080, 3110, 3140, 3170, 3200, 3230, 
                3260, 3290, 3320, 3350, 3380, 3410, 3440, 3450, 3460)
 
-bfinshoregrid <-  FishStatsUtils::northwest_atlantic_grid %>%
-  filter(stratum_number %in% bfinshore)
-
-bfin <- bfinshoregrid %>%
+bfin <-  northwest_atlantic_grid %>%
+  filter(stratum_number %in% bfinshore) %>%
   select(stratum_number) %>% 
   distinct()
 
 # from Tony's 8 March presentation, minus the inshore in CCBay
 bfoffshore <- c(1010, 1730, 1690, 1650, 1050, 1060, 1090, 1100, 1250, 1200, 1190, 1610)
 
-bfoffshoregrid <-  FishStatsUtils::northwest_atlantic_grid %>%
-  filter(stratum_number %in% bfoffshore)
-
-bfoff <- bfoffshoregrid %>%
+bfoff <- northwest_atlantic_grid %>%
+  filter(stratum_number %in% bfoffshore) %>%
   select(stratum_number) %>% 
   distinct()
 
@@ -110,30 +106,23 @@ GOM <- c(1220, 1240, 1260:1290, 1360:1400, 3560:3830)
 SS  <- c(1300:1352, 3840:3990)
 
 AllEPU <- northwest_atlantic_grid %>% 
-  filter(stratum_number %in% c(MAB, GB, GOM, SS)) %>% 
-  select(stratum_number) %>% 
+  dplyr::filter(stratum_number %in% c(MAB, GB, GOM, SS)) %>% 
+  dplyr::select(stratum_number) %>% 
   distinct()
 
-MABGBgrid <-  FishStatsUtils::northwest_atlantic_grid %>%
-  filter(stratum_number %in% c(MAB, GB))
-
-MABGB <- MABGBgrid %>% 
-  select(stratum_number) %>% 
+MABGB <- northwest_atlantic_grid %>%
+  dplyr::filter(stratum_number %in% c(MAB, GB)) %>% 
+  dplyr::select(stratum_number) %>% 
   distinct()
 
-albinshoregrid <- MABGBgrid %>%
-  filter(stratum_number>2999 & stratum_number<3999) %>% #inshore
-  anti_join(bfinshoregrid)
-
-albinshore <- albinshoregrid %>%
-  select(stratum_number) %>% 
+albinshore <- MABGB %>%
+  dplyr::filter(stratum_number>2999 & stratum_number<3999) %>% #inshore
+  dplyr::filter(!(stratum_number %in% bfinshore)) %>% 
   distinct() 
 
-othoffshoregrid <- MABGBgrid %>%
-  anti_join(bind_rows(albinshoregrid, bfinshoregrid, bfoffshoregrid))
-
-othoffshore <- othoffshoregrid %>%
-  select(stratum_number) %>% 
+othoffshore <- MABGB %>%
+  dplyr::filter(stratum_number<2000) %>%
+  dplyr::filter(!(stratum_number %in% bfoffshore)) %>% 
   distinct() 
 
 # configs
