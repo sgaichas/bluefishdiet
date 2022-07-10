@@ -115,6 +115,11 @@ MABGB <- northwest_atlantic_grid %>%
   dplyr::select(stratum_number) %>% 
   distinct()
 
+GOMSS <- northwest_atlantic_grid %>%
+  dplyr::filter(stratum_number %in% c(GOM, SS)) %>% 
+  dplyr::select(stratum_number) %>% 
+  distinct()
+
 albinshore <- MABGB %>%
   dplyr::filter(stratum_number>2999 & stratum_number<3999) %>% #inshore
   dplyr::filter(!(stratum_number %in% bfinshore)) %>% 
@@ -160,11 +165,12 @@ OverdispersionConfig	<- c("eta1"=0, "eta2"=0)
 
 strata.limits <- as.list(c("AllEPU" = AllEPU, 
                          "MABGB" = MABGB, 
-                         "albinshore" = albinshore,
-                         "bfinshore" = bfin,
-                         "bfoffshore" = bfoff,                         
-                         "bfall" = bfall,
-                         "othoffshore" = othoffshore
+                         #"albinshore" = albinshore,
+                         #"bfinshore" = bfin,
+                         #"bfoffshore" = bfoff,                         
+                         #"bfall" = bfall,
+                         #"othoffshore" = othoffshore,
+                         "GOMSS" = GOMSS
                          ))
 
 settings = make_settings( n_x = 500, 
