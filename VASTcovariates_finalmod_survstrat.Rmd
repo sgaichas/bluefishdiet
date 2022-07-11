@@ -183,7 +183,7 @@ stratlook <- data.frame(Stratum = c("Stratum_1",
 
 ### Fall Index  
 
-Plot individual time series
+Plot individual time series (bias corrected) with standard errors:
 
 ```{r}
 splitoutput <- read.csv("pyindex/allagg_fall_500_lennosst_split_biascorrect/Index.csv")
@@ -208,14 +208,17 @@ ggplot(splitoutput, aes(x=Time, y=Estimate, colour=Region)) +
 ```{r}
 in2off <- splitoutput %>%
   dplyr::select(Time, Region, Estimate, Std..Error.for.Estimate) %>%
-  tidyr::pivot_wider(names_from = Region, values_from = c(Estimate, Std..Error.for.Estimate)) %>%
+  tidyr::pivot_longer(c(Estimate, Std..Error.for.Estimate), names_to = "Var") %>%
+  dplyr::group_by(Var) %>%
+  tidyr::pivot_wider(names_from = Region, values_from = value) %>%
   dplyr::mutate(AlbInshore = MABGBalbinshore,
                 BlueInshore = bfin,
                 BlueOffshore = bfoff,
                 OthOffshore = MABGB - (bfoff + bfin + MABGBalbinshore),
                 SumMABGB = AlbInshore + BlueInshore + BlueOffshore + OthOffshore) %>%
   dplyr::select(Time, AlbInshore, BlueInshore, BlueOffshore, OthOffshore, SumMABGB, MABGB) %>%
-  tidyr::pivot_longer(!Time, names_to = "Region", values_to = "Estimate")
+  tidyr::pivot_longer(!c(Time, Var), names_to = "Region", values_to = "value") %>%
+  tidyr::pivot_wider(names_from = "Var", values_from = "value")
 
 ggplot(in2off, aes(x=Time, y=Estimate, colour = Region)) +
   geom_errorbar(aes(ymin=Estimate+Std..Error.for.Estimate, ymax=Estimate-Std..Error.for.Estimate))+
@@ -286,17 +289,21 @@ ggplot(splitoutput, aes(x=Time, y=Estimate, colour=Region)) +
  
 ```{r}
 in2off <- splitoutput %>%
-  dplyr::select(Time, Region, Estimate) %>%
-  tidyr::pivot_wider(names_from = Region, values_from = Estimate) %>%
+  dplyr::select(Time, Region, Estimate, Std..Error.for.Estimate) %>%
+  tidyr::pivot_longer(c(Estimate, Std..Error.for.Estimate), names_to = "Var") %>%
+  dplyr::group_by(Var) %>%
+  tidyr::pivot_wider(names_from = Region, values_from = value) %>%
   dplyr::mutate(AlbInshore = MABGBalbinshore,
                 BlueInshore = bfin,
                 BlueOffshore = bfoff,
                 OthOffshore = MABGB - (bfoff + bfin + MABGBalbinshore),
                 SumMABGB = AlbInshore + BlueInshore + BlueOffshore + OthOffshore) %>%
   dplyr::select(Time, AlbInshore, BlueInshore, BlueOffshore, OthOffshore, SumMABGB, MABGB) %>%
-  tidyr::pivot_longer(!Time, names_to = "Region", values_to = "Estimate")
+  tidyr::pivot_longer(!c(Time, Var), names_to = "Region", values_to = "value") %>%
+  tidyr::pivot_wider(names_from = "Var", values_from = "value")
 
 ggplot(in2off, aes(x=Time, y=Estimate, colour = Region)) +
+  geom_errorbar(aes(ymin=Estimate+Std..Error.for.Estimate, ymax=Estimate-Std..Error.for.Estimate))+
   geom_point()+
   geom_line()+
   #facet_wrap(~Region) + #+ , scales = "free_y"
