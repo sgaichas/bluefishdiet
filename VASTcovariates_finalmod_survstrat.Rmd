@@ -267,19 +267,28 @@ ggplot(MABGBprop, aes(x=Time, y=Estimate, colour = Region)) +
  
 ### Fall Diagnostics {.tabset}
 
-```{r, results='asis', eval=FALSE}
+```{r, results='asis'}
 
-for(mapyr in 1985:2021){
+diagplots <- c("Data_and_knots",
+               "Data_by_year",
+               "quantile_residuals",
+               "quantile_residuals_on_map",
+               "Aniso",
+               "center_of_gravity")
+
+for(p in diagplots){
   
-    cat("  \n####",  as.character(mapyr),"  \n")
-    print(yrmap(mapyr)) 
+    cat("  \n####",  as.character(p),"  \n")
+    cat(paste0("![](pyindex/allagg_fall_500_lennosst_split_biascorrect/",
+                      p,
+                      ".png)")) 
     cat("  \n")   
     
   }
 
 ```
 
-###{-} 
+### {-} 
 
 ## Spring results
  
@@ -366,7 +375,32 @@ ggplot(MABGBprop, aes(x=Time, y=Estimate, colour = Region)) +
 
 ![Spring density maps with covariates](pyindex/allagg_spring_500_lennosst_split_biascorrect/ln_density-predicted.png)
 
-All results in the respective pyindex/allagg_fall_500_lennosst_split_biascorrect and allagg_spring_500_lennsst_splitbiascorrect folders.
+### Spring Diagnostics {.tabset}
+
+```{r, results='asis'}
+
+diagplots <- c("Data_and_knots",
+               "Data_by_year",
+               "quantile_residuals",
+               "quantile_residuals_on_map",
+               "Aniso",
+               "center_of_gravity")
+
+for(p in diagplots){
+  
+    cat("  \n####",  as.character(p),"  \n")
+    cat(paste0("![](pyindex/allagg_spring_500_lennosst_split_biascorrect/",
+                      p,
+                      ".png)")) 
+    cat("  \n")   
+    
+  }
+
+```
+
+### {-} 
+
+All results in the respective `pyindex/allagg_fall_500_lennosst_split_biascorrect` and `allagg_spring_500_lennsst_splitbiascorrect` folders.
 
 The full results are on [google drive](https://drive.google.com/drive/folders/1PsEk5hhQ7fR0Gq4NnYPvU4V59d4nIR8E) rather than github to save space.
 
