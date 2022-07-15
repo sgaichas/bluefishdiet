@@ -45,3 +45,4 @@ output: html_document
 
 <a href="https://sgaichas.github.io/bluefishdiet/VASTcovariates_finalmod_survstrat.html" target="_blank"> Bias corrected index for partitions based on survey strata - July 11 2022 </a>
 
+<a href="https://sgaichas.github.io/bluefishdiet/VASTcovariates_finalmod_strattest.html" target="_blank"> Me worrying (unnecessarily?) about strata.limits - July 15 2022 </a>

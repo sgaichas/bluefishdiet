@@ -28,13 +28,15 @@ library(here)
 #library(VAST)
 ```
 
-Investigating the stability of index estimates using different strata limits definitions.
+Investigating the stability of index estimates using different strata limits definitions. Ideally, the index for our areas of interest will be robust to the selection of overall model strata.limits (within reason).
 
-Why: the fall model converges using the full set of "EPU" strata in the VAST northwest_atlantic_grid, and when using all survey strata including those outside the defined EPUs, but does not converge when limited to the survey strata defined AllEPU strata limits, which differ only a little spatially. Spring converges in both cases, but with different parameter estimates.
+The largest possible spatial domain is the full Northwest Atlantic grid in VAST, which is the full set of NEFSC survey strata including those not routinely sampled anymore south of Cape Hatteras. The smallest possible spatial domain for the bluefish assessment is the MABGB survey strata. I would rather not model at this level if we want to use the same dataset and VAST model to derive an index for the Gulf of Maine in addition to Mid Atlantic and Georges Bank for State of the Ecosystem reporting. But we'll look at both extremes as the overall strata.limits here and compare index results.
+
+Why am I opening this can of worms: the fall model converges using the full set of "EPU" strata in the VAST northwest_atlantic_grid, and when using all survey strata including those outside the defined EPUs, but does not converge when limited to the survey strata defined AllEPU strata limits, which differ only a little spatially. Spring converges in both cases. Any change in the model spatial domain overall will result in different parameter estimates. But it is the index we are interested in.
 
 [Model comparisons](https://sgaichas.github.io/bluefishdiet/VASTcovariates_updatedPreds_sst.html) evaluating fit with different catchability coefficents, etc, for the full model converge in fall because we are using the *entire* survey grid that extends beyond either EPU definition (South of Cape Hatteras and maybe also a bit north), and then splitting to our areas of interest. As noted during analysis of the bias corrected run, 
 
-**Attempts to rewrite these strata to a subset of only the needed ones failed! The model did not converge! I need to better understand how stratum definitions affect model estimation. I thought--apparently incorrectly--that they didn't. This configuration, where each strata set also has a complement included, results in model convergence.**
+**Attempts to rewrite these strata to a subset of only the needed ones failed! The model did not converge! I need to better understand how stratum definitions affect model estimation. I thought--apparently incorrectly--that they didn't. This configuration, where each strata set also has a complement included, results in model convergence.** So I was incorrect in thinking I was using the same strata.limits, and was correct in my understanding of how the model works. I just failed to notice I was actually comparing the full range of survey strata with the truncated range in AllEPU as the model outer limits.
 
 So the question is whether we get a similar index using the entire survey grid and partitioning results to AllEPU or some other strata, in which case we go ahead and run on the full survey grid and don't worry about it.
 
@@ -138,15 +140,14 @@ We are now back to bias correction turned off, and instead running this script f
 
 # Model Results, comparing strata limit definitions
 
-Compare full model partitioned results to those estimated only from AllEPU, MABGB:
+Compare full model (all survey strata including below Hatteras) partitioned results to those estimated only from AllEPU, MABGB:
 
 ```{r}
 
-moddir <- c("pyindex/allagg_fall_500_lennosst_spilt",
-            "pyindex/allagg_fall_500_lennosst_spilt1",
+moddir <- c("pyindex/allagg_fall_500_lennosst_split1",
             "pyindex/allagg_fall_500_lennosst_AllEPU",
             "pyindex/allagg_fall_500_lennosst_MABGB",
-            "pyindex/allagg_spring_500_lennosst_spilt1",
+            "pyindex/allagg_spring_500_lennosst_split1",
             "pyindex/allagg_spring_500_lennosst_AllEPU",
             "pyindex/allagg_spring_500_lennosst_MABGB")
 
@@ -175,233 +176,168 @@ stratlook <- data.frame(Stratum = c("Stratum_1",
                                        "MABGBalbinshore",
                                        "MABGBoffshorebigin"))
 
+# function to apply extracting info
+getmodinfo.index <- function(d.name){
+  # read settings
+  modpath <- stringr::str_split(d.name, "/", simplify = TRUE)
+  modname <- modpath[length(modpath)]
+  
+  settings <- read.table(file.path(d.name, "settings.txt"), comment.char = "",
+    fill = TRUE, header = FALSE)
+  
+  n_x <- as.numeric(as.character(settings[(which(settings[,1]=="$n_x")+1),2]))
+  grid_size_km <- as.numeric(as.character(settings[(which(settings[,1]=="$grid_size_km")+1),2]))
+  max_cells <- as.numeric(as.character(settings[(which(settings[,1]=="$max_cells")+1),2]))
+  use_anisotropy <- as.character(settings[(which(settings[,1]=="$use_anisotropy")+1),2])
+  fine_scale <- as.character(settings[(which(settings[,1]=="$fine_scale")+1),2])
+  bias.correct <- as.character(settings[(which(settings[,1]=="$bias.correct")+1),2])
+  
+  #FieldConfig
+  if(settings[(which(settings[,1]=="$FieldConfig")+1),1]=="Component_1"){
+    omega1 <- as.character(settings[(which(settings[,1]=="$FieldConfig")+2),2])
+    omega2 <- as.character(settings[(which(settings[,1]=="$FieldConfig")+3),1])
+    epsilon1 <- as.character(settings[(which(settings[,1]=="$FieldConfig")+4),2])
+    epsilon2 <- as.character(settings[(which(settings[,1]=="$FieldConfig")+5),1])
+    beta1 <- as.character(settings[(which(settings[,1]=="$FieldConfig")+6),2])
+    beta2 <- as.character(settings[(which(settings[,1]=="$FieldConfig")+7),1])
+  }
+  
+  if(settings[(which(settings[,1]=="$FieldConfig")+1),1]=="Omega1"){
+    omega1 <- as.character(settings[(which(settings[,1]=="$FieldConfig")+3),1])
+    omega2 <- as.character(settings[(which(settings[,1]=="$FieldConfig")+4),1])
+    epsilon1 <- as.character(settings[(which(settings[,1]=="$FieldConfig")+3),2])
+    epsilon2 <- as.character(settings[(which(settings[,1]=="$FieldConfig")+4),2])
+    beta1 <- "IID"
+    beta2 <- "IID"
+  }
+  
+  
+  #RhoConfig
+  rho_beta1 <- as.numeric(as.character(settings[(which(settings[,1]=="$RhoConfig")+3),1]))
+  rho_beta2 <- as.numeric(as.character(settings[(which(settings[,1]=="$RhoConfig")+3),2]))
+  rho_epsilon1 <- as.numeric(as.character(settings[(which(settings[,1]=="$RhoConfig")+4),1]))
+  rho_epsilon2 <- as.numeric(as.character(settings[(which(settings[,1]=="$RhoConfig")+4),2]))
+  
+  # read parameter estimates, object is called parameter_Estimates
+  load(file.path(d.name, "parameter_estimates.RData"))
+  
+  AIC <- parameter_estimates$AIC[1]  
+  converged <- parameter_estimates$Convergence_check[1]
+  fixedcoeff <- unname(parameter_estimates$number_of_coefficients[2])
+  randomcoeff <- unname(parameter_estimates$number_of_coefficients[3])
+  
+  index <- read.csv(file.path(d.name, "Index.csv"))
+  
+  
+  # return model attributes as a dataframe
+  out <- data.frame(modname = modname,
+                    n_x = n_x,
+                    grid_size_km = grid_size_km,
+                    max_cells = max_cells,
+                    use_anisotropy = use_anisotropy,
+                    fine_scale =  fine_scale,
+                    bias.correct = bias.correct,
+                    omega1 = omega1,
+                    omega2 = omega2,
+                    epsilon1 = epsilon1,
+                    epsilon2 = epsilon2,
+                    beta1 = beta1,
+                    beta2 = beta2,
+                    rho_epsilon1 = rho_epsilon1,
+                    rho_epsilon2 = rho_epsilon2,
+                    rho_beta1 = rho_beta1,
+                    rho_beta2 = rho_beta2,
+                    AIC = AIC,
+                    converged = converged,
+                    fixedcoeff = fixedcoeff,
+                    randomcoeff = randomcoeff,
+                    index = index
+  )
+  	
+	return(out)
+
+}
+
+modcompare <- purrr::map_dfr(moddir, getmodinfo.index)
+
 ```
 
 ## Fall results
 
-### Fall Index  
-
-Plot individual time series (bias corrected) with standard errors:
+Which models converged?
 
 ```{r}
-splitoutput <- read.csv("pyindex/allagg_fall_500_lennosst_split_biascorrect/Index.csv")
+fallconverged <- modcompare %>%
+  dplyr::filter(grepl("fall", modname)) %>%
+  dplyr::select(modname, converged) %>%
+  dplyr::distinct()
 
-splitoutput <- splitoutput %>%
-  left_join(stratlook)
+knitr::kable(fallconverged)
+```
 
-ggplot(splitoutput, aes(x=Time, y=Estimate, colour=Region)) +
-  geom_errorbar(aes(ymin=Estimate+Std..Error.for.Estimate, ymax=Estimate-Std..Error.for.Estimate))+
+
+### Fall Index  
+
+Plot index time series with standard errors by model:
+
+```{r}
+
+falloutput <- modcompare %>%
+  dplyr::filter(grepl("fall", modname)) %>%
+  dplyr::left_join(stratlook, by = c("index.Stratum" = "Stratum")) %>%
+  dplyr::mutate(Region = case_when(grepl("MABGB", modname) ~  "MABGB",
+                                      TRUE ~ Region)) %>%
+  dplyr::filter(Region %in% c("AllEPU", "MABGB"))
+
+ggplot(falloutput, aes(x=index.Time, y=index.Estimate, colour=modname)) +
+  geom_errorbar(aes(ymin=index.Estimate+index.Std..Error.for.Estimate, ymax=index.Estimate-index.Std..Error.for.Estimate))+
   geom_point()+
   geom_line()+
   facet_wrap(~Region, scales = "free_y") +
   guides(colour = guide_legend(ncol=2)) +
   #theme(legend.position = c(1, 0),
    #     legend.justification = c(1, 0))
-  theme(legend.position="none")
+  theme(legend.position="bottom")
 
 ```
-
-
- 
-```{r}
-in2off <- splitoutput %>%
-  dplyr::select(Time, Region, Estimate, Std..Error.for.Estimate) %>%
-  tidyr::pivot_longer(c(Estimate, Std..Error.for.Estimate), names_to = "Var") %>%
-  dplyr::group_by(Var) %>%
-  tidyr::pivot_wider(names_from = Region, values_from = value) %>%
-  dplyr::mutate(AlbInshore = MABGBalbinshore,
-                BlueInshore = bfin,
-                BlueOffshore = bfoff,
-                OthOffshore = MABGB - (bfoff + bfin + MABGBalbinshore),
-                SumMABGB = AlbInshore + BlueInshore + BlueOffshore + OthOffshore) %>%
-  dplyr::select(Time, AlbInshore, BlueInshore, BlueOffshore, OthOffshore, SumMABGB, MABGB) %>%
-  tidyr::pivot_longer(!c(Time, Var), names_to = "Region", values_to = "value") %>%
-  tidyr::pivot_wider(names_from = "Var", values_from = "value")
-
-ggplot(in2off, aes(x=Time, y=Estimate, colour = Region)) +
-  geom_errorbar(aes(ymin=Estimate+Std..Error.for.Estimate, ymax=Estimate-Std..Error.for.Estimate))+
-  geom_point()+
-  geom_line()+
-  #facet_wrap(~Region) + #+ , scales = "free_y"
-  #theme(legend.position = c(1, 0),
-  #      legend.justification = c(1, 0))
-  ggtitle("Fall Prey Index, Mid-Atlantic and Georges Bank")
-
-
-```
-
- or as proportions (here proportion of MABGB index).
-
-```{r}
-MABGBprop <- in2off %>%
-  #dplyr::filter(Region != "AllEPU") %>%
-  dplyr::select(Time, Region, Estimate) %>%
-  tidyr::pivot_wider(names_from = Region, values_from = Estimate) %>%
-  dplyr::mutate(AlbInshoreprop = AlbInshore/MABGB,
-                BlueInshoreprop = BlueInshore/MABGB,
-                BlueOffshoreprop = BlueOffshore/MABGB,
-                OthOffshoreprop = OthOffshore/MABGB) %>%
-  tidyr::pivot_longer(!Time, names_to = "Region", values_to = "Estimate") %>%
-  dplyr::filter(Region %in% c("AlbInshoreprop", "BlueInshoreprop", "BlueOffshoreprop",
-                              "OthOffshoreprop"))
-  
-
-ggplot(MABGBprop, aes(x=Time, y=Estimate, colour = Region)) +
-  geom_point()+
-  geom_line()+
-  #facet_wrap(~Region) + #+ , scales = "free_y"
-  #theme(legend.position = c(1, 0),
-  #      legend.justification = c(1, 0))
-  ggtitle("Fall Prey Index as proportion of Mid-Atlantic and Georges Bank")
-  
-  
-```
-
-### Fall predicted ln-density
-
-![Fall density maps with covariates](pyindex/allagg_fall_500_lennosst_split_biascorrect/ln_density-predicted.png)
- 
-### Fall Diagnostics {.tabset}
-
-```{r, results='asis'}
-
-diagplots <- c("Data_and_knots",
-               "Data_by_year",
-               "quantile_residuals",
-               "quantile_residuals_on_map",
-               "Aniso",
-               "center_of_gravity")
-
-for(p in diagplots){
-  
-    cat("  \n####",  as.character(p),"  \n")
-    cat(paste0("![](pyindex/allagg_fall_500_lennosst_split_biascorrect/",
-                      p,
-                      ".png)")) 
-    cat("  \n")   
-    
-  }
-
-```
-
-### {-} 
 
 ## Spring results
+
+```{r}
+springconverged <- modcompare %>%
+  dplyr::filter(grepl("spring", modname)) %>%
+  dplyr::select(modname, converged) %>%
+  dplyr::distinct()
+
+knitr::kable(springconverged)
+```
+
  
 ### Spring Index  
 
-Plot individual time series
+Plot index time series with standard errors by model:
 
 ```{r}
-splitoutput <- read.csv("pyindex/allagg_spring_500_lennosst_split_biascorrect/Index.csv")
 
-splitoutput <- splitoutput %>%
-  left_join(stratlook)
+springoutput <- modcompare %>%
+  dplyr::filter(grepl("spring", modname)) %>%
+  dplyr::left_join(stratlook, by = c("index.Stratum" = "Stratum")) %>%
+  dplyr::mutate(Region = case_when(grepl("MABGB", modname) ~  "MABGB",
+                                      TRUE ~ Region)) %>%
+  dplyr::filter(Region %in% c("AllEPU", "MABGB"))
 
-ggplot(splitoutput, aes(x=Time, y=Estimate, colour=Region)) +
-  geom_errorbar(aes(ymin=Estimate+Std..Error.for.Estimate, ymax=Estimate-Std..Error.for.Estimate))+
+ggplot(springoutput, aes(x=index.Time, y=index.Estimate, colour=modname)) +
+  geom_errorbar(aes(ymin=index.Estimate+index.Std..Error.for.Estimate, ymax=index.Estimate-index.Std..Error.for.Estimate))+
   geom_point()+
   geom_line()+
   facet_wrap(~Region, scales = "free_y") +
   guides(colour = guide_legend(ncol=2)) +
   #theme(legend.position = c(1, 0),
    #     legend.justification = c(1, 0))
-  theme(legend.position="none")
+  theme(legend.position="bottom")
 
 ```
 
- or just the indices from inshore (alb), inshore bluefish, offshore bluefish, and further out
- 
-```{r}
-in2off <- splitoutput %>%
-  dplyr::select(Time, Region, Estimate, Std..Error.for.Estimate) %>%
-  tidyr::pivot_longer(c(Estimate, Std..Error.for.Estimate), names_to = "Var") %>%
-  dplyr::group_by(Var) %>%
-  tidyr::pivot_wider(names_from = Region, values_from = value) %>%
-  dplyr::mutate(AlbInshore = MABGBalbinshore,
-                BlueInshore = bfin,
-                BlueOffshore = bfoff,
-                OthOffshore = MABGB - (bfoff + bfin + MABGBalbinshore),
-                SumMABGB = AlbInshore + BlueInshore + BlueOffshore + OthOffshore) %>%
-  dplyr::select(Time, AlbInshore, BlueInshore, BlueOffshore, OthOffshore, SumMABGB, MABGB) %>%
-  tidyr::pivot_longer(!c(Time, Var), names_to = "Region", values_to = "value") %>%
-  tidyr::pivot_wider(names_from = "Var", values_from = "value")
-
-ggplot(in2off, aes(x=Time, y=Estimate, colour = Region)) +
-  geom_errorbar(aes(ymin=Estimate+Std..Error.for.Estimate, ymax=Estimate-Std..Error.for.Estimate))+
-  geom_point()+
-  geom_line()+
-  #facet_wrap(~Region) + #+ , scales = "free_y"
-  #theme(legend.position = c(1, 0),
-  #      legend.justification = c(1, 0))
-  ggtitle("Spring Prey Index, Mid-Atlantic and Georges Bank")
-
-
-```
-
- or as proportions (here proportion of MABGB index).
-
-```{r}
-MABGBprop <- in2off %>%
-  #dplyr::filter(Region != "AllEPU") %>%
-  dplyr::select(Time, Region, Estimate) %>%
-  tidyr::pivot_wider(names_from = Region, values_from = Estimate) %>%
-  dplyr::mutate(AlbInshoreprop = AlbInshore/MABGB,
-                BlueInshoreprop = BlueInshore/MABGB,
-                BlueOffshoreprop = BlueOffshore/MABGB,
-                OthOffshoreprop = OthOffshore/MABGB) %>%
-  tidyr::pivot_longer(!Time, names_to = "Region", values_to = "Estimate") %>%
-  dplyr::filter(Region %in% c("AlbInshoreprop", "BlueInshoreprop", "BlueOffshoreprop",
-                              "OthOffshoreprop"))
-  
-
-ggplot(MABGBprop, aes(x=Time, y=Estimate, colour = Region)) +
-  geom_point()+
-  geom_line()+
-  #facet_wrap(~Region) + #+ , scales = "free_y"
-  #theme(legend.position = c(1, 0),
-  #      legend.justification = c(1, 0))
-  ggtitle("Spring Prey Index as proportion of Mid-Atlantic and Georges Bank")
-  
-  
-```
-
-
-### Spring predicted ln-density
-
-![Spring density maps with covariates](pyindex/allagg_spring_500_lennosst_split_biascorrect/ln_density-predicted.png)
-
-### Spring Diagnostics {.tabset}
-
-```{r, results='asis'}
-
-diagplots <- c("Data_and_knots",
-               "Data_by_year",
-               "quantile_residuals",
-               "quantile_residuals_on_map",
-               "Aniso",
-               "center_of_gravity")
-
-for(p in diagplots){
-  
-    cat("  \n####",  as.character(p),"  \n")
-    cat(paste0("![](pyindex/allagg_spring_500_lennosst_split_biascorrect/",
-                      p,
-                      ".png)")) 
-    cat("  \n")   
-    
-  }
-
-```
-
-### {-} 
-
-All results in the respective `pyindex/allagg_fall_500_lennosst_split_biascorrect` and `allagg_spring_500_lennsst_splitbiascorrect` folders.
-
-The full results are on [google drive](https://drive.google.com/drive/folders/1PsEk5hhQ7fR0Gq4NnYPvU4V59d4nIR8E) rather than github to save space.
-
-Still to do:
-
-*  fix index within 3 miles of shore and outside that (highest priority)
+OK I feel better about this. All indices look very close, and well within standard error ranges. Perhaps best to continue with the full set of survey strata (here `..._split1` models), since those models converge consistently. It seems reasonable that strata limits at the MABGB level would depart a bit more from the full model narrowed down to MABGB as they are excluding data from the full spatial domain. 
 
 ## References
