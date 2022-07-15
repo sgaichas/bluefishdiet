@@ -100,6 +100,11 @@ AllEPU <- northwest_atlantic_grid %>%
   select(stratum_number) %>% 
   distinct()
 
+MABGBGOM <- northwest_atlantic_grid %>% 
+  filter(stratum_number %in% c(MAB, GB, GOM)) %>% 
+  select(stratum_number) %>% 
+  distinct()
+
 MABGB <- northwest_atlantic_grid %>% 
   filter(stratum_number %in% c(MAB, GB)) %>% 
   select(stratum_number) %>% 
@@ -186,7 +191,7 @@ OverdispersionConfig	<- c("eta1"=0, "eta2"=0)
 # eta1 = vessel effects on prey encounter rate
 # eta2 = vessel effects on prey weight
 
-strata.limits <- as.list(c(MABGB
+strata.limits <- as.list(c(MABGBGOM
                          #"AllEPU" = AllEPU, 
                          #"MABGB" = MABGB, 
                          #"MABGBinshore" = MABGBinshore, 
@@ -220,7 +225,7 @@ settings = make_settings( n_x = 500,
 #########################################################
 # Run model fall
 
-season <- c("fall_500_lennosst_MABGB")
+season <- c("fall_500_lennosst_MABGBGOM")
 
 working_dir <- here::here(sprintf("pyindex/allagg_%s/", season))
 
@@ -253,7 +258,7 @@ plot( fit,
 ######################################################
 # Run model spring
 
-season <- c("spring_500_lennosst_MABGB")
+season <- c("spring_500_lennosst_MABGBGOM")
 
 working_dir <- here::here(sprintf("pyindex/allagg_%s/", season))
 
