@@ -4,7 +4,14 @@ author: "Sarah Gaichas"
 output: html_document
 ---
 
+<button>
+    <a href="https://github.com/sgaichas/bluefishdiet"> Bluefish Forage Index Repo </a>
+</button>
+
+
 <!-- ADD LINKS BELOW, note, using the RMD link syntax will open the presentation in the same tab, which is annoying. Use the html with the "_blank" to fix that behavior -->
+
+## Analysis pages
  
 
 <a href="https://sgaichas.github.io/bluefishdiet/DietSummary.html" target="_blank"> Initial Diet summaries for NEFSC data - Nov 10 2021 </a>
