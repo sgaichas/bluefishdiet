@@ -133,6 +133,19 @@ MABGBoffshorebigin <- MABGB %>%
 
 ```
 
+Visuals of what the full model domain looks like with strata.limits defined using all of these groupings that extend to all survey strata (model name ends in `_split1`):
+
+![split1 spatial domain](pyindex/allagg_fall_500_lennosst_split1/Data_and_knots.png)
+
+And this is the model domain when strata.limits are only survey strata-defined EPUs (model name ends in `_AllEPU`):
+
+![AllEPU spatial domain](pyindex/allagg_fall_500_lennosst_AllEPU/Data_and_knots.png)
+
+And finally just for testing, the model domain when strata.limits include only the MAB and GB survey strata-defined EPUs (model name ends in `_MABGB`):
+
+![MABGB spatial domain](pyindex/allagg_fall_500_lennosst_MABGB/Data_and_knots.png)
+
+
 We are now back to bias correction turned off, and instead running this script for a single set of strata.limits to compare indices generated: 
 
 ```{r, code = readLines(here("VASTunivariate_bfp_teststratalimits.R")), eval=F}
@@ -339,5 +352,108 @@ ggplot(springoutput, aes(x=index.Time, y=index.Estimate, colour=modname)) +
 ```
 
 OK I feel better about this. All indices look very close, and well within standard error ranges. Perhaps best to continue with the full set of survey strata (here `..._split1` models), since those models converge consistently. It seems reasonable that strata limits at the MABGB level would depart a bit more from the full model narrowed down to MABGB as they are excluding data from the full spatial domain. 
+
+Last thing, what difference did bias correction make on the index? The above are all not bias corrected because that takes four times as long to run. However we can compare the split1 models to the bias corrected models because they were run on exactly the same footprint. Here is the difference:
+
+## Bias corrected vs not
+
+```{r}
+moddir2 <- c("pyindex/allagg_fall_500_lennosst_split1",
+            "pyindex/allagg_fall_500_lennosst_split_biascorrect",
+            "pyindex/allagg_spring_500_lennosst_split1",
+            "pyindex/allagg_spring_500_lennosst_split_biascorrect")
+
+modcompare2 <- purrr::map_dfr(moddir2, getmodinfo.index)
+
+
+
+```
+
+
+## Fall results
+
+Which models converged?
+
+```{r}
+fallconverged2 <- modcompare2 %>%
+  dplyr::filter(grepl("fall", modname)) %>%
+  dplyr::select(modname, converged) %>%
+  dplyr::distinct()
+
+knitr::kable(fallconverged2)
+```
+
+
+### Fall Index  
+
+Plot index time series with standard errors by model:
+
+```{r}
+
+falloutput2 <- modcompare2 %>%
+  dplyr::filter(grepl("fall", modname)) %>%
+  dplyr::left_join(stratlook, by = c("index.Stratum" = "Stratum")) %>%
+  #dplyr::mutate(Region = case_when(grepl("MABGB", modname) ~  "MABGB",
+  #                                    TRUE ~ Region)) %>%
+  dplyr::filter(Region %in% c("AllEPU", "MABGB",
+                              "bfin", "bfoff",
+                              "MABGBalbinshore"))
+
+ggplot(falloutput2, aes(x=index.Time, y=index.Estimate, colour=modname)) +
+  geom_errorbar(aes(ymin=index.Estimate+index.Std..Error.for.Estimate, ymax=index.Estimate-index.Std..Error.for.Estimate))+
+  geom_point()+
+  geom_line()+
+  facet_wrap(~Region, scales = "free_y") +
+  guides(colour = guide_legend(ncol=2)) +
+  #theme(legend.position = c(1, 0),
+   #     legend.justification = c(1, 0))
+  theme(legend.position="bottom")
+
+```
+
+### Spring results
+
+Which models converged?
+
+```{r}
+springconverged2 <- modcompare2 %>%
+  dplyr::filter(grepl("spring", modname)) %>%
+  dplyr::select(modname, converged) %>%
+  dplyr::distinct()
+
+knitr::kable(springconverged2)
+```
+
+### Spring index
+
+Plot index time series with standard errors by model:
+
+```{r}
+
+springoutput2 <- modcompare2 %>%
+  dplyr::filter(grepl("spring", modname)) %>%
+  dplyr::left_join(stratlook, by = c("index.Stratum" = "Stratum")) %>%
+  #dplyr::mutate(Region = case_when(grepl("MABGB", modname) ~  "MABGB",
+  #                                    TRUE ~ Region)) %>%
+  dplyr::filter(Region %in% c("AllEPU", "MABGB",
+                              "bfin", "bfoff",
+                              "MABGBalbinshore"))
+
+ggplot(springoutput2, aes(x=index.Time, y=index.Estimate, colour=modname)) +
+  geom_errorbar(aes(ymin=index.Estimate+index.Std..Error.for.Estimate, ymax=index.Estimate-index.Std..Error.for.Estimate))+
+  geom_point()+
+  geom_line()+
+  facet_wrap(~Region, scales = "free_y") +
+  guides(colour = guide_legend(ncol=2)) +
+  #theme(legend.position = c(1, 0),
+   #     legend.justification = c(1, 0))
+  theme(legend.position="bottom")
+
+```
+
+Bias correction tends to inflate the index a bit.
+
+This probably doesn't matter if it is used as a covariate in an assessment model.
+
 
 ## References
