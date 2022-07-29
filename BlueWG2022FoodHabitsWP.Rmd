@@ -9,7 +9,7 @@ output:
   html_document:
     code_fold: hide
 link-citations: yes
-csl: plos.csl
+csl: fishery-bulletin.csl
 always_allow_html: true
 ---
 
