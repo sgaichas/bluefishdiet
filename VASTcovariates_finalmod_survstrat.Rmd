@@ -7,7 +7,7 @@ output:
   html_document:
     code_fold: hide
 link-citations: yes
-csl: ices-journal-of-marine-science.csl
+csl: fishery-bulletin.csl
 bibliography: FishDiet_EcoIndicators.bib
 ---
 
@@ -130,6 +130,7 @@ MABGBoffshorebigin <- MABGB %>%
 
 **Attempts to rewrite these strata to a subset of only the needed ones failed! The model did not converge! I need to better understand how stratum definitions affect model estimation. I thought--apparently incorrectly--that they didn't. This configuration, where each strata set also has a complement included, results in model convergence.**
 
+Bias correction is based on [@thorson_implementing_2016]. 
 
 Run this script, the same used to test catchability covariates, but now has all three covariates (predator mean length, number of predator species, and SSTfill) included and  `bias.correct=TRUE`: 
 
