@@ -1,0 +1,597 @@
+---
+title: "2022 Bluefish (*Pomatomus saltatrix*) Research Track Working Paper YY: Forage Index"
+subtitle: "Vector Autoregressive Spatio-Temporal (VAST) modeling of piscivore stomach contents, 1985-2021"
+author: "Sarah Gaichas, James Gartland, Brian Smith, Elizabeth Ng, Michael Celestino, Anthony Wood, Katie Drew, Abigail Tyrell, and James Thorson"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    code_fold: hide
+link-citations: yes
+csl: fishery-bulletin.csl
+bibliography: FishDiet_EcoIndicators.bib
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      message = FALSE,
+                      warning = FALSE)
+
+library(tidyverse)
+theme_set(theme_bw())
+library(here)
+library(dendextend)
+#library(DT)
+#library(pdftools)
+#library(patchwork)
+#library(ggiraph)
+
+#library(ecodata)
+#library(VAST)
+
+# try to put affiliations in the yaml header later
+# author:
+# - affiliation: group1
+#   name: 'Sarah Gaichas, Brian Smith, Anthony Wood, Abigail Tyrell'
+# - affiliation: group2
+#   name: James Gartland
+# - affiliation: group3
+#   name: Elizabeth Ng
+# - affiliation: group4
+#   name: Michael Celestino
+# - affiliation: group5
+#   name: Katie Drew
+# - affiliation: group6
+#   name: Abigail Tyrell  
+# address:
+# - address: NOAA NMFS Northeast Fisheries Science Center, Woods Hole, MA, USA
+#   code: group1
+# - address: Virginia Institute of Marine Science, Gloucester Point, VA, USA
+#   code: group2
+# - address: University of Washington, Seattle, WA, USA
+#   code: group3
+# - address: New Jersey Department of Environmental Protection, Port Republic, NJ, USA
+#   code: group4
+# - address: Atlantic States Marine Fisheries Commission, Arlington, VA, USA
+#   code: group5
+# - address: Ocean Associates Inc, Arlington, VA, USA
+#   code: group6
+
+```
+
+# Does prey drive availability of bluefish? Assessing small pelagic fish trends in space and time using piscivore diet data
+
+## Abstract
+
+Changing distribution and abundance of small pelagics may drive changes in predator distributions, affecting predator availability to fisheries and surveys. However, small pelagic fish are difficult to survey directly, so we developed a novel method of assessing small pelagic fish aggregate abundance via predator diet data. We used piscivore diet data collected from multiple bottom trawl surveys within a Vector Autoregressive Spatio-Temporal (VAST) model to assess trends of small pelagics on the Northeast US shelf. The goal was to develop a spatial “forage index” to inform survey and/or fishery availability in the bluefish (*Pomatomus saltatrix*) stock assessment. Using spring and fall surveys from 1973-2020, 20 small pelagic groups were identified as major bluefish prey using the diet data. Then, predators were grouped by diet similarity to identify 19 piscivore species with the most similar diet to bluefish in the region. Diets from all 20 piscivores were combined for the 20 prey groups at each surveyed location, and the total weight of small pelagic prey per predator stomach at each location was input into a Poisson-link delta model to estimate expected prey mass per predator stomach. Best fit models included spatial and spatio-temporal random effects, with predator mean length, number of predator species, and sea surface temperature as catchability covariates. Spring and fall prey indices were split into inshore and offshore areas to reflect changing prey availability over time in areas available to the recreational fishery and the bottom trawl survey, and also to contribute to regional ecosystem reporting. 
+
+## Introduction
+
+The objective of this work was to create a "prey index" to evaluate changes in bluefish prey over time and in space using Vector Autoregressive Spatio-Temporal modeling (VAST [@thorson_comparing_2017; @thorson_guidance_2019]). This approach was patterned on @ng_predator_2021, which used predator stomach data to create a biomass index for a single prey, Atlantic herring. Expected biomass of herring per stomach was estimated in VAST with 2 linear predictors, the number of herring per stomach and the average weight of herring in a stomach. 
+
+We adapted the approach of @ng_predator_2021 to get an index for "bluefish prey" in aggregate rather than a single prey species. Further, we include inshore and offshore regions by combining results across regional bottom trawl surveys surveys as was done for summer flounder biomass in @perretti_spatio-temporal_2019. Finally, since bluefish themselves are somewhat sparsely sampled by the surveys, we aggregate all predators that have a similar diet composition to bluefish to better represent bluefish prey biomass. 
+
+We characterize mean weight of bluefish prey from all piscivores caught at each survey location and model that over time/space. Covariates potentially affecting perceived patterns in the bluefish prey index include number of predators, size composition of predators, and sea surface temperature (SST) at each survey location. 
+
+Therefore, the steps involved to estimate the forage index included defining the input dataset, and running multiple configurations of the VAST model. Steps involved in defining the dataset included defining "bluefish prey", defining a set of piscivore predators with similar diets to bluefish, integrating diet data from two regional surveys, and integrating supplementary SST data to fill gaps in in-situ temperature data measurements. Steps involved in running the VAST model included decisions on spatial footprint, model structure, model selection to determine if spatial and spatio-temporal random effects were supported by the data, and further model selection to determine which catchability covariates were best supported by the data. Finally, subsets of the spatial domain were defined to match bluefish assessment inputs (survey and recreational fishery CPUE) for potential use as covariates in bluefish stock assessment models, and a bias-corrected [@thorson_implementing_2016] forage index for each spatial subset was generated. 
+
+This approach is generalizable to any spatial subset of the full VAST spatial domain, such that forage indices for each ecoregion on the Northeast US continental shelf, or for other piscivore predators can also be generated. 
+
+## Methods
+
+### Input dataset
+Fish food habits data are collected aboard several regional fishery independent surveys in the Northeast US. The longest time series of diet has been collected by the Northeast Fisheries Science Center (NEFSC) bottom trawl survey [@smith_trophic_2010] from south of Cape Hatteras, NC to the Scotian Shelf at the US/Canada border since the early 1970s, which represents the bulk of the data for this analysis. Using similar survey protocols to the NEFSC survey, the NorthEast Area Monitoring and Assessment Program (NEAMAP) survey has collected fish diet data in inshore waters from Cape Hatteras, NC to Cape Cod, MA since 2008. 
+
+#### Defining bluefish prey  
+Bluefish eat small pelagics that are not well sampled by bottom trawl surveys. Bluefish themselves are not well sampled by bottom trawl surveys. Nevertheless, the diet samples collected for bluefish indicate that anchovies, herrings, squids, butterfish, scup, and small hakes are important prey. See working paper **#XX**, as well as [this web summary page link](https://sgaichas.github.io/bluefishdiet/DietSummary.html) for NEFSC survey and [this presentation link](https://docs.google.com/presentation/d/1VlP0OsSLnoaoFHHt7kJbrqNTgBJqI6Ru/edit#slide=id.p1) for NEAMAP survey bluefish diet composition summaries.
+
+Using all sampled bluefish stomachs included in the NEFSC food habits database 1973-2020, we created a list of all pelagic nekton bluefish prey that had at least 10 observations (Table 1). Broad categories such as empty stomach, fish unidentified, osteichthes, unidentified animal remains, and blown stomach were not included in the prey list.
+
+```{r preylist}
+# object is called `allfh`
+load(url("https://github.com/Laurels1/Condition/raw/master/data/allfh.RData"))
+
+preycount <- allfh %>%
+   group_by(pdcomnam, pynam) %>%
+   summarise(count = n()) %>%
+   filter(pdcomnam != "") %>%
+   #arrange(desc(count))
+   pivot_wider(names_from = pdcomnam, values_from = count) 
+
+gencomlist <- allfh %>%  
+  select(pynam, gencom2) %>%
+  distinct()
+
+blueprey <- preycount %>%
+  filter(BLUEFISH > 9) %>%
+  filter(!pynam %in% c("EMPTY", "BLOWN",
+                       "FISH", "OSTEICHTHYES",
+                       "ANIMAL REMAINS",
+                       "FISH SCALES")) %>%
+  #filter(!str_detect(pynam, "SHRIMP|CRAB")) %>%
+  left_join(gencomlist) %>%
+  filter(!gencom2 %in% c("ARTHROPODA", "ANNELIDA",
+                         "CNIDARIA", "UROCHORDATA",
+                         "ECHINODERMATA", "WORMS",
+                         "BRACHIOPODA", "COMB JELLIES",
+                         "BRYOZOA", "SPONGES",
+                         "MISCELLANEOUS", "OTHER")) %>%
+  arrange(desc(BLUEFISH))
+
+kableExtra::kable(blueprey[,c('pynam','BLUEFISH')],
+                  col.names = c('Prey name', 'Bluefish stomachs (n)'),
+                  caption = "Table 1. Prey identified in bluefish stomachs, NEFSC diet database, 1973-2020.")
+```
+
+
+#### Defining piscivore predators  
+The choice of predators is largely intended to balance increasing sample size for modeling bluefish prey with using predators likely to be foraging similarly to bluefish.  One extreme assumption would be to include only bluefish as predators, but there are relatively few bluefish samples due to incomplete availability to bottom trawl surveys. This would miss prey available to bluefish because we have not sampled bluefish adequately. The opposite extreme assumption would be to include all stomachs that contain any of the top bluefish prey, regardless of which species ate the prey. This would include predators that do not forage similarly to bluefish and might therefore "count" prey that are not actually available to bluefish due to habitat differences. The intermediate approach which selects a group of piscivores that forage similarly to bluefish both increases sample size and screens out the most dissimilar predators to bluefish. The three possibilities above represent different piscivore groupings. 
+
+For bluefish forage index modeling, we are selecting a set of predators that have high diet similarity to bluefish. @garrison_dietary_2000 evaluated similarity of predator diets on the Northeast US shelf to develop foraging guilds. The Schoener similarity index [@schoener_nonsynchronous_1970] was applied
+
+>to assess the dietary overlap, $D_{ij}$, between predator pairs:
+
+$$ D_{i,j} = 1 – 0.5 (∑ |p_{i,k} – p_{j,k}|) $$
+
+>where $p_{i,k}$ = mean proportional volume of prey type $k$ in predator $i$ and $p_{i,k}$ = mean proportional volume of
+prey type $k$ in predator $j$ [@garrison_dietary_2000]. 
+
+They used NEFSC bottom trawl survey data 1973-1997. We are using diets from 1985-2020 to characterize the prey index. Therefore an additional 20+ years of diet information is available to assess whether predator diet similarity has changed. Diet similarity analysis has been completed (B. Smith, pers. comm.), with a table of prey similarity available via [this link on the NEFSC food habits shiny app](https://fwdp.shinyapps.io/tm2020/#4_DIET_OVERLAP_AND_TROPHIC_GUILDS) that was used to define feeding guilds based on 50 predators. We evaluated results from several clustering algorithms (see [this link](https://sgaichas.github.io/bluefishdiet/PreySimilarityUpdate.html)) to determine how robustly different sets of predators grouped with bluefish. The working group selected the piscivore list based on the "complete" clustering algorithm (Table 2). 
+
+This piscivore dataset better captured predators that feed similarly to bluefish (e.g. striped bass), and has a higher proportion of stations with bluefish prey than a dataset based on the @garrison_dietary_2000 piscivore definition. We also evaluated a piscivore definition using only the predators that always cluster with bluefish no matter what clustering algorithm is applied. However, a dataset based on that limited piscivore list excluded predators highlighted by the bluefish experts striped bass and resulted in fewer overall stations than the either of the above piscivore definitions, with a lower proportion of stations with bluefish prey.
+
+```{r pisclist}
+dietoverlap <- read_csv(here("datfromshiny/tgmat.2022-02-15.csv"))
+
+d_dietoverlap <- dist(dietoverlap)
+
+# again directly from https://cran.r-project.org/web/packages/dendextend/vignettes/Cluster_Analysis.html
+hclust_methods <- c("ward.D", "single", "complete", "average", "mcquitty", 
+        "median", "centroid", "ward.D2")
+diet_dendlist <- dendlist()
+for(i in seq_along(hclust_methods)) {
+   hc_diet <- hclust(d_dietoverlap, method = hclust_methods[i])   
+   diet_dendlist <- dendlist(diet_dendlist, as.dendrogram(hc_diet))
+}
+names(diet_dendlist) <- hclust_methods
+
+preds <- list()
+
+for(i in 1:8) {
+  dendi <- diet_dendlist[[i]]
+  namei <- names(diet_dendlist)[i]
+  labels(dendi) <- paste(as.character(names(dietoverlap[-1]))[order.dendrogram(dendi)],
+                           "(",labels(dendi),")", 
+                           sep = "")
+  #preds[[namei]] <- partition_leaves(dendi)[[which_node(dendi, c("35", "36", "37"))]]
+  preds[[namei]] <- partition_leaves(dendi)[[which_node(dendi, c("Bluefish..S(37)", "Bluefish..M(36)", "Bluefish..L(35)"))]]
+
+}
+
+  dendi <- diet_dendlist$complete
+
+  labels(dendi) <- paste(as.character(names(dietoverlap[-1]))[order.dendrogram(dendi)],
+                           "(",labels(dendi),")", 
+                           sep = "")
+  
+  pisccomplete <- partition_leaves(dendi)[[which_node(dendi, c("Bluefish..S(37)", "Bluefish..M(36)", "Bluefish..L(35)"))]]
+  
+  pisccompletedf <- data.frame("COMNAME" = toupper(str_remove(pisccomplete, "\\..*")),
+                              "SizeCat" = str_remove(str_extract(pisccomplete, "\\..*[:upper:]+"), "\\.."),
+                              "feedguild" = "pisccomplete")
+
+  
+kableExtra::kable(pisccompletedf[,1:2],
+                  col.names = c('Predator name', "Size category"),
+                  caption = "Table 2. Predators clustering with Bluefish, NEFSC diet database, 1973-2020.")  
+
+```
+
+#### Integrating regional surveys  
+
+
+#### Integrating SST data  
+
+
+### VAST modeling  
+
+#### Structural decisions  
+
+
+#### Model selection  
+
+
+### Spatial definitions  
+
+
+
+## Results  
+
+### Input dataset overview 
+
+### VAST model selection  
+
+### Bias-corrected spatial forage indices  
+
+
+[Model comparisons](https://sgaichas.github.io/bluefishdiet/VASTcovariates_updatedPreds_sst.html) led us to the best model fit using mean predator length, number of predator species, and SST at a survey station as catchability covariates. The model has been partitioned into several definitions of "inshore" and "offshore" for the stock assessment inputs. First we define a partition that is the MAB and GB areas only as the GOM is not relevant to the bluefish assessment (yet). This is called MABGB, while the full model is AllEPU. Within this partition,
+
+1.  Survey inshore vs offshore to evaluate availability to the survey index. Strata partitions include:
+    + Albatross inshore stations
+    + Bigelow inshore bluefish index stations
+    + offshore bluefish index stations (added this year)
+    + offshore non-bluefish stations
+    
+1.  Recreational fishery inshore vs offshore to evaluate availability to the MRIP CPUE index. Strata partitions include
+    + shoreline to 3 miles out
+    + offshore of 3 miles
+    
+Survey strata definitions are built into VAST already. The results presented here pertain only to survey strata; I'll consider the 3 mile split separately in a different model run. I can't find a way to have VAST do all the partitions at once, because the 3 mile split cuts across survey stratum boundaries. 
+
+Definitions for strata used in the script `bluefishdiet/VASTunivariate_bfp_allsurvs_lencovSST_inoffsplit.R`:
+
+```{r, eval=FALSE}
+
+# use only MAB, GB, GOM, SS EPUs 
+# leave out south of Cape Hatteras at Elizabeth's suggestion
+# could also leave out SS?
+# CHECK if these EPUs match what we use in SOE
+
+bfstrata <- c(3020, 3050, 3080, 3110, 3140, 3170, 3200, 3230, 
+              3260, 3290, 3320, 3350, 3380, 3410, 3440, 3450, 3460)
+
+bfoffshore <- c(1010, 1730, 1690, 1650, 1050, 1060, 1090, 1100, 1250, 1200, 1190, 1610)
+
+MAB <- c(1010:1080, 1100:1120, 1600:1750, 3010:3450, 3470, 3500, 3510)
+GB  <- c(1090, 1130:1210, 1230, 1250, 3460, 3480, 3490, 3520:3550)
+GOM <- c(1220, 1240, 1260:1290, 1360:1400, 3560:3830)
+SS  <- c(1300:1352, 3840:3990)
+
+MABinshore <- c(3010:3450, 3470, 3500, 3510)
+GBinshore  <- c(3460, 3480, 3490, 3520:3550)
+
+MABoffshore <- c(1010:1080, 1100:1120, 1600:1750)
+GBoffshore  <- c(1090, 1130:1210, 1230, 1250)
+
+AllEPU <- northwest_atlantic_grid %>% 
+  filter(stratum_number %in% c(MAB, GB, GOM, SS)) %>% 
+  select(stratum_number) %>% 
+  distinct()
+
+MABGB <- northwest_atlantic_grid %>% 
+  filter(stratum_number %in% c(MAB, GB)) %>% 
+  select(stratum_number) %>% 
+  distinct()
+
+MABGBinshore <- northwest_atlantic_grid %>% 
+  filter(stratum_number %in% c(MABinshore, GBinshore)) %>% 
+  select(stratum_number) %>% 
+  distinct()
+
+MABGBoffshore <- northwest_atlantic_grid %>% 
+  filter(stratum_number %in% c(MABoffshore, GBoffshore)) %>% 
+  select(stratum_number) %>% 
+  distinct()
+
+bfall <- northwest_atlantic_grid %>% 
+  filter(stratum_number %in% c(bfstrata, bfoffshore)) %>% 
+  select(stratum_number) %>% 
+  distinct()
+
+bfallnot <- northwest_atlantic_grid %>%
+  filter(!(stratum_number %in% bfall)) %>%
+  select(stratum_number) %>% 
+  distinct()
+
+bfin <- northwest_atlantic_grid %>% 
+  filter(stratum_number %in% bfstrata) %>% 
+  select(stratum_number) %>% 
+  distinct()
+
+bfinnot <- northwest_atlantic_grid %>%
+  filter(!(stratum_number %in% bfin)) %>%
+  select(stratum_number) %>% 
+  distinct()
+
+bfoff <- northwest_atlantic_grid %>% 
+  filter(stratum_number %in% bfoffshore) %>% 
+  select(stratum_number) %>% 
+  distinct()
+
+bfoffnot <- northwest_atlantic_grid %>%
+  filter(!(stratum_number %in% bfoff)) %>%
+  select(stratum_number) %>% 
+  distinct()
+
+MABGBalbinshore <- MABGBinshore %>%
+  filter(!(stratum_number %in% bfstrata)) %>%
+  distinct()
+
+MABGBoffshorebigin <- MABGB %>%
+  filter(!(stratum_number %in% MABGBalbinshore$stratum_number)) %>%
+  distinct()
+
+
+```
+
+**Attempts to rewrite these strata to a subset of only the needed ones failed! The model did not converge! I need to better understand how stratum definitions affect model estimation. I thought--apparently incorrectly--that they didn't. This configuration, where each strata set also has a complement included, results in model convergence.**
+
+Bias correction is based on [@thorson_implementing_2016]. 
+
+Run this script, the same used to test catchability covariates, but now has all three covariates (predator mean length, number of predator species, and SSTfill) included and  `bias.correct=TRUE`: 
+
+```{r, code = readLines(here("VASTunivariate_bfp_allsurvs_lencovSST_inoffsplit.R")), eval=F}
+```
+
+# Model Results, Bias-corrected survey strata
+
+## Fall results
+
+Make a lookup table:
+
+```{r}
+# strata.limits <- as.list(c("AllEPU" = AllEPU, 
+#                          "MABGB" = MABGB, 
+#                          "MABGBinshore" = MABGBinshore, 
+#                          "MABGBoffshore" = MABGBoffshore, 
+#                          "bfall" = bfall,
+#                          "bfallnot" = bfallnot,
+#                          "bfin" = bfin,
+#                          "bfinnot" = bfinnot,
+#                          "bfoff" = bfoff,
+#                          "bfoffnot" = bfoffnot,
+#                          "MABGBalbinshore" = MABGBalbinshore,
+#                          "MABGBoffshorebigin" = MABGBoffshorebigin))
+
+stratlook <- data.frame(Stratum = c("Stratum_1",
+                                      "Stratum_2",
+                                      "Stratum_3",
+                                      "Stratum_4",
+                                      "Stratum_5",
+                                      "Stratum_6",
+                                      "Stratum_7",
+                                      "Stratum_8",
+                                      "Stratum_9",
+                                      "Stratum_10",
+                                      "Stratum_11",
+                                      "Stratum_12"),
+                           Region  = c("AllEPU", 
+                                       "MABGB", 
+                                       "MABGBinshore", 
+                                       "MABGBoffshore", 
+                                       "bfall",
+                                       "bfallnot",
+                                       "bfin",
+                                       "bfinnot",
+                                       "bfoff",
+                                       "bfoffnot",
+                                       "MABGBalbinshore",
+                                       "MABGBoffshorebigin"))
+
+```
+
+### Fall Index  
+
+Plot individual time series (bias corrected) with standard errors:
+
+```{r}
+splitoutput <- read.csv("pyindex/allagg_fall_500_lennosst_split_biascorrect/Index.csv")
+
+splitoutput <- splitoutput %>%
+  left_join(stratlook)
+
+ggplot(splitoutput, aes(x=Time, y=Estimate, colour=Region)) +
+  geom_errorbar(aes(ymin=Estimate+Std..Error.for.Estimate, ymax=Estimate-Std..Error.for.Estimate))+
+  geom_point()+
+  geom_line()+
+  facet_wrap(~Region, scales = "free_y") +
+  guides(colour = guide_legend(ncol=2)) +
+  #theme(legend.position = c(1, 0),
+   #     legend.justification = c(1, 0))
+  theme(legend.position="none")
+
+```
+
+
+ 
+```{r}
+in2off <- splitoutput %>%
+  dplyr::select(Time, Region, Estimate, Std..Error.for.Estimate) %>%
+  tidyr::pivot_longer(c(Estimate, Std..Error.for.Estimate), names_to = "Var") %>%
+  dplyr::group_by(Var) %>%
+  tidyr::pivot_wider(names_from = Region, values_from = value) %>%
+  dplyr::mutate(AlbInshore = MABGBalbinshore,
+                BlueInshore = bfin,
+                BlueOffshore = bfoff,
+                OthOffshore = MABGB - (bfoff + bfin + MABGBalbinshore),
+                SumMABGB = AlbInshore + BlueInshore + BlueOffshore + OthOffshore) %>%
+  dplyr::select(Time, AlbInshore, BlueInshore, BlueOffshore, OthOffshore, SumMABGB, MABGB) %>%
+  tidyr::pivot_longer(!c(Time, Var), names_to = "Region", values_to = "value") %>%
+  tidyr::pivot_wider(names_from = "Var", values_from = "value")
+
+ggplot(in2off, aes(x=Time, y=Estimate, colour = Region)) +
+  geom_errorbar(aes(ymin=Estimate+Std..Error.for.Estimate, ymax=Estimate-Std..Error.for.Estimate))+
+  geom_point()+
+  geom_line()+
+  #facet_wrap(~Region) + #+ , scales = "free_y"
+  #theme(legend.position = c(1, 0),
+  #      legend.justification = c(1, 0))
+  ggtitle("Fall Prey Index, Mid-Atlantic and Georges Bank")
+
+
+```
+
+ or as proportions (here proportion of MABGB index).
+
+```{r}
+MABGBprop <- in2off %>%
+  #dplyr::filter(Region != "AllEPU") %>%
+  dplyr::select(Time, Region, Estimate) %>%
+  tidyr::pivot_wider(names_from = Region, values_from = Estimate) %>%
+  dplyr::mutate(AlbInshoreprop = AlbInshore/MABGB,
+                BlueInshoreprop = BlueInshore/MABGB,
+                BlueOffshoreprop = BlueOffshore/MABGB,
+                OthOffshoreprop = OthOffshore/MABGB) %>%
+  tidyr::pivot_longer(!Time, names_to = "Region", values_to = "Estimate") %>%
+  dplyr::filter(Region %in% c("AlbInshoreprop", "BlueInshoreprop", "BlueOffshoreprop",
+                              "OthOffshoreprop"))
+  
+
+ggplot(MABGBprop, aes(x=Time, y=Estimate, colour = Region)) +
+  geom_point()+
+  geom_line()+
+  #facet_wrap(~Region) + #+ , scales = "free_y"
+  #theme(legend.position = c(1, 0),
+  #      legend.justification = c(1, 0))
+  ggtitle("Fall Prey Index as proportion of Mid-Atlantic and Georges Bank")
+  
+  
+```
+
+### Fall predicted ln-density
+
+![Fall density maps with covariates](pyindex/allagg_fall_500_lennosst_split_biascorrect/ln_density-predicted.png)
+ 
+### Fall Diagnostics {.tabset}
+
+```{r, results='asis'}
+
+diagplots <- c("Data_and_knots",
+               "Data_by_year",
+               "quantile_residuals",
+               "quantile_residuals_on_map",
+               "Aniso",
+               "center_of_gravity")
+
+for(p in diagplots){
+  
+    cat("  \n####",  as.character(p),"  \n")
+    cat(paste0("![](pyindex/allagg_fall_500_lennosst_split_biascorrect/",
+                      p,
+                      ".png)")) 
+    cat("  \n")   
+    
+  }
+
+```
+
+### {-} 
+
+## Spring results
+ 
+### Spring Index  
+
+Plot individual time series
+
+```{r}
+splitoutput <- read.csv("pyindex/allagg_spring_500_lennosst_split_biascorrect/Index.csv")
+
+splitoutput <- splitoutput %>%
+  left_join(stratlook)
+
+ggplot(splitoutput, aes(x=Time, y=Estimate, colour=Region)) +
+  geom_errorbar(aes(ymin=Estimate+Std..Error.for.Estimate, ymax=Estimate-Std..Error.for.Estimate))+
+  geom_point()+
+  geom_line()+
+  facet_wrap(~Region, scales = "free_y") +
+  guides(colour = guide_legend(ncol=2)) +
+  #theme(legend.position = c(1, 0),
+   #     legend.justification = c(1, 0))
+  theme(legend.position="none")
+
+```
+
+ or just the indices from inshore (alb), inshore bluefish, offshore bluefish, and further out
+ 
+```{r}
+in2off <- splitoutput %>%
+  dplyr::select(Time, Region, Estimate, Std..Error.for.Estimate) %>%
+  tidyr::pivot_longer(c(Estimate, Std..Error.for.Estimate), names_to = "Var") %>%
+  dplyr::group_by(Var) %>%
+  tidyr::pivot_wider(names_from = Region, values_from = value) %>%
+  dplyr::mutate(AlbInshore = MABGBalbinshore,
+                BlueInshore = bfin,
+                BlueOffshore = bfoff,
+                OthOffshore = MABGB - (bfoff + bfin + MABGBalbinshore),
+                SumMABGB = AlbInshore + BlueInshore + BlueOffshore + OthOffshore) %>%
+  dplyr::select(Time, AlbInshore, BlueInshore, BlueOffshore, OthOffshore, SumMABGB, MABGB) %>%
+  tidyr::pivot_longer(!c(Time, Var), names_to = "Region", values_to = "value") %>%
+  tidyr::pivot_wider(names_from = "Var", values_from = "value")
+
+ggplot(in2off, aes(x=Time, y=Estimate, colour = Region)) +
+  geom_errorbar(aes(ymin=Estimate+Std..Error.for.Estimate, ymax=Estimate-Std..Error.for.Estimate))+
+  geom_point()+
+  geom_line()+
+  #facet_wrap(~Region) + #+ , scales = "free_y"
+  #theme(legend.position = c(1, 0),
+  #      legend.justification = c(1, 0))
+  ggtitle("Spring Prey Index, Mid-Atlantic and Georges Bank")
+
+
+```
+
+ or as proportions (here proportion of MABGB index).
+
+```{r}
+MABGBprop <- in2off %>%
+  #dplyr::filter(Region != "AllEPU") %>%
+  dplyr::select(Time, Region, Estimate) %>%
+  tidyr::pivot_wider(names_from = Region, values_from = Estimate) %>%
+  dplyr::mutate(AlbInshoreprop = AlbInshore/MABGB,
+                BlueInshoreprop = BlueInshore/MABGB,
+                BlueOffshoreprop = BlueOffshore/MABGB,
+                OthOffshoreprop = OthOffshore/MABGB) %>%
+  tidyr::pivot_longer(!Time, names_to = "Region", values_to = "Estimate") %>%
+  dplyr::filter(Region %in% c("AlbInshoreprop", "BlueInshoreprop", "BlueOffshoreprop",
+                              "OthOffshoreprop"))
+  
+
+ggplot(MABGBprop, aes(x=Time, y=Estimate, colour = Region)) +
+  geom_point()+
+  geom_line()+
+  #facet_wrap(~Region) + #+ , scales = "free_y"
+  #theme(legend.position = c(1, 0),
+  #      legend.justification = c(1, 0))
+  ggtitle("Spring Prey Index as proportion of Mid-Atlantic and Georges Bank")
+  
+  
+```
+
+
+### Spring predicted ln-density
+
+![Spring density maps with covariates](pyindex/allagg_spring_500_lennosst_split_biascorrect/ln_density-predicted.png)
+
+### Spring Diagnostics {.tabset}
+
+```{r, results='asis'}
+
+diagplots <- c("Data_and_knots",
+               "Data_by_year",
+               "quantile_residuals",
+               "quantile_residuals_on_map",
+               "Aniso",
+               "center_of_gravity")
+
+for(p in diagplots){
+  
+    cat("  \n####",  as.character(p),"  \n")
+    cat(paste0("![](pyindex/allagg_spring_500_lennosst_split_biascorrect/",
+                      p,
+                      ".png)")) 
+    cat("  \n")   
+    
+  }
+
+```
+
+### {-} 
+
+All results in the respective `pyindex/allagg_fall_500_lennosst_split_biascorrect` and `allagg_spring_500_lennsst_splitbiascorrect` folders.
+
+The full results are on [google drive](https://drive.google.com/drive/folders/1PsEk5hhQ7fR0Gq4NnYPvU4V59d4nIR8E) rather than github to save space.
+
+Still to do:
+
+*  fix index within 3 miles of shore and outside that (highest priority)
+
+## References
