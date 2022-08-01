@@ -84,7 +84,7 @@ Fish food habits data are collected aboard several regional fishery independent 
 #### Defining bluefish prey  
 Bluefish eat small pelagics that are not well sampled by bottom trawl surveys. Bluefish themselves are not well sampled by bottom trawl surveys. Nevertheless, the diet samples collected for bluefish indicate that anchovies, herrings, squids, butterfish, scup, and small hakes are important prey. See working paper **#XX**, as well as [this web summary page link](https://sgaichas.github.io/bluefishdiet/DietSummary.html) for NEFSC survey and [this presentation link](https://docs.google.com/presentation/d/1VlP0OsSLnoaoFHHt7kJbrqNTgBJqI6Ru/edit#slide=id.p1) for NEAMAP survey bluefish diet composition summaries.
 
-Using all sampled bluefish stomachs included in the NEFSC food habits database 1973-2020, we created a list of all pelagic nekton bluefish prey that had at least 10 observations (Table 1). Broad categories such as empty stomach, fish unidentified, osteichthes, unidentified animal remains, and blown stomach were not included in the prey list.
+Using all sampled bluefish stomachs included in the NEFSC food habits database 1973-2020, we created a list of all pelagic nekton bluefish prey that had at least 10 observations (Table 1). Broad categories such as empty stomach, fish unidentified, Osteichthyes, unidentified animal remains, and blown stomach were not included in the prey list.
 
 ```{r preylist}
 # object is called `allfh`
@@ -124,7 +124,7 @@ kableExtra::kable(blueprey[,c('pynam','BLUEFISH')],
 
 
 #### Defining piscivore predators  
-The choice of predators is largely intended to balance increasing sample size for modeling bluefish prey with using predators likely to be foraging similarly to bluefish.  One extreme assumption would be to include only bluefish as predators, but there are relatively few bluefish samples due to incomplete availability to bottom trawl surveys. This would miss prey available to bluefish because we have not sampled bluefish adequately. The opposite extreme assumption would be to include all stomachs that contain any of the top bluefish prey, regardless of which species ate the prey. This would include predators that do not forage similarly to bluefish and might therefore "count" prey that are not actually available to bluefish due to habitat differences. The intermediate approach which selects a group of piscivores that forage similarly to bluefish both increases sample size and screens out the most dissimilar predators to bluefish. The three possibilities above represent different piscivore groupings. 
+The choice of predators is largely intended to balance increasing sample size for modeling bluefish prey with using predators likely to be foraging similarly to bluefish.  One extreme assumption would be to include only bluefish as predators, but there are relatively few bluefish diet samples due to incomplete availability to bottom trawl surveys. This would miss prey available to bluefish because we have not sampled bluefish adequately. The opposite extreme assumption would be to include all stomachs that contain any of the top bluefish prey, regardless of which species ate the prey. This would include predators that do not forage similarly to bluefish and might therefore "count" prey that are not actually available to bluefish due to habitat differences. The intermediate approach which selects a group of piscivores that forage similarly to bluefish both increases sample size and screens out the most dissimilar predators to bluefish. A further refinement to the input data is only using the prey items identified above as "bluefish prey" across all predators identified as piscivores.
 
 For bluefish forage index modeling, we are selecting a set of predators that have high diet similarity to bluefish. @garrison_dietary_2000 evaluated similarity of predator diets on the Northeast US shelf to develop foraging guilds. The Schoener similarity index [@schoener_nonsynchronous_1970] was applied
 
@@ -135,9 +135,7 @@ $$ D_{i,j} = 1 – 0.5 (∑ |p_{i,k} – p_{j,k}|) $$
 >where $p_{i,k}$ = mean proportional volume of prey type $k$ in predator $i$ and $p_{i,k}$ = mean proportional volume of
 prey type $k$ in predator $j$ [@garrison_dietary_2000]. 
 
-They used NEFSC bottom trawl survey data 1973-1997. We are using diets from 1985-2020 to characterize the prey index. Therefore an additional 20+ years of diet information is available to assess whether predator diet similarity has changed. Diet similarity analysis has been completed (B. Smith, pers. comm.), with a table of prey similarity available via [this link on the NEFSC food habits shiny app](https://fwdp.shinyapps.io/tm2020/#4_DIET_OVERLAP_AND_TROPHIC_GUILDS) that was used to define feeding guilds based on 50 predators. We evaluated results from several clustering algorithms (see [this link](https://sgaichas.github.io/bluefishdiet/PreySimilarityUpdate.html)) to determine how robustly different sets of predators grouped with bluefish. The working group selected the piscivore list based on the "complete" clustering algorithm (Table 2). 
-
-This piscivore dataset better captured predators that feed similarly to bluefish (e.g. striped bass), and has a higher proportion of stations with bluefish prey than a dataset based on the @garrison_dietary_2000 piscivore definition. We also evaluated a piscivore definition using only the predators that always cluster with bluefish no matter what clustering algorithm is applied. However, a dataset based on that limited piscivore list excluded predators highlighted by the bluefish experts striped bass and resulted in fewer overall stations than the either of the above piscivore definitions, with a lower proportion of stations with bluefish prey.
+@garrison_dietary_2000 used NEFSC bottom trawl survey data 1973-1997. We are using diets from 1985-2020 to characterize the forage index. Therefore an additional 20+ years of diet information is available to assess whether predator diet similarity has changed. Diet similarity analysis has been completed (B. Smith, pers. comm.), with a table of prey similarity available via [this link on the NEFSC food habits shiny app](https://fwdp.shinyapps.io/tm2020/#4_DIET_OVERLAP_AND_TROPHIC_GUILDS) that was used to define feeding guilds based on 50 predators. We evaluated results from several clustering algorithms (see [this link](https://sgaichas.github.io/bluefishdiet/PreySimilarityUpdate.html)) to determine how robustly different sets of predators grouped with bluefish. The working group selected the piscivore list based on the "complete" clustering algorithm, including all species that clustered with all 3 sizes of bluefish (Table 2). 
 
 ```{r pisclist}
 dietoverlap <- read_csv(here("datfromshiny/tgmat.2022-02-15.csv"))
@@ -154,42 +152,67 @@ for(i in seq_along(hclust_methods)) {
 }
 names(diet_dendlist) <- hclust_methods
 
-preds <- list()
+# preds <- list()
+# 
+# for(i in 1:8) {
+#   dendi <- diet_dendlist[[i]]
+#   namei <- names(diet_dendlist)[i]
+#   labels(dendi) <- paste(as.character(names(dietoverlap[-1]))[order.dendrogram(dendi)],
+#                            "(",labels(dendi),")", 
+#                            sep = "")
+#   #preds[[namei]] <- partition_leaves(dendi)[[which_node(dendi, c("35", "36", "37"))]]
+#   preds[[namei]] <- partition_leaves(dendi)[[which_node(dendi, c("Bluefish..S(37)", "Bluefish..M(36)", "Bluefish..L(35)"))]]
+# 
+# }
 
-for(i in 1:8) {
-  dendi <- diet_dendlist[[i]]
-  namei <- names(diet_dendlist)[i]
-  labels(dendi) <- paste(as.character(names(dietoverlap[-1]))[order.dendrogram(dendi)],
-                           "(",labels(dendi),")", 
-                           sep = "")
-  #preds[[namei]] <- partition_leaves(dendi)[[which_node(dendi, c("35", "36", "37"))]]
-  preds[[namei]] <- partition_leaves(dendi)[[which_node(dendi, c("Bluefish..S(37)", "Bluefish..M(36)", "Bluefish..L(35)"))]]
+dendi <- diet_dendlist$complete
 
-}
-
-  dendi <- diet_dendlist$complete
-
-  labels(dendi) <- paste(as.character(names(dietoverlap[-1]))[order.dendrogram(dendi)],
+labels(dendi) <- paste(as.character(names(dietoverlap[-1]))[order.dendrogram(dendi)],
                            "(",labels(dendi),")", 
                            sep = "")
   
-  pisccomplete <- partition_leaves(dendi)[[which_node(dendi, c("Bluefish..S(37)", "Bluefish..M(36)", "Bluefish..L(35)"))]]
+pisccomplete <- partition_leaves(dendi)[[which_node(dendi, c("Bluefish..S(37)", "Bluefish..M(36)", "Bluefish..L(35)"))]]
   
-  pisccompletedf <- data.frame("COMNAME" = toupper(str_remove(pisccomplete, "\\..*")),
+
+sizedefs <- allfh %>% 
+  select(pdcomnam, sizecat, pdlen) %>% 
+  group_by(pdcomnam, sizecat) %>% 
+  summarize(minlen = min(pdlen), maxlen = max(pdlen))
+
+pisccompletedf <- data.frame("COMNAME" = toupper(str_remove(pisccomplete, "\\..*")),
                               "SizeCat" = str_remove(str_extract(pisccomplete, "\\..*[:upper:]+"), "\\.."),
-                              "feedguild" = "pisccomplete")
+                              "feedguild" = "pisccomplete") %>%
+  left_join(sizedefs, by=c("COMNAME" = "pdcomnam", 
+                          "SizeCat" = "sizecat")) %>%
+  arrange(COMNAME, minlen)
 
   
-kableExtra::kable(pisccompletedf[,1:2],
-                  col.names = c('Predator name', "Size category"),
-                  caption = "Table 2. Predators clustering with Bluefish, NEFSC diet database, 1973-2020.")  
+kableExtra::kable(pisccompletedf[,-3],
+                  col.names = c('Predator name', "Size category", "Minimum length (cm)", "Maximum length (cm)"),
+                  caption = "Table 2. Predators with highest diet similarity to Bluefish, NEFSC diet database, 1973-2020.",
+                  align = "rccc")  
 
 ```
 
+This piscivore dataset better captured predators that feed similarly to bluefish (e.g. striped bass), and has a higher proportion of stations with bluefish prey than a dataset based on the @garrison_dietary_2000 piscivore definition. We also evaluated a piscivore definition using only the predators that always cluster with bluefish no matter what clustering algorithm is applied. However, a dataset based on that limited piscivore list excluded predators highlighted by bluefish experts (e.g., striped bass) and resulted in the inclusion of fewer overall stations than the either of the above piscivore definitions, with a lower proportion of included stations with bluefish prey.
+
+The NEAMAP survey operates closer to shore than the current NEFSC survey. While both surveys capture many of the same predators, some are not available close to shore and others are more available close to shore. The NEAMAP dataset includes the following piscivore predators and size ranges, adding two species not captured by the NEFSC survey offshore but included based on working group expert judgement of prey similarity to bluefish (Spanish mackerel and spotted sea trout) and leaving out those not captured inshore:
+
++  Summer Flounder 21-70 cm
++  Silver Hake 21-76 cm
++  Weakfish 26-50 cm
++  Atlantic Cod 81-150 cm 
++  Bluefish 3 – 118 cm
++  Striped Bass 31 – 120 cm
++  Spanish Mackerel 10 – 33.5 cm 
++  Spotted Sea Trout 15.5 – 34 cm 
++  Spiny Dogfish 36 – 117 cm
++  Goosefish 5 – 124 cm  
+
 #### Integrating regional surveys  
+For each survey dataset, the full diet database was filtered to include the list of piscivores (Table 2). Then, the list of bluefish prey (Table 1) was used to categorize prey items for each predator as "bluefish prey" or "other prey". Each station was given a unique station identifier, and the total weight (g) of bluefish prey at each station was summed. Total bluefish prey weight was divided by the total number of stomachs across all piscivore predators at the station to get mean bluefish prey weight (g) at each station. In addition, the number of piscivore species and the mean size acrall all piscivores was calcualted for each station. 
 
-
-#### Integrating SST data  
+#### Filling gaps in SST data  
 
 
 ### VAST modeling  
