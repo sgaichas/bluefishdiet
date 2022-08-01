@@ -213,18 +213,36 @@ The NEAMAP survey operates closer to shore than the current NEFSC survey. While 
 For each survey dataset, the full diet database was filtered to include only predators on the list of piscivores with the most diet similarity to bluefish (Table 2). Then, the list of bluefish prey (Table 1) was used to categorize prey items for each predator as "bluefish prey" or "other prey". Each station was given a unique station identifier (cruise and station number), and the total weight (g) of bluefish prey at each station was summed. Total bluefish prey weight was divided by the total number of stomachs across all piscivore predators at the station to get mean bluefish prey weight (g) at each station. In addition, the number of piscivore species and the mean size (total length, cm) across all piscivores was calculated at each station. Seasons were identified as "Spring" (collection months January - June) and "Fall" (collection months July-December) to align with assumptions used in the bluefish stock assessment. Vessel identifiers were assigned based on years and survey, with two vessels used for the NEFSC survey (R/V Albatross prior to 2009 and R/V Bigelow 2009 to present) and a single vessel used for the NEAMAP survey 2008-present. These were used to evaluate whether vessel effects were present. Variable names were reconciled between NEFSC and NEAMAP, and the datasets were appended into a single dataset with one row per station including station ID, year, season, date, latitude, longitude, vessel, mean bluefish prey weight, mean piscivore length, number of piscivore species, and sea surface temperature (degrees C).  
 
 #### Filling gaps in sea surface temperature (SST) data  
-Initial dataset checks revealed that approximately 10% of survey stations were missing in-situ sea water temperature measurements. Gaps in temperature information were more prevalent early in the time series (1980s and early 1990s), although stations without temperature data were found in nearly all years. Rather than truncate the dataset to only those stations with in-situ temperature measurements, we investigated other sources of SST data to fill gaps.
+Initial dataset checks revealed that approximately 10% of survey stations were missing in-situ sea water temperature measurements. Gaps in temperature information were more prevalent early in the time series (1980s and early 1990s), although stations without temperature data were found in nearly all years (see "SST mismatch by year" section [at this link](https://sgaichas.github.io/bluefishdiet/SSTmethods.html)). Rather than truncate the dataset to only those stations with in-situ temperature measurements, we investigated other sources of SST data to fill gaps.
 
 Two SST data sources were investigated, both based on satellite data: the National Oceanic and Atmospheric Administration Optimum Interpolation Sea Surface Temperature (NOAA OI SST) V2 High Resolution Dataset [@reynolds_daily_2007] data provided by the NOAA PSL, Boulder, Colorado, USA, from their website at https://psl.noaa.gov, and the higher resolution source data for the OI SST, the [AVHRR Pathfinder SST data linked here](https://www.ncei.noaa.gov/products/avhrr-pathfinder-sst) [@saha_avhrr_2018]. Both sources provide global daily SST at different spatial resolutions (OI SST uses a 25 km grid, and AVHRR uses a 4 km grid) from 1981-present. 
 
-The OI SST data are provided as global files for each year. Files for 1985-2021 were downloaded from https://downloads.psl.noaa.gov/Datasets/noaa.oisst.v2.highres/sst.day.mean.[year].v2.nc as rasters using code developed by Kim Bastille for Northeast US ecosystem reporting, cropped to the Norhteast US spatial extent, and converted to R dataframe objects where the temperature of a grid cell is associated with the coordinates at the center of the grid cell. Then, OI SST temperature was matched to the survey data using year, month, day and spatial nearest neighbor matches to survey locations. 
+The OI SST data are provided as global files for each year. Files for years 1985-2021 were downloaded from https://downloads.psl.noaa.gov/Datasets/noaa.oisst.v2.highres/sst.day.mean.[year].v2.nc as rasters using code developed by Kim Bastille for Northeast US ecosystem reporting, cropped to the Northeast US spatial extent, and converted to R dataframe objects where the temperature of a grid cell is associated with the coordinates at the center of the grid cell. Then, OI SST temperature was matched to the survey data using year, month, day and spatial nearest neighbor matches to survey station locations. 
+
+AVHRR data is organized into year/data folders with 2 nc files for each date, one day and one night. A list of survey year-month-day combinations was generated from the piscivore diet dataset to download only AVHRR daily files within $\pm$ 2 days of survey dates from https://www.ncei.noaa.gov/data/oceans/pathfinder/Version5.3/L3C/[year]/data/. The "sea_surface_temperature" and "quality_level" fields were extracted as rasters, cropped to the Northeast US spatial extent, appended into an annual dataset and saved as R dataframe objects similar to the OI SST methods. Examination of a subset of AVHRR SST data with quality level 3 and above showed extended periods with little SST data within the survey domain, likely due to cloud cover (see "SST AVHRR 2021 survey dates" section [at this link](https://sgaichas.github.io/bluefishdiet/SSTmethods.html)). Therefore, to match AVHRR SST to survey stations, methods for combining and filling temporal and spatial gaps would be required, which was beyond the scope of the current analysis. 
+
+For survey stations with in-situ temperature measurements, the in-situ measurement was retained. For survey stations with missing temperature data (~10% of all stations), OI SST was substituted for input into VAST models.
 
 ### VAST modeling  
+We will use VAST [@thorson_comparing_2017; @thorson_guidance_2019] to evaluate changes in bluefish prey biomass and distribution over time. 
+
+$$\rho_1(i) = \beta_1(c_i, t_i) + \omega_1^*(s_i, c_i) + \varepsilon_1^*(s_i, c_i, t_i) + \eta_1(v_i, c_i) \\ + \nu_1(c_i, t_i) + \zeta_1(i) - \iota(c_i, t_i)$$
 
 #### Structural decisions  
+@thorson_guidance_2019 lists 15 major decisions for constructing a VAST model. 
 
+##### Spatial domain
+So is it the whole Northwest Atlantic grid and should I then rerun the REML model selection *one* *more* *time*? to get the same answer...
+
+##### Categories
+
+##### Which variable --> Which model structure
+Univariate model to produce univariate forage index to be most useful in assessment model.
 
 #### Model selection  
+Following what @ng_predator_2021 did for herring, we apply a Poisson-link delta model to estimate expected prey mass per predator stomach. However, we use 500 knots, estimated by k-means clustering of the data, to define the spatial dimensions of each seasonal model.   
+
+Model selection follows @ng_predator_2021 using REML. 
 
 
 ### Spatial definitions  
