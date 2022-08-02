@@ -1,18 +1,22 @@
 ---
-title: "2022 Bluefish (*Pomatomus saltatrix*) Research Track Working Paper YY: Forage Index"
-subtitle: "Vector Autoregressive Spatio-Temporal (VAST) modeling of piscivore stomach contents, 1985-2021"
-author: "Sarah Gaichas, James Gartland, Brian Smith, Elizabeth Ng, Michael Celestino, Anthony Wood, Katie Drew, Abigail Tyrell, and James Thorson"
+title: '2022 Bluefish (*Pomatomus saltatrix*) Research Track Working Paper YY: Forage
+  Index'
+author: Sarah Gaichas, James Gartland, Brian Smith, Elizabeth Ng, Michael Celestino,
+  Anthony Wood, Katie Drew, Abigail Tyrell, and James Thorson
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output:
   html_document:
     code_fold: hide
+  word_document: default
+subtitle: Vector Autoregressive Spatio-Temporal (VAST) modeling of piscivore stomach
+  contents, 1985-2021
 link-citations: yes
 csl: fishery-bulletin.csl
 bibliography: FishDiet_EcoIndicators.bib
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE,
+knitr::opts_chunk$set(echo = FALSE, # no code blocks in word doc
                       message = FALSE,
                       warning = FALSE)
 
@@ -20,6 +24,8 @@ library(tidyverse)
 theme_set(theme_bw())
 library(here)
 library(dendextend)
+library(flextable) #hopefully makes actual tables in word
+set_flextable_defaults(font.size = 11, padding = 3)
 #library(DT)
 #library(pdftools)
 #library(patchwork)
@@ -117,9 +123,14 @@ blueprey <- preycount %>%
                          "MISCELLANEOUS", "OTHER")) %>%
   arrange(desc(BLUEFISH))
 
-kableExtra::kable(blueprey[,c('pynam','BLUEFISH')],
-                  col.names = c('Prey name', 'Bluefish stomachs (n)'),
-                  caption = "Table 1. Prey identified in bluefish stomachs, NEFSC diet database, 1973-2020.")
+# kableExtra::kable(blueprey[,c('pynam','BLUEFISH')],
+#                   col.names = c('Prey name', 'Bluefish stomachs (n)'),
+#                   caption = "Table 1. Prey identified in bluefish stomachs, NEFSC diet database, 1973-2020.")
+
+flextable::flextable(blueprey[,c('pynam','BLUEFISH')]) %>%
+  flextable::set_header_labels(pynam = "Prey name", BLUEFISH = "Bluefish stomachs (n)") %>%
+  flextable::set_caption("Prey identified in bluefish stomachs, NEFSC diet database, 1973-2020.") %>%
+  flextable::autofit()
 ```
 
 
@@ -187,11 +198,19 @@ pisccompletedf <- data.frame("COMNAME" = toupper(str_remove(pisccomplete, "\\..*
   arrange(COMNAME, minlen)
 
   
-kableExtra::kable(pisccompletedf[,-3],
-                  col.names = c('Predator name', "Size category", "Minimum length (cm)", "Maximum length (cm)"),
-                  caption = "Table 2. Predators with highest diet similarity to Bluefish, NEFSC diet database, 1973-2020.",
-                  align = "rccc")  
+# kableExtra::kable(pisccompletedf[,-3],
+#                   col.names = c('Predator name', "Size category", "Minimum length (cm)", "Maximum length (cm)"),
+#                   caption = "Table 2. Predators with highest diet similarity to Bluefish, NEFSC diet database, 1973-2020.",
+#                   align = "rccc")  
 
+flextable::flextable(pisccompletedf[,-3]) %>%
+  flextable::set_header_labels(COMNAME = 'Predator name', 
+                               SizeCat = "Size category", 
+                               minlen = "Minimum length (cm)",
+                               maxlen = "Maximum length (cm)") %>%
+  flextable::set_caption("Predators with highest diet similarity to Bluefish, NEFSC diet database, 1973-2020.") %>%
+  flextable::autofit()
+  
 ```
 
 This piscivore dataset better captured predators that feed similarly to bluefish (e.g. striped bass), and has a higher proportion of stations with bluefish prey than a dataset based on the @garrison_dietary_2000 piscivore definition. We also evaluated a piscivore definition using only the predators that always cluster with bluefish no matter what clustering algorithm is applied. However, a dataset based on that limited piscivore list excluded predators highlighted by bluefish experts (e.g., striped bass) and resulted in the inclusion of fewer overall stations than the either of the above piscivore definitions, with a lower proportion of included stations with bluefish prey.
