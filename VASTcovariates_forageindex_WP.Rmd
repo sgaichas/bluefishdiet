@@ -5,9 +5,9 @@ author: Sarah Gaichas, James Gartland, Brian Smith, Elizabeth Ng, Michael Celest
   Anthony Wood, Katie Drew, Abigail Tyrell, and James Thorson
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output:
+  word_document: default
   html_document:
     code_fold: hide
-  word_document: default
 subtitle: Vector Autoregressive Spatio-Temporal (VAST) modeling of piscivore stomach
   contents, 1985-2021
 link-citations: yes
@@ -243,9 +243,9 @@ AVHRR data is organized into year/data folders with 2 nc files for each date, on
 For survey stations with in-situ temperature measurements, the in-situ measurement was retained. For survey stations with missing temperature data (~10% of all stations), OI SST was substituted for input into VAST models.
 
 ### VAST modeling  
-We will use VAST [@thorson_comparing_2017; @thorson_guidance_2019] to evaluate changes in bluefish prey biomass and distribution over time. 
+We will use VAST [@thorson_comparing_2017; @thorson_guidance_2019] to evaluate changes in bluefish prey biomass and distribution over time. VAST is structured to estimate fixed and random effects across two linear predictors, which are then multiplied to estimate an index of the quantity of interest. A full model including fixed intercepts ($\beta$), spatial random effects ($\omega$), spatio-temporal random effects ($\varepsilon$), vessel effects ($\eta$), 
 
-$$\rho_1(i) = \beta_1(c_i, t_i) + \omega_1^*(s_i, c_i) + \varepsilon_1^*(s_i, c_i, t_i) + \eta_1(v_i, c_i) \\ + \nu_1(c_i, t_i) + \zeta_1(i) - \iota(c_i, t_i)$$
+$$ \rho_1(i) = \beta_1(c_i, t_i) + \omega_1^*(s_i, c_i) + \varepsilon_1^*(s_i, c_i, t_i) + \eta_1(v_i, c_i) + \nu_1(c_i, t_i) + \zeta_1(i) - \iota(c_i, t_i) $$
 
 #### Structural decisions  
 @thorson_guidance_2019 lists 15 major decisions for constructing a VAST model. 
