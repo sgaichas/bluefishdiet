@@ -5,9 +5,9 @@ author: Sarah Gaichas, James Gartland, Brian Smith, Elizabeth Ng, Michael Celest
   Anthony Wood, Katie Drew, Abigail Tyrell, and James Thorson
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output:
-  word_document: default
   html_document:
     code_fold: hide
+  word_document: default
 subtitle: Vector Autoregressive Spatio-Temporal (VAST) modeling of piscivore stomach
   contents, 1985-2021
 link-citations: yes
@@ -259,13 +259,29 @@ So is it the whole Northwest Atlantic grid and should I then rerun the REML mode
 Univariate model to produce univariate forage index to be most useful in assessment model.
 
 #### Model selection  
-Following what @ng_predator_2021 did for herring, we apply a Poisson-link delta model to estimate expected prey mass per predator stomach. However, we use 500 knots, estimated by k-means clustering of the data, to define the spatial dimensions of each seasonal model.   
+Following what @ng_predator_2021 did for herring, we apply a Poisson-link delta model to estimate expected prey mass per predator stomach. However, we use 500 knots, estimated by k-means clustering of the data, to define the spatial dimensions of each seasonal model. We compared the AIC for the 500 knot models to see if including the spatial and spatio-temporal random effects in the first and second linear predictors improved the model fit. Model structures tested include with and without anistropy (2 fixed parameters), and with and without spatial and spatio-temporal random effects in the second linear predictor or both linear predictors. This follows the model selection process outlined in @ng_predator_2021 using REML. 
 
-Model selection follows @ng_predator_2021 using REML. 
+Following this, we evaluated catchability covariates using AIC to determine which are best supported by the data. We used the structure selected by the REML model selection, then evaluated vessel effects (overdispersion) and a range of potential catchability covariates using maximum likelihood to calculate AIC instead of REML, because we are not changing the random effects. Catchability covariates explored included mean predator length at each station, number of predator species at each station, and sea surface temperature (SST) at each station. 
 
+The predator length covariate may more directly model vessel differences in predator catch that affect stomach contents than modeling a vessel catchability covariate directly. This was the approach taken by @ng_predator_2021. They found that predator length covariates were strongly supported as catchability covariates (larger predators being more likely to have more prey in stomachs).  The rationale for including number of predator species is that more species "sampling" the prey field at a particular station may result in a higher encounter rate (more stations with positive bluefish prey in stomachs). Water temperature was also included as a potential catchability covariate, because temperature affects predator feeding rate.
 
 ### Spatial definitions  
 
+Our main goal is to determine whether bluefish prey availability has changed in inshore waters where the recreational fishery primarily operates.  Our food habits datasets do not extend into inland waters such as bays and sounds, with the exception of Cape Cod Bay. (In the future we might be able to investigate food habits from ChesMMAP or surveys south of Cape Hatteras.) However, there is data from both historical NEFSC surveys and NEAMAP in state coastal waters (0-3 miles from shore), and offshore across the continental shelf. 
+
+The model has been partitioned into several definitions of "inshore" and "offshore" for the stock assessment inputs. First we define a partition that is the MAB and GB areas only as the GOM is not relevant to the bluefish assessment (yet). This is called MABGB, while the full model is AllEPU. Within this partition,
+
+1.  Survey inshore vs offshore to evaluate availability to the survey index. Strata partitions include:
+    + Albatross inshore stations
+    + Bigelow inshore bluefish index stations
+    + offshore bluefish index stations (added this year)
+    + offshore non-bluefish stations
+    
+1.  Recreational fishery inshore vs offshore to evaluate availability to the MRIP CPUE index. Strata partitions include
+    + shoreline to 3 miles out`
+    + offshore of 3 miles
+    
+Survey strata definitions are built into the VAST `northwest-atlantic` extrapolation grid already. We defined additional new strata to address the recreational inshore-offshore 3 mile boundary. 
 
 
 ## Results  
