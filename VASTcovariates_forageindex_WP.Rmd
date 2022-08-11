@@ -243,7 +243,7 @@ AVHRR data is organized into year/data folders with 2 nc files for each date, on
 For survey stations with in-situ temperature measurements, the in-situ measurement was retained. For survey stations with missing temperature data (~10% of all stations), OI SST was substituted for input into VAST models.
 
 ### VAST modeling  
-We will use VAST [@thorson_comparing_2017; @thorson_guidance_2019] to evaluate changes in bluefish prey biomass and distribution over time. VAST is structured to estimate fixed and random effects across two linear predictors, which are then multiplied to estimate an index of the quantity of interest. A full model including fixed intercepts ($\beta$), spatial random effects ($\omega$), spatio-temporal random effects ($\varepsilon$), vessel effects ($\eta$), 
+We will use VAST [@thorson_comparing_2017; @thorson_guidance_2019] to evaluate changes in bluefish prey biomass and distribution over time. VAST is structured to estimate fixed and random effects across two linear predictors, which are then multiplied to estimate an index of the quantity of interest. A full model including fixed intercepts ($\beta$), spatial random effects ($\omega$), spatio-temporal random effects ($\varepsilon$), vessel effects ($\eta$), density or habitat covariates, and catchability covariates. 
 
 $$ \rho_1(i) = \beta_1(c_i, t_i) + \omega_1^*(s_i, c_i) + \varepsilon_1^*(s_i, c_i, t_i) + \eta_1(v_i, c_i) + \nu_1(c_i, t_i) + \zeta_1(i) - \iota(c_i, t_i) $$
 
@@ -486,7 +486,32 @@ ndietbfbfpreyNEFSC <- fh.nefsc.pisc.pisccomplete %>%
 
 # NEAMAP totals?
 
-# NEAMAP poscivores and bluefish
+
+# NEAMAP piscivores and bluefish
+neamap_bluepreyagg_stn <- read_csv(here("fhdat/NEAMAP_Mean stomach weights_Bluefish PreyWQ2.csv")) %>%
+  mutate(vessel = "NEAMAP") %>%
+  rename(id = station,
+         sumbluepywt = sumbluepreywt,
+         nbluepysp = nbfpreyspp,
+         #npreysp = ,
+         npiscsp = npiscspp,
+         nstomtot = nstomtot, 
+         meanbluepywt = meanbluepreywt,
+         meanpisclen = meanpisclen.simple, 
+         #varpisclen = ,
+         season_ng = season,
+         declat  = lat,
+         declon = lon,
+         bottemp = bWT,
+         #surftemp = , 
+         setdepth = depthm) 
+
+neamap_npisctows <- neamap_bluepreyagg_stn %>%
+  nrow()
+
+neamap_nbfpreytows <- neamap_bluepreyagg_stn %>%
+  filter(meanbluepywt>0) %>%
+  nrow()
 
 
 
