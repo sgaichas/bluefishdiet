@@ -288,6 +288,212 @@ Survey strata definitions are built into the VAST `northwest-atlantic` extrapola
 
 ### Input dataset overview 
 
+```{r dietsumm}
+bluefishaggdiet <- read_csv(here("datfromshiny","DC.Bluefish (Pomatomus saltatrix).All.2021-10-07.csv"))
+
+# decadal diet
+diet70 <- read_csv(here("datfromshiny","DC.Bluefish (Pomatomus saltatrix).1970s.2021-10-07.csv")) %>%
+  mutate(Decade = 1970)
+diet80 <- read_csv(here("datfromshiny","DC.Bluefish (Pomatomus saltatrix).1980s.2021-10-07.csv"))%>%
+  mutate(Decade = 1980)
+diet90 <- read_csv(here("datfromshiny","DC.Bluefish (Pomatomus saltatrix).1990s.2021-10-07.csv"))%>%
+  mutate(Decade = 1990)
+diet00 <- read_csv(here("datfromshiny","DC.Bluefish (Pomatomus saltatrix).2000s.2021-10-07.csv"))%>%
+  mutate(Decade = 2000)
+diet10 <- read_csv(here("datfromshiny","DC.Bluefish (Pomatomus saltatrix).2010s.2021-10-07.csv"))%>%
+  mutate(Decade = 2010)
+
+bluefishdecadediet <- bind_rows(diet70, diet80, diet90, diet00, diet10)
+
+# seasonal diet
+dietspring <- read_csv(here("datfromshiny","DC.Bluefish (Pomatomus saltatrix).SPRING.2021-10-07.csv"))%>%
+  mutate(Season = "Spring")
+dietfall <- read_csv(here("datfromshiny","DC.Bluefish (Pomatomus saltatrix).FALL.2021-10-07.csv"))%>%
+  mutate(Season = "Fall")
+
+bluefishseasondiet <- bind_rows(dietspring, dietfall)
+
+# regional diet
+dietMAB <- read_csv(here("datfromshiny","DC.Bluefish (Pomatomus saltatrix).MID-ATLANTIC BIGHT.2021-10-07.csv")) %>%
+  mutate(Region = "MAB")
+dietSNE <- read_csv(here("datfromshiny","DC.Bluefish (Pomatomus saltatrix).SOUTHERN NEW ENGLAND.2021-10-07.csv"))%>%
+  mutate(Region = "SNE")
+dietGB <- read_csv(here("datfromshiny","DC.Bluefish (Pomatomus saltatrix).GEORGES BANK.2021-10-07.csv"))%>%
+  mutate(Region = "GB")
+
+bluefishregiondiet <- bind_rows(dietMAB, dietSNE, dietGB)
+
+# bluefish size diet
+dietSM <- read_csv(here("datfromshiny","DC.Bluefish (Pomatomus saltatrix).S.2021-10-07.csv")) %>%
+  mutate(Size = "Small")
+dietMED <- read_csv(here("datfromshiny","DC.Bluefish (Pomatomus saltatrix).M.2021-10-07.csv"))%>%
+  mutate(Size = "Medium")
+dietLG <- read_csv(here("datfromshiny","DC.Bluefish (Pomatomus saltatrix).L.2021-10-07.csv"))%>%
+  mutate(Size = "Large")
+
+bluefishsizediet <- bind_rows(dietSM, dietMED, dietLG)
+
+preylist <- unique(c(bluefishaggdiet$Prey, bluefishdecadediet$Prey, bluefishregiondiet$Prey, bluefishseasondiet$Prey, bluefishsizediet$Prey))
+
+```
+
+```{r preycol}
+#from http://medialab.github.io/iwanthue/ using 35 categories, colorblind friendly
+# again from http://medialab.github.io/iwanthue/ All colors colorspace, colorblind friendly, hard
+preycol <- c("#00495d",
+"#3ac100",
+"#a646f7",
+"#72ff75",
+"#8d00a6",
+"#c6ff90",
+"#0268f1",
+"#ff8d23",
+"#0144a6",
+"#01a249",
+"#e1009e",
+"#abffe1",
+"#7e0082",
+"#fffdd4",
+"#24001c",
+"#bbf6ff",
+"#a60029",
+"#0176c8",
+"#8a4700",
+"#a083ff",
+"#454400",
+"#ff7fff",
+"#005d35",
+"#c9005e",
+"#00483e",
+"#ff96e4",
+"#291d00",
+"#d5a5ff",
+"#2e0400",
+"#ffc5d6",
+"#00285f",
+"#ffbb88",
+"#4a002e",
+"#ff8092",
+"#68001a")
+names(preycol) <- as.factor(preylist)
+
+```
+
+The list of bluefish prey derived from the most common identifiable prey items in NEFSC diet database (Table 1) includes the majority of bluefish diet composition by decade (Fig. ) and season (Fig. ). Even when evaluated annually and seasonally (where bluefish sample sizes may be small for a year-season combination), a majority of observed diet is included in the dataset for analysis (Fig. ). 
+
+```{r decadediet}
+preycolsel <- preycol[toupper(names(preycol)) %in% blueprey$pynam] 
+
+p <- ggplot(bluefishdecadediet, aes(x=as.factor(Decade), y=Pct.m, fill=Prey)) +
+  geom_bar_interactive(width = 0.95, stat = "identity", show.legend = FALSE,
+                       aes(tooltip = Prey, data_id = Prey))+
+  scale_fill_manual(values=preycolsel) +         #custom colors
+  ggthemes::theme_tufte()
+#ggiraph(code=print(p))
+p
+```
+
+  
+```{r seasondiet}
+preycolsel <- preycol[toupper(names(preycol)) %in% blueprey$pynam] 
+
+p <- ggplot(bluefishseasondiet, aes(x=as.factor(Season), y=Pct.m, fill=Prey)) +
+  geom_bar_interactive(width = 0.95, stat = "identity", show.legend = FALSE,
+                       aes(tooltip = Prey, data_id = Prey))+
+  scale_fill_manual(values=preycolsel) +         #custom colors
+  ggthemes::theme_tufte()
+#ggiraph(code=print(p))
+p
+```
+
+
+```{r yearseasondiet}
+source(here("get_diet.R"))
+
+bluefish <- get_diet(135) 
+
+preycolsel <- preycol[toupper(names(preycol)) %in% blueprey$pynam] 
+names(preycolsel) <- toupper(names(preycolsel))
+
+p1 <-   ggplot(bluefish, aes(year, relmsw, fill=prey)) +
+   geom_bar(stat = "identity") + #
+   ylab("Percent in Diet") +
+   xlab("Year") +
+   facet_wrap("season", nrow=4) +
+   theme_bw() +
+   #viridis::scale_fill_viridis(discrete = TRUE) +
+   scale_fill_manual(values=preycolsel) + 
+   theme(legend.position = "none"
+         #legend.position="bottom",
+         #legend.text=element_text(size=5)
+         ) +
+    geom_bar_interactive(stat = "identity", aes(tooltip = prey, data_id = prey))
+
+#ggiraph(code = print(p1), height=14) 
+p1
+```
+
+
+```{r datasetsumm}
+
+# total diet observations (n hauls) 1985-2021
+ndietNEFSC <- allfh %>%
+  filter(year>1984) %>%
+  group_by(year, season, station) %>%
+  summarise() %>%
+  nrow()
+
+# total piscivore diet observations (n hauls) 1985-2021
+fh.nefsc.pisc.pisccomplete <- allfh %>%
+  #filter(pynam != "EMPTY") %>%
+  left_join(pisccompletedf, by = c("pdcomnam" = "COMNAME",
+                               "sizecat" = "SizeCat")) %>%
+  filter(!is.na(feedguild)) %>%
+  mutate(blueprey = case_when(pynam %in% blueprey$pynam ~ "blueprey",
+                              TRUE ~ "othprey"))
+
+
+ndietpiscNEFSC <- fh.nefsc.pisc.pisccomplete %>%
+  filter(year>1984) %>%
+  group_by(year, season, station) %>%
+  summarise() %>%
+  nrow()  
+
+# total piscivore observations with bluefish prey
+nbfpreyNEFSC <- fh.nefsc.pisc.pisccomplete %>%
+  filter(year>1984,
+         blueprey == "blueprey") %>%
+  group_by(year, season, station) %>%
+  summarise() %>%
+  nrow()  
+
+# total bluefish diet observations (n hauls) 1985-2021
+ndietbfNEFSC <- fh.nefsc.pisc.pisccomplete %>%
+  filter(year>1984,
+         pdcomnam == "BLUEFISH") %>%
+  group_by(year, season, station) %>%
+  summarise() %>%
+  nrow()  
+
+# bluefish diet observations with bluefish prey (n hauls) 1985-2021
+ndietbfbfpreyNEFSC <- fh.nefsc.pisc.pisccomplete %>%
+  filter(year>1984,
+         pdcomnam == "BLUEFISH",
+         blueprey == "blueprey") %>%
+  group_by(year, season, station) %>%
+  summarise() %>%
+  nrow()  
+
+# NEAMAP totals?
+
+# NEAMAP poscivores and bluefish
+
+
+
+```
+
+The full NEFSC diet database 1985-2021 contains `r ndietNEFSC` survey stations with diet collections. 
+
 ### VAST model selection  
 
 ### Bias-corrected spatial forage indices  
