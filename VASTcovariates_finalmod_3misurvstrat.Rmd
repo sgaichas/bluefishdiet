@@ -46,6 +46,9 @@ Survey strata definitions are built into VAST already. The results presented her
 
 remotes::install_github("james-thorson/VAST@dev")
 
+# ALSO NEEDED dev version of FishStatsUtils
+remotes::install_github("james-thorson/FishStatsUtils@dev")
+
 # I did not update any packages, we'll see how this goes
 # These were the choices
 #  4: FishStats... (c8bf4df1b... -> 305b3845e...) [GitHub]
