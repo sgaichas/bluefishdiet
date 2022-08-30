@@ -54,8 +54,12 @@ vignettes/*.pdf
 /pyindex_old
 /data-raw
 /pyindex_newpreds
+/pyindex_testspatial
 
 /spatialdat/World_Internal_Waters_v3_20191118.zip  
 /spatialdat/World_Internal_Waters_v3_20191118
+/spatialdat/CoastalZoneManagementActBoundary
+/spatialdat/CoastalZoneManagementActBoundary.zip
+/spatialdat/CoastalZoneManagementActBoundary.gdb.zip
 
 vast_example.zip  
