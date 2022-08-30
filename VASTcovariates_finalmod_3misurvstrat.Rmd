@@ -97,6 +97,7 @@ plot( fit )
 I think the way to run all the splits we want in one model, we need to define splits in the inshore strata that are inside 3 miles and offshore of 3 miles and renumber those strata. Then we can just call them all in one. And I don't love the idea of separate runs for these across different versions of VAST...
 
 Thorson's recommendations for the dev version:
+
 >The dev branch has a feature where you can just supply `extrapolation_list` to `fit_model` and it overrides the call to `make_extrapolation_info`.  So you could make your own function locally by modifying `Prepare_NWA_Extrapolation_Data_Fn` and pass that through with no other changes needed
 
 >I recommend also plotting the predictive CV .. using dev branch this is done by `plot(fit, plot_set=3, plot_value = sd)`, or using earlier versions required a different function for `plot_value` to get the CV (I improved the interface sometime recently but don't remember exactly when)
@@ -134,7 +135,7 @@ MABGBoffshore <- c(1010:1080, 1090, 1100:1120,1130:1210, 1230, 1250, 1600:1750)
 
 Read in spatial info saved from [here](https://sgaichas.github.io/bluefishdiet/VASTcovariates_updatedPreds_sst_3mi.html)
 
-```{r newstrata}
+```{r newstrata, eval=FALSE}
 
 coast3nmbuff <- readRDS(here("spatialdat/neus_coast3nmbuff.rds"))
 
@@ -246,7 +247,7 @@ saveRDS(coast3nmbuffst, file = here("spatialdat/coast3nmbuffst.rds"))
 
 Modify the function from `FishStatsUtils::Prepare_NWA_Extrapolation_Data_Fn` to make a new grid with updated strata
 
-```{r newprepextrap}
+```{r newprepextrap, eval=FALSE}
 
 Prepare_NWA_Extrapolation_Data_Fn_skg <- function (strata.limits = NULL, 
                                                epu_to_use = c("All", "Georges_Bank", "Mid_Atlantic_Bight", "Scotian_Shelf", "Gulf_of_Maine", "Other")[1],
@@ -302,7 +303,7 @@ Prepare_NWA_Extrapolation_Data_Fn_skg <- function (strata.limits = NULL,
 Now define new `strata.limits`. Ensure that the full spatial domain includes the full extraoplation grid since it allows us to cut down to any strata and models all converged as noted [here](https://sgaichas.github.io/bluefishdiet/VASTcovariates_finalmod_strattest.html). 
 
 
-```{r stratalimits}
+```{r stratalimits, eval=FALSE}
 
 strata.limits <- as.list(c("AllEPU" = allEPU2, 
                            "MABGB" = MABGB2,
@@ -322,7 +323,7 @@ strata.limits <- as.list(c("AllEPU" = allEPU2,
 
 Make the new extrapolation list:
 
-```{r extraplist}
+```{r extraplist, eval=FALSE}
 
 Extrapolation_List  <-  Prepare_NWA_Extrapolation_Data_Fn_skg( strata.limits=strata.limits)
 
@@ -391,10 +392,10 @@ stratlook <- data.frame(Stratum = c("Stratum_1",
 
 ### Fall Index  
 
-Plot individual time series (bias corrected) with standard errors:
+Plot individual time series with standard errors:
 
 ```{r}
-splitoutput <- read.csv("pyindex/allagg_fall_500_lennosst_split_biascorrect/Index.csv")
+splitoutput <- read.csv("pyindex/allagg_fall_500_lennosst_ALLsplit/Index.csv")
 
 splitoutput <- splitoutput %>%
   left_join(stratlook)
@@ -411,7 +412,7 @@ ggplot(splitoutput, aes(x=Time, y=Estimate, colour=Region)) +
 
 ```
 
-
+ or just the indices from inshore (alb), inshore bluefish, offshore bluefish, and further out, plus the state and federal waters split.
  
 ```{r}
 in2off <- splitoutput %>%
@@ -422,9 +423,12 @@ in2off <- splitoutput %>%
   dplyr::mutate(AlbInshore = MABGBalbinshore,
                 BlueInshore = bfin,
                 BlueOffshore = bfoff,
-                OthOffshore = MABGB - (bfoff + bfin + MABGBalbinshore),
+                #OthOffshore = MABGB - (bfoff + bfin + MABGBalbinshore),
+                OthOffshore = MABGBothoffshore,
+                StateWaters = MABGBstate,
+                FedWaters =   MABGBfed,
                 SumMABGB = AlbInshore + BlueInshore + BlueOffshore + OthOffshore) %>%
-  dplyr::select(Time, AlbInshore, BlueInshore, BlueOffshore, OthOffshore, SumMABGB, MABGB) %>%
+  dplyr::select(Time, AlbInshore, BlueInshore, BlueOffshore, OthOffshore, SumMABGB, StateWaters, FedWaters, MABGB) %>%
   tidyr::pivot_longer(!c(Time, Var), names_to = "Region", values_to = "value") %>%
   tidyr::pivot_wider(names_from = "Var", values_from = "value")
 
@@ -450,10 +454,12 @@ MABGBprop <- in2off %>%
   dplyr::mutate(AlbInshoreprop = AlbInshore/MABGB,
                 BlueInshoreprop = BlueInshore/MABGB,
                 BlueOffshoreprop = BlueOffshore/MABGB,
-                OthOffshoreprop = OthOffshore/MABGB) %>%
+                OthOffshoreprop = OthOffshore/MABGB,
+                StateWatersprop = StateWaters/MABGB, 
+                FedWatersprop = FedWaters/MABGB) %>%
   tidyr::pivot_longer(!Time, names_to = "Region", values_to = "Estimate") %>%
   dplyr::filter(Region %in% c("AlbInshoreprop", "BlueInshoreprop", "BlueOffshoreprop",
-                              "OthOffshoreprop"))
+                              "OthOffshoreprop", "StateWatersprop", "FedWatersprop"))
   
 
 ggplot(MABGBprop, aes(x=Time, y=Estimate, colour = Region)) +
@@ -469,7 +475,7 @@ ggplot(MABGBprop, aes(x=Time, y=Estimate, colour = Region)) +
 
 ### Fall predicted ln-density
 
-![Fall density maps with covariates](pyindex/allagg_fall_500_lennosst_split_biascorrect/ln_density-predicted.png)
+![Fall density maps with covariates](pyindex/allagg_fall_500_lennosst_ALLsplit/ln_density-predicted.png)
  
 ### Fall Diagnostics {.tabset}
 
@@ -485,7 +491,7 @@ diagplots <- c("Data_and_knots",
 for(p in diagplots){
   
     cat("  \n####",  as.character(p),"  \n")
-    cat(paste0("![](pyindex/allagg_fall_500_lennosst_split_biascorrect/",
+    cat(paste0("![](pyindex/allagg_fall_500_lennosst_ALLsplit/",
                       p,
                       ".png)")) 
     cat("  \n")   
@@ -503,7 +509,7 @@ for(p in diagplots){
 Plot individual time series
 
 ```{r}
-splitoutput <- read.csv("pyindex/allagg_spring_500_lennosst_split_biascorrect/Index.csv")
+splitoutput <- read.csv("pyindex/allagg_spring_500_lennosst_ALLsplit/Index.csv")
 
 splitoutput <- splitoutput %>%
   left_join(stratlook)
@@ -520,7 +526,7 @@ ggplot(splitoutput, aes(x=Time, y=Estimate, colour=Region)) +
 
 ```
 
- or just the indices from inshore (alb), inshore bluefish, offshore bluefish, and further out
+ or just the indices from inshore (alb), inshore bluefish, offshore bluefish, and further out, plus the state and federal waters split.
  
 ```{r}
 in2off <- splitoutput %>%
@@ -531,9 +537,12 @@ in2off <- splitoutput %>%
   dplyr::mutate(AlbInshore = MABGBalbinshore,
                 BlueInshore = bfin,
                 BlueOffshore = bfoff,
-                OthOffshore = MABGB - (bfoff + bfin + MABGBalbinshore),
+                #OthOffshore = MABGB - (bfoff + bfin + MABGBalbinshore),
+                OthOffshore = MABGBothoffshore,
+                StateWaters = MABGBstate,
+                FedWaters =   MABGBfed,
                 SumMABGB = AlbInshore + BlueInshore + BlueOffshore + OthOffshore) %>%
-  dplyr::select(Time, AlbInshore, BlueInshore, BlueOffshore, OthOffshore, SumMABGB, MABGB) %>%
+  dplyr::select(Time, AlbInshore, BlueInshore, BlueOffshore, OthOffshore, SumMABGB, StateWaters, FedWaters, MABGB) %>%
   tidyr::pivot_longer(!c(Time, Var), names_to = "Region", values_to = "value") %>%
   tidyr::pivot_wider(names_from = "Var", values_from = "value")
 
@@ -559,10 +568,12 @@ MABGBprop <- in2off %>%
   dplyr::mutate(AlbInshoreprop = AlbInshore/MABGB,
                 BlueInshoreprop = BlueInshore/MABGB,
                 BlueOffshoreprop = BlueOffshore/MABGB,
-                OthOffshoreprop = OthOffshore/MABGB) %>%
+                OthOffshoreprop = OthOffshore/MABGB,
+                StateWatersprop = StateWaters/MABGB, 
+                FedWatersprop = FedWaters/MABGB) %>%
   tidyr::pivot_longer(!Time, names_to = "Region", values_to = "Estimate") %>%
   dplyr::filter(Region %in% c("AlbInshoreprop", "BlueInshoreprop", "BlueOffshoreprop",
-                              "OthOffshoreprop"))
+                              "OthOffshoreprop", "StateWatersprop", "FedWatersprop"))
   
 
 ggplot(MABGBprop, aes(x=Time, y=Estimate, colour = Region)) +
@@ -579,7 +590,7 @@ ggplot(MABGBprop, aes(x=Time, y=Estimate, colour = Region)) +
 
 ### Spring predicted ln-density
 
-![Spring density maps with covariates](pyindex/allagg_spring_500_lennosst_split_biascorrect/ln_density-predicted.png)
+![Spring density maps with covariates](pyindex/allagg_spring_500_lennosst_ALLsplit/ln_density-predicted.png)
 
 ### Spring Diagnostics {.tabset}
 
@@ -595,7 +606,7 @@ diagplots <- c("Data_and_knots",
 for(p in diagplots){
   
     cat("  \n####",  as.character(p),"  \n")
-    cat(paste0("![](pyindex/allagg_spring_500_lennosst_split_biascorrect/",
+    cat(paste0("![](pyindex/allagg_spring_500_lennosst_ALLsplit/",
                       p,
                       ".png)")) 
     cat("  \n")   
@@ -606,12 +617,15 @@ for(p in diagplots){
 
 ### {-} 
 
-All results in the respective `pyindex/allagg_fall_500_lennosst_split_biascorrect` and `allagg_spring_500_lennsst_splitbiascorrect` folders.
+All results in the respective `pyindex/allagg_fall_500_lennosst_ALLsplit` and `allagg_spring_500_lennsst_ALLsplit` folders.
 
 The full results are on [google drive](https://drive.google.com/drive/folders/1PsEk5hhQ7fR0Gq4NnYPvU4V59d4nIR8E) rather than github to save space.
 
-Still to do:
+### Still to do:
 
-*  fix index within 3 miles of shore and outside that (highest priority)
+*  Why didn't residuals on map plot work?
+*  Bias correction
+*  Formatting for assessment input
+
 
 ## References
