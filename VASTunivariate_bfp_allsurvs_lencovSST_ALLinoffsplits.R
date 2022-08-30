@@ -244,7 +244,7 @@ settings = make_settings( n_x = 500,
                           )
 
 
-Extrapolation_List <- readRDS(here::here("spatialdat/CustomExtrapolationList.rds"))
+New_Extrapolation_List <- readRDS(here::here("spatialdat/CustomExtrapolationList.rds"))
 
 # select dataset and set directory for output
 
@@ -262,7 +262,7 @@ if(!dir.exists(working_dir)) {
 
 fit <- fit_model(
   settings = settings, 
-  Extrapolation_List = Extrapolation_List,
+  extrapolation_list = New_Extrapolation_List,
   Lat_i = bluepyagg_stn_fall$Lat, 
   Lon_i = bluepyagg_stn_fall$Lon, 
   t_i = bluepyagg_stn_fall$Year, 
@@ -294,8 +294,8 @@ if(!dir.exists(working_dir)) {
 }                         
                           
 
-fit = fit_model( settings = settings,  
-                 Extrapolation_List = Extrapolation_List,
+fit <- fit_model( settings = settings,  
+                 extrapolation_list = New_Extrapolation_List,
                  Lat_i = bluepyagg_stn_spring[,'Lat'], 
                  Lon_i = bluepyagg_stn_spring[,'Lon'], 
                  t_i = bluepyagg_stn_spring[,'Year'], 
