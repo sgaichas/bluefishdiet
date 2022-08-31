@@ -235,7 +235,7 @@ settings = make_settings( n_x = 500,
                           #strata.limits = list('All_areas' = 1:1e5), full area
                           strata.limits = strata.limits,
                           purpose = "index2", 
-                          bias.correct = TRUE,
+                          bias.correct = FALSE,
                           #use_anisotropy = FALSE,
                           #fine_scale = FALSE,
                           #FieldConfig = FieldConfig,
@@ -251,7 +251,7 @@ New_Extrapolation_List <- readRDS(here::here("spatialdat/CustomExtrapolationList
 #########################################################
 # Run model fall
 
-season <- c("fall_500_lennosst_ALLsplit_biascorrect")
+season <- c("fall_500_lennosst_ALLsplit")
 
 working_dir <- here::here(sprintf("pyindex/allagg_%s/", season))
 
@@ -259,6 +259,8 @@ if(!dir.exists(working_dir)) {
   dir.create(working_dir)
 }
 
+# subset for faster testing
+#bluepyagg_stn_fall <- bluepyagg_stn_fall %>% filter(Year<1990)                       
 
 fit <- fit_model(
   settings = settings, 
@@ -285,14 +287,16 @@ plot( fit,
 ######################################################
 # Run model spring
 
-season <- c("spring_500_lennosst_ALLsplit_biascorrect")
+season <- c("spring_500_lennosst_ALLsplit")
 
 working_dir <- here::here(sprintf("pyindex/allagg_%s/", season))
 
 if(!dir.exists(working_dir)) {
   dir.create(working_dir)
 }                         
-                          
+  
+# subset for faster testing
+#bluepyagg_stn_spring <- bluepyagg_stn_spring %>% filter(Year<1990) 
 
 fit <- fit_model( settings = settings,  
                  extrapolation_list = New_Extrapolation_List,
