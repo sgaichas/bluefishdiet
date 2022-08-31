@@ -827,6 +827,10 @@ As noted previously [with VAST release code and only survey strata in the mix](h
 
 *  Why didn't residuals on map plot work? Unclear, part is commented out but also not sure residuals in general were estimated. Thorson is on it.
 
+Another nifty dev trick from Jim:
+
+> Regarding simulating data, the dev-branch has a new function `reload_model` where you can now save a fit, close terminal, reload in new terminal, and run `reload_model` to relink the DLL.  This then allows `simulate_data` and other functions requiring a call to the DLL to work in a new session.
+
 ```{r, eval=FALSE}
 # read fall fit back in and save plot object from plot function
 
@@ -838,6 +842,10 @@ plotvarsfall <- plot( fit,
       working_dir = paste0(working_dir, "/"))
 
 # generate the residuals from fit object rather than rerunning VAST?
+
+# yes we can, but we have to reload_model like Jim says above
+reload_model(fit)
+
 # this code from https://github.com/James-Thorson-NOAA/FishStatsUtils/blob/main/R/fit_model.R#L508-L612
 
 x <- fit
