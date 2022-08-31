@@ -1,6 +1,6 @@
 ---
 title: "VAST aggregate prey model on survey strata and 3mi split"
-subtitle: "NEFSC and NEAMAP surveys, new predator list, all covariates, bias corrected"
+subtitle: "NEFSC and NEAMAP surveys, new predator list, all covariates, NOT bias corrected"
 author: "Sarah Gaichas"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output:
@@ -623,7 +623,171 @@ The full results are on [google drive](https://drive.google.com/drive/folders/1P
 
 ### Still to do:
 
-*  Why didn't residuals on map plot work?
+*  Why didn't residuals on map plot work? Unclear, part is commented out but also not sure residuals in general were estimated.  
+
+```{r, eval=FALSE}
+# read fall fit back in and save plot object from plot function
+
+season <- c("fall_500_lennosst_ALLsplit")
+working_dir <- here::here(sprintf("pyindex/allagg_%s/", season))
+fit <- readRDS(paste0(working_dir, "fit.rds"))
+
+plotvarsfall <- plot( fit,
+      working_dir = paste0(working_dir, "/"))
+
+# generate the residuals from fit object rather than rerunning VAST?
+# this code from https://github.com/James-Thorson-NOAA/FishStatsUtils/blob/main/R/fit_model.R#L508-L612
+
+x <- fit
+n_samples <- 250
+
+# Residuals
+  if( tolower(what) == "residuals" ){
+    # extract objects
+    Obj = x$tmb_list$Obj
+
+    # Change n_g
+    # Must change back explicitly because TMB appears to pass env as a pointer, so changes in copy affect original x outside of function!
+    n_g_orig = Obj$env$data$n_g
+    revert_settings = function(n_g){Obj$env$data$n_g = n_g}
+    on.exit( revert_settings(n_g_orig) )
+    Obj$env$data$n_g = 0
+
+    if( type %in% c(1,4) ){
+      b_iz = matrix(NA, nrow=length(x$data_list$b_i), ncol=n_samples)
+      message( "Sampling from the distribution of data conditional on estimated fixed and random effects" )
+      for( zI in 1:n_samples ){
+        if( zI%%max(1,floor(n_samples/10)) == 0 ){
+          message( "  Finished sample ", zI, " of ",n_samples )
+        }
+        b_iz[,zI] = simulate_data( fit=list(tmb_list=list(Obj=Obj)), type=type, random_seed=list(random_seed+zI,NULL)[[1+is.null(random_seed)]] )$b_i
+      }
+      #if( any(is.na(x$data_list$b_i)) ){
+      #  stop("dharmaRes not designed to work when any observations have b_i=NA")
+      #}
+      # Substitute any observation where b_i = NA with all zeros, which will then have a uniform PIT
+      which_na = which(is.na(x$data_list$b_i))
+      if( length(which_na) > 0 ){
+        x$data_list$b_i[which_na] = 0
+        b_iz[which_na,] = 0
+        warning("When calculating DHARMa residuals, replacing instances where b_i=NA with a uniform PIT residual")
+      }
+      if( any(is.na(b_iz)) ){
+        stop("Check simulated residuals for NA values")
+      }
+
+      # Run DHARMa
+      # Adding jitters because DHARMa version 0.3.2.0 sometimes still throws an error method="traditional" and integer=FALSE without jitters
+      dharmaRes = DHARMa::createDHARMa(simulatedResponse=strip_units(b_iz) + 1e-10*array(rnorm(prod(dim(b_iz))),dim=dim(b_iz)),
+        observedResponse=strip_units(x$data_list$b_i) + 1e-10*rnorm(length(x$data_list$b_i)),
+        fittedPredictedResponse=strip_units(x$Report$D_i),
+        integer=FALSE)
+      #dharmaRes = DHARMa::createDHARMa(simulatedResponse=strip_units(b_iz),
+      #  observedResponse=strip_units(x$data_list$b_i),
+      #  fittedPredictedResponse=strip_units(x$Report$D_i),
+      #  method="PIT")
+
+      # Save to report error
+      if( FALSE ){
+        all = list( simulatedResponse=strip_units(b_iz), observedResponse=strip_units(x$data_list$b_i), fittedPredictedResponse=strip_units(x$Report$D_i) )
+        #save(all, file=paste0(root_dir,"all.RData") )
+        dharmaRes = DHARMa::createDHARMa(simulatedResponse=all$simulatedResponse + rep(1,nrow(all$simulatedResponse))%o%c(0.001*rnorm(1),rep(0,ncol(all$simulatedResponse)-1)),
+          observedResponse=all$observedResponse,
+          fittedPredictedResponse=all$fittedPredictedResponse,
+          method="PIT")
+      }
+
+      # Calculate probability-integral-transform (PIT) residuals
+      message( "Substituting probability-integral-transform (PIT) residuals for DHARMa-calculated residuals" )
+      prop_lessthan_i = apply( b_iz<outer(x$data_list$b_i,rep(1,n_samples)),
+        MARGIN=1,
+        FUN=mean )
+      prop_lessthanorequalto_i = apply( b_iz<=outer(x$data_list$b_i,rep(1,n_samples)),
+        MARGIN=1,
+        FUN=mean )
+      PIT_i = runif(min=prop_lessthan_i, max=prop_lessthanorequalto_i, n=length(prop_lessthan_i) )
+      # cbind( "Difference"=dharmaRes$scaledResiduals - PIT_i, "PIT"=PIT_i, "Original"=dharmaRes$scaledResiduals, "b_i"=x$data_list$b_i )
+      dharmaRes$scaledResiduals = PIT_i
+    }else if( type==0 ){
+      # Check for issues
+      if( !all(x$data_list$ObsModel_ez[1,] %in% c(1,2)) ){
+        stop("oneStepAhead residuals only code for gamma and lognormal distributions")
+      }
+
+      # Run OSA
+      message( "Running oneStepPredict_deltaModel for each observation, to then load them into DHARMa object for plotting" )
+      osa = TMBhelper::oneStepPredict_deltaModel( obj = x$tmb_list$Obj,
+        observation.name = "b_i",
+        method = "cdf",
+        data.term.indicator = "keep",
+        deltaSupport = 0,
+        trace = TRUE )
+
+      # Build DHARMa object on fake inputs and load OSA into DHARMa object
+      dharmaRes = DHARMa::createDHARMa(simulatedResponse=matrix(rnorm(x$data_list$n_i*10,mean=x$data_list$b_i),ncol=10),
+        observedResponse=x$data_list$b_i,
+        fittedPredictedResponse=x$Report$D_i,
+        integer=FALSE)
+      dharmaRes$scaledResiduals = pnorm(osa$residual)
+    }else{
+      stop("`type` only makes sense for 0 (oneStepAhead), 1 (conditional, a.k.a. measurement error) or 4 (unconditional) simulations")
+    }
+
+    # do plot
+    if( is.null(working_dir) ){
+      plot_dharma(dharmaRes, ...)
+    }else if(!is.na(working_dir) ){
+      png(file=paste0(working_dir,"quantile_residuals.png"), width=8, height=4, res=200, units='in')
+        plot_dharma(dharmaRes, ...)
+      dev.off()
+    }
+
+    # Return stuff
+    ans = dharmaRes
+    message( "Invisibly returning output from `DHARMa::createDHARMa`, e.g., to apply `plot.DHARMa` to this output")
+  }
+
+# residual map plot code commented out of dev version
+# https://github.com/James-Thorson-NOAA/FishStatsUtils/blob/dev/R/plot_results.R#L264-L286
+
+    # Plotting quantile residuals
+    #message("\n### Making quantile residuals using conditional simulation and package DHARMa")
+    dharmaRes = summary( fit, what="residuals", working_dir=working_dir, type=1)
+
+dharmaRes <- plotvarsfall$dharmaRes
+year_labels <- plotvarsfall$plot_maps_args$year_labels
+years_to_plot <- plotvarsfall$plot_maps_args$years_to_plot
+n_cells_residuals <- NULL #plotvarsfall$plot_maps_args$n_cells #?
+projargs <- plotvarsfall$plot_maps_args$projargs
+
+# Mapping quantile residuals
+    #message("\n### Plotting quantile residuals ")
+    dharma_raster = plot_quantile_residuals( dharmaRes = dharmaRes,
+                                             fit = fit,
+                                             working_dir = working_dir,
+                                             year_labels = year_labels,
+                                             years_to_plot = years_to_plot,
+                                             n_cells_residuals = n_cells_residuals,
+                                             projargs = projargs#,
+                                             #... 
+                                             )
+
+    # Semivariance for quantile residuals
+    # Disabled due to problems with raster plots in V >= 4.2.1
+    if( fit$data_list$n_t > 1 ){
+      3message("\n### Plotting semivariance for normal-transformed quantile residuals ")
+      residual_semivariance = plot_residual_semivariance( fit = fit,
+                                                          dharma_raster = dharma_raster,
+                                                          dharmaRes = dharmaRes,
+                                                          working_dir = working_dir )
+     }else{
+       message("\n### Skipping plot of semivariance for normal-transformed quantile residuals")
+       residual_semivariance = NULL
+     }
+
+
+```
+
 *  Bias correction
 *  Formatting for assessment input
 
