@@ -55,6 +55,7 @@ vignettes/*.pdf
 /data-raw
 /pyindex_newpreds
 /pyindex_testspatial
+/testdev
 
 /spatialdat/World_Internal_Waters_v3_20191118.zip  
 /spatialdat/World_Internal_Waters_v3_20191118
