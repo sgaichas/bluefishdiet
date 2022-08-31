@@ -47,6 +47,7 @@ Survey strata definitions are built into VAST already. The results presented her
 remotes::install_github("james-thorson/VAST@dev")
 
 # ALSO NEEDED dev version of FishStatsUtils
+# re-installed after additions by Jim addressing plotting issues
 remotes::install_github("james-thorson/FishStatsUtils@dev")
 
 # I did not update any packages, we'll see how this goes
@@ -79,6 +80,7 @@ example = load_example( data_set="EBS_pollock" )
 settings = make_settings( n_x = 100, 
   Region = example$Region, 
   purpose = "index2", 
+  Version = "VAST_v14_0_1", #needed to prevent error from newer dev version number
   bias.correct = FALSE )
 
 # Run model
@@ -834,17 +836,21 @@ Another nifty dev trick from Jim:
 ```{r, eval=FALSE}
 # read fall fit back in and save plot object from plot function
 
-season <- c("fall_500_lennosst_ALLsplit")
+season <- c("spring_500_lennosst_ALLsplit_biascorrect")
 working_dir <- here::here(sprintf("pyindex/allagg_%s/", season))
 fit <- readRDS(paste0(working_dir, "fit.rds"))
 
-plotvarsfall <- plot( fit,
+plotvarsspring <- plot( fit,
       working_dir = paste0(working_dir, "/"))
 
 # generate the residuals from fit object rather than rerunning VAST?
 
 # yes we can, but we have to reload_model like Jim says above
 reload_model(fit)
+
+dharmaRes = summary( fit, what="residuals", working_dir=working_dir, type=1)
+
+saveRDS(dharmaRes, file = here::here("pyindex/dharmaResSpringBCdev.rds"))
 
 # this code from https://github.com/James-Thorson-NOAA/FishStatsUtils/blob/main/R/fit_model.R#L508-L612
 
@@ -964,11 +970,11 @@ n_samples <- 250
     #message("\n### Making quantile residuals using conditional simulation and package DHARMa")
     dharmaRes = summary( fit, what="residuals", working_dir=working_dir, type=1)
 
-dharmaRes <- plotvarsfall$dharmaRes
-year_labels <- plotvarsfall$plot_maps_args$year_labels
-years_to_plot <- plotvarsfall$plot_maps_args$years_to_plot
+dharmaRes <- plotvarsspring$dharmaRes
+year_labels <-plotvarsspring$plot_maps_args$year_labels
+years_to_plot <- plotvarsspring$plot_maps_args$years_to_plot
 n_cells_residuals <- NULL #plotvarsfall$plot_maps_args$n_cells #?
-projargs <- plotvarsfall$plot_maps_args$projargs
+projargs <- plotvarsspring$plot_maps_args$projargs
 
 # Mapping quantile residuals
     #message("\n### Plotting quantile residuals ")
