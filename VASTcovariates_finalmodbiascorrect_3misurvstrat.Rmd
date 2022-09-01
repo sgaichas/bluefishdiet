@@ -827,7 +827,7 @@ As noted previously [with VAST release code and only survey strata in the mix](h
 
 ### Still to do:
 
-*  Why didn't residuals on map plot work? Unclear, part is commented out but also not sure residuals in general were estimated. Thorson is on it.
+*  Jim Thorson got residual plots working in correction to FishStatsUtils dev 31 August. New plots are here. Ignore code below aside from more tips and tricks for using dev branch VAST.
 
 Another nifty dev trick from Jim:
 
