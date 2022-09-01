@@ -623,7 +623,7 @@ The full results are on [google drive](https://drive.google.com/drive/folders/1P
 
 ### Still to do:
 
-*  Why didn't residuals on map plot work? Unclear, part is commented out but also not sure residuals in general were estimated.  
+*  Thorson got residual plots working in `FishStatsUtils` dev 31 August. Ignore code below. 
 
 ```{r, eval=FALSE}
 # read fall fit back in and save plot object from plot function
@@ -788,7 +788,7 @@ projargs <- plotvarsfall$plot_maps_args$projargs
 
 ```
 
-*  Bias correction
+*  Bias correction--see next Rmd
 *  Formatting for assessment input
 
 
