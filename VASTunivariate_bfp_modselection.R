@@ -272,19 +272,6 @@ strata.limits <- as.list(c("AllEPU" = allEPU2,
                            "MABGBothoffshore" = MABGBothoffshore2,
                            "allother" = allother2))
 
-settings <- make_settings( n_x = 500, 
-                          Region = "northwest_atlantic",
-                          Version = "VAST_v14_0_1", #needed to prevent error from newer dev version number
-                          #strata.limits = list('All_areas' = 1:1e5), full area
-                          strata.limits = strata.limits,
-                          purpose = "index2", 
-                          bias.correct = FALSE,
-                          use_anisotropy = use_anisotropy,
-                          FieldConfig = FieldConfig,
-                          RhoConfig = RhoConfig,
-                          OverdispersionConfig = OverdispersionConfig
-                          )
-
 # run all with custom extrapolation list just in case that makes a difference
 New_Extrapolation_List <- readRDS(here::here("spatialdat/CustomExtrapolationList.rds"))
 
@@ -317,10 +304,10 @@ mod.FieldConfig <- list(FieldConfig, FieldConfig,
 
 names(mod.FieldConfig) <- mod.config
 
-mod.use_anistropy <- list("TRUE", "FALSE", 
-                       "TRUE", "FALSE",
-                       "TRUE", "FALSE",
-                       "TRUE", "FALSE")
+mod.use_anistropy <- list(TRUE, FALSE, 
+                          TRUE, FALSE,
+                          TRUE, FALSE,
+                          TRUE, FALSE)
 
 names(mod.use_anistropy) <- mod.config
 
@@ -355,7 +342,7 @@ for(season in mod.season){
                                bias.correct = FALSE,
                                use_anisotropy = use_anisotropy,
                                FieldConfig = FieldConfig,
-                               #RhoConfig = RhoConfig, #always default
+                               RhoConfig = RhoConfig, #always default
                                OverdispersionConfig = OverdispersionConfig
     )
     
