@@ -372,3 +372,100 @@ for(season in mod.season){
   } # end config loop
 } # end season loop
 
+#########################################################
+# Define covariate combinations
+
+mod.covar <- c("base", "len", "num", "lennum", 
+               "sst", "lensst", "numsst", "lennumsst",
+               "eta10", "eta11")
+
+OverdispersionConfig	<- c("eta1"=0, "eta2"=0)
+# eta1 = vessel effects on prey encounter rate
+# eta2 = vessel effects on prey weight
+
+OverdispersionConfig1 <- c("eta1"=1, "eta2"=0)
+OverdispersionConfig2 <- c("eta1"=1, "eta2"=1)
+
+Q_ikbase  <-  NULL
+Q_iklen <- as.matrix(dat[,c("meanpisclen")])
+Q_iknum <- as.matrix(dat[,c("npiscsp")])
+Q_iklennum <- as.matrix(dat[,c("meanpisclen", "npiscsp")])
+Q_iksst <- as.matrix(dat[,c("sstfill")])
+Q_iklensst <- as.matrix(dat[,c("meanpisclen", "sstfill")])
+Q_iknumsst <- as.matrix(dat[,c("npiscsp", "sstfill")])
+Q_iklennumsst <- as.matrix(dat[,c("meanpisclen", "npiscsp", "sstfill")])
+
+mod.Qik <- list(Q_ikbase, Q_iklen, Q_iknum, Q_iklennum,
+                Q_iksst, Q_iklensst, Q_iknumsst, Q_iklennumsst,
+                Q_ikbase, Q_ikbase)
+
+mod.eta <- list(OverdispersionConfig, OverdispersionConfig, 
+                OverdispersionConfig, OverdispersionConfig, 
+                OverdispersionConfig, OverdispersionConfig, 
+                OverdispersionConfig, OverdispersionConfig,
+                OverdispersionConfig1, OverdispersionConfig2)
+
+names(mod.Qik) <- mod.covar
+names(mod.eta) <- mod.covar
+
+#########################################################
+# Run model selection 2
+
+for(season in mod.season){
+  
+  season <- season # c("annual_500_lennosst_ALLsplit")
+  
+  dat <- mod.dat[[season]]
+  
+  for(covar in mod.covar) {
+    
+    name <- paste0(season,"_", covar)
+    
+    working_dir <- here::here(sprintf("pyindex_modsel1/allagg_%s/", name))
+    
+    if(!dir.exists(working_dir)) {
+      dir.create(working_dir)
+    }
+    
+    # winners of model selection 1
+    use_anisotropy <- 
+    FieldConfig <- 
+     
+    OverdispersionConfig <- mod.eta[[covar]]
+    Q_ik <- mod.Qik[[covar]]
+    
+    settings <- make_settings( n_x = 500, 
+                               Region = "northwest_atlantic",
+                               Version = "VAST_v14_0_1", #needed to prevent error from newer dev version number
+                               #strata.limits = list('All_areas' = 1:1e5), full area
+                               strata.limits = strata.limits,
+                               purpose = "index2", 
+                               bias.correct = FALSE,
+                               use_anisotropy = use_anisotropy,
+                               FieldConfig = FieldConfig,
+                               RhoConfig = RhoConfig, #always default
+                               OverdispersionConfig = OverdispersionConfig
+    )
+    
+    
+    fit <- fit_model(
+      settings = settings, 
+      extrapolation_list = New_Extrapolation_List,
+      Lat_i = dat$Lat, 
+      Lon_i = dat$Lon, 
+      t_i = dat$Year, 
+      b_i = as_units(dat[,'Catch_g'], 'g'),
+      a_i = rep(1, nrow(dat)),
+      v_i = dat$Vessel,
+      Q_ik = Q_ik,
+      #Use_REML = TRUE,
+      working_dir = paste0(working_dir, "/"))
+    
+    #saveRDS(fit, file = paste0(working_dir, "/fit.rds"))
+    
+    # Plot results
+    plot( fit,
+          working_dir = paste0(working_dir, "/"))
+    
+  } # end config loop
+} # end season loop
