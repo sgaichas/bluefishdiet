@@ -386,26 +386,12 @@ OverdispersionConfig	<- c("eta1"=0, "eta2"=0)
 OverdispersionConfig1 <- c("eta1"=1, "eta2"=0)
 OverdispersionConfig2 <- c("eta1"=1, "eta2"=1)
 
-Q_ikbase  <-  NULL
-Q_iklen <- as.matrix(dat[,c("meanpisclen")])
-Q_iknum <- as.matrix(dat[,c("npiscsp")])
-Q_iklennum <- as.matrix(dat[,c("meanpisclen", "npiscsp")])
-Q_iksst <- as.matrix(dat[,c("sstfill")])
-Q_iklensst <- as.matrix(dat[,c("meanpisclen", "sstfill")])
-Q_iknumsst <- as.matrix(dat[,c("npiscsp", "sstfill")])
-Q_iklennumsst <- as.matrix(dat[,c("meanpisclen", "npiscsp", "sstfill")])
-
-mod.Qik <- list(Q_ikbase, Q_iklen, Q_iknum, Q_iklennum,
-                Q_iksst, Q_iklensst, Q_iknumsst, Q_iklennumsst,
-                Q_ikbase, Q_ikbase)
-
 mod.eta <- list(OverdispersionConfig, OverdispersionConfig, 
                 OverdispersionConfig, OverdispersionConfig, 
                 OverdispersionConfig, OverdispersionConfig, 
                 OverdispersionConfig, OverdispersionConfig,
                 OverdispersionConfig1, OverdispersionConfig2)
 
-names(mod.Qik) <- mod.covar
 names(mod.eta) <- mod.covar
 
 #########################################################
@@ -417,19 +403,34 @@ for(season in mod.season){
   
   dat <- mod.dat[[season]]
   
+  Q_ikbase  <-  NULL
+  Q_iklen <- as.matrix(dat[,c("meanpisclen")])
+  Q_iknum <- as.matrix(dat[,c("npiscsp")])
+  Q_iklennum <- as.matrix(dat[,c("meanpisclen", "npiscsp")])
+  Q_iksst <- as.matrix(dat[,c("sstfill")])
+  Q_iklensst <- as.matrix(dat[,c("meanpisclen", "sstfill")])
+  Q_iknumsst <- as.matrix(dat[,c("npiscsp", "sstfill")])
+  Q_iklennumsst <- as.matrix(dat[,c("meanpisclen", "npiscsp", "sstfill")])
+  
+  mod.Qik <- list(Q_ikbase, Q_iklen, Q_iknum, Q_iklennum,
+                  Q_iksst, Q_iklensst, Q_iknumsst, Q_iklennumsst,
+                  Q_ikbase, Q_ikbase)
+  
+  names(mod.Qik) <- mod.covar
+  
   for(covar in mod.covar) {
     
     name <- paste0(season,"_", covar)
     
-    working_dir <- here::here(sprintf("pyindex_modsel1/allagg_%s/", name))
+    working_dir <- here::here(sprintf("pyindex_modsel2/allagg_%s/", name))
     
     if(!dir.exists(working_dir)) {
       dir.create(working_dir)
     }
     
     # winners of model selection 1
-    use_anisotropy <- 
-    FieldConfig <- 
+    use_anisotropy <- TRUE
+    FieldConfig <- FieldConfig1
      
     OverdispersionConfig <- mod.eta[[covar]]
     Q_ik <- mod.Qik[[covar]]
