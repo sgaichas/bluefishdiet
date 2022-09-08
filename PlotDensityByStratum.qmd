@@ -1,0 +1,55 @@
+---
+title: "Density by stratum"
+format: html
+editor: visual
+---
+
+## VAST estimated density in each strata
+
+Looks like mean density by stratum it should be in \`fit\$Report\$mean_D\_ctl\` in the fit output of each model. The currently loaded model is the bias corrected annual model.
+
+Stealing code from the `FishStatsUtils` plotting functions at https://github.com/James-Thorson-NOAA/FishStatsUtils/blob/dev/R/plot_index.R
+
+```{r}
+# currently loaded model is the bias corrected annual
+# can read in fit.rds from ~/Documents/0_Data/bluefishdiet/pyindex/allagg_annual_500_lennosst_ALLsplit_biascorrect
+
+n_categories = dim(fit$Report$mean_D_ctl)[1]
+n_years = dim(fit$Report$mean_D_ctl)[2]
+n_strata = dim(fit$Report$mean_D_ctl)[3]
+
+strata_names <- c("AllEPU", 
+                  "MABGB", 
+                  "MABGBstate", 
+                  "MABGBfed", 
+                  "MAB",
+                  "GB",
+                  "GOM",
+                  "bfall",
+                  "bfin",
+                  "bfoff",
+                  "MABGBalbinshore",
+                  "MABGBothoffshore",
+                  "allother")
+
+year_labels <- fit$year_labels
+years_to_plot <- fit$years_to_plot
+category_names <- fit$category_names
+plot_legend <- ifelse(n_strata>1, TRUE, FALSE)
+
+# reference the data using fit$Report$mean_D_ctl[category, years_to_plot, stratum]
+dens_strat1 <- fit$Report$mean_D_ctl[1,years_to_plot,1]
+
+```
+
+Huge density estimates in year 23 (2007) in any strata containing nearshore Long Island. The relevant comparison for this model is combined MABGB state and federal waters density for comparison with MRIP CPUE.
+
+```{r}
+plot(year_labels, fit$Report$mean_D_ctl[1,years_to_plot,4], ylim=c(0,0.5)) #fedwaters
+lines(year_labels, fit$Report$mean_D_ctl[1,years_to_plot,3], ylim=c(0,0.5)) #statewaters
+
+```
+
+To my eye, state waters forage density was higher pre 1991, was even with federal waters forage density through about 2006, and has been mainly higher than federal waters density again since 2008.
+
+It would be nice to get error bars on these.
