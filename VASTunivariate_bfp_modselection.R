@@ -297,10 +297,10 @@ FieldConfig3 <- matrix( c("IID",0,"IID",0,0,"IID"), ncol=2, nrow=3,
 FieldConfig4 <- matrix( c(0,0,"IID",0,0,"IID"), ncol=2, nrow=3, 
                         dimnames=list(c("Omega","Epsilon","Beta"),c("Component_1","Component_2")))
 
-mod.FieldConfig <- list(FieldConfig, FieldConfig,
-                     FieldConfig2, FieldConfig2,
-                     FieldConfig3, FieldConfig3,
-                     FieldConfig4, FieldConfig4)
+mod.FieldConfig <- list(FieldConfig1, FieldConfig1,
+                        FieldConfig2, FieldConfig2,
+                        FieldConfig3, FieldConfig3,
+                        FieldConfig4, FieldConfig4)
 
 names(mod.FieldConfig) <- mod.config
 
@@ -375,8 +375,10 @@ for(season in mod.season){
 #########################################################
 # Define covariate combinations
 
-mod.covar <- c("base", "len", "num", "lennum", 
-               "sst", "lensst", "numsst", "lennumsst",
+mod.covar <- c("base", "len", 
+               "num", "lennum", 
+               "sst", "lensst", 
+               "numsst", "lennumsst",
                "eta10", "eta11")
 
 OverdispersionConfig	<- c("eta1"=0, "eta2"=0)
@@ -412,8 +414,10 @@ for(season in mod.season){
   Q_iknumsst <- as.matrix(dat[,c("npiscsp", "sstfill")])
   Q_iklennumsst <- as.matrix(dat[,c("meanpisclen", "npiscsp", "sstfill")])
   
-  mod.Qik <- list(Q_ikbase, Q_iklen, Q_iknum, Q_iklennum,
-                  Q_iksst, Q_iklensst, Q_iknumsst, Q_iklennumsst,
+  mod.Qik <- list(Q_ikbase, Q_iklen, 
+                  Q_iknum, Q_iklennum,
+                  Q_iksst, Q_iklensst, 
+                  Q_iknumsst, Q_iklennumsst,
                   Q_ikbase, Q_ikbase)
   
   names(mod.Qik) <- mod.covar
@@ -468,5 +472,5 @@ for(season in mod.season){
     plot( fit,
           working_dir = paste0(working_dir, "/"))
     
-  } # end config loop
+  } # end covar loop
 } # end season loop
