@@ -212,7 +212,7 @@ settings = make_settings( n_x = 500,
                           #strata.limits = list('All_areas' = 1:1e5), full area
                           strata.limits = strata.limits,
                           purpose = "index2", 
-                          bias.correct = FALSE,
+                          bias.correct = TRUE,
                           #use_anisotropy = FALSE,
                           #fine_scale = FALSE,
                           #FieldConfig = FieldConfig,
@@ -228,7 +228,7 @@ New_Extrapolation_List <- readRDS(here::here("spatialdat/CustomExtrapolationList
 #########################################################
 # Run model annual
 
-season <- c("annual_500_lennosst_ALLsplit")
+season <- c("annual_500_lennosst_ALLsplit_biascorrect")
 
 working_dir <- here::here(sprintf("pyindex/allagg_%s/", season))
 
