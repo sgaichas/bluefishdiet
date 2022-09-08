@@ -986,13 +986,125 @@ for(p in diagplots){
 
 ### {-} 
 
-All results in the respective `pyindex/allagg_fall_500_lennosst_ALLsplit_biascorrect` and `pyindex/allagg_spring_500_lennsst_ALLsplit_biascorrect` folders.
+### Annual Index  
+
+Plot individual time series with standard errors:
+
+```{r}
+splitoutput <- read.csv("pyindex/allagg_annual_500_lennosst_ALLsplit_biascorrect/Index.csv")
+
+splitoutput <- splitoutput %>%
+  left_join(stratlook)
+
+ggplot(splitoutput, aes(x=Time, y=Estimate, colour=Region)) +
+  geom_errorbar(aes(ymin=Estimate+Std..Error.for.Estimate, ymax=Estimate-Std..Error.for.Estimate))+
+  geom_point()+
+  geom_line()+
+  facet_wrap(~Region, scales = "free_y") +
+  guides(colour = guide_legend(ncol=2)) +
+  #theme(legend.position = c(1, 0),
+   #     legend.justification = c(1, 0))
+  theme(legend.position="none")
+
+```
+
+ or just the indices from inshore (alb), inshore bluefish, offshore bluefish, and further out, plus the state and federal waters split.
+ 
+```{r}
+in2off <- splitoutput %>%
+  dplyr::select(Time, Region, Estimate, Std..Error.for.Estimate) %>%
+  tidyr::pivot_longer(c(Estimate, Std..Error.for.Estimate), names_to = "Var") %>%
+  dplyr::group_by(Var) %>%
+  tidyr::pivot_wider(names_from = Region, values_from = value) %>%
+  dplyr::mutate(AlbInshore = MABGBalbinshore,
+                BlueInshore = bfin,
+                BlueOffshore = bfoff,
+                #OthOffshore = MABGB - (bfoff + bfin + MABGBalbinshore),
+                OthOffshore = MABGBothoffshore,
+                StateWaters = MABGBstate,
+                FedWaters =   MABGBfed,
+                SumMABGB = AlbInshore + BlueInshore + BlueOffshore + OthOffshore) %>%
+  dplyr::select(Time, AlbInshore, BlueInshore, BlueOffshore, OthOffshore, SumMABGB, StateWaters, FedWaters, MABGB) %>%
+  tidyr::pivot_longer(!c(Time, Var), names_to = "Region", values_to = "value") %>%
+  tidyr::pivot_wider(names_from = "Var", values_from = "value")
+
+ggplot(in2off, aes(x=Time, y=Estimate, colour = Region)) +
+  geom_errorbar(aes(ymin=Estimate+Std..Error.for.Estimate, ymax=Estimate-Std..Error.for.Estimate))+
+  geom_point()+
+  geom_line()+
+  #facet_wrap(~Region) + #+ , scales = "free_y"
+  #theme(legend.position = c(1, 0),
+  #      legend.justification = c(1, 0))
+  ggtitle("Annual Prey Index, Mid-Atlantic and Georges Bank")
+
+
+```
+
+ or as proportions (here proportion of MABGB index).
+
+```{r}
+MABGBprop <- in2off %>%
+  #dplyr::filter(Region != "AllEPU") %>%
+  dplyr::select(Time, Region, Estimate) %>%
+  tidyr::pivot_wider(names_from = Region, values_from = Estimate) %>%
+  dplyr::mutate(AlbInshoreprop = AlbInshore/MABGB,
+                BlueInshoreprop = BlueInshore/MABGB,
+                BlueOffshoreprop = BlueOffshore/MABGB,
+                OthOffshoreprop = OthOffshore/MABGB,
+                StateWatersprop = StateWaters/MABGB, 
+                FedWatersprop = FedWaters/MABGB) %>%
+  tidyr::pivot_longer(!Time, names_to = "Region", values_to = "Estimate") %>%
+  dplyr::filter(Region %in% c("AlbInshoreprop", "BlueInshoreprop", "BlueOffshoreprop",
+                              "OthOffshoreprop", "StateWatersprop", "FedWatersprop"))
+  
+
+ggplot(MABGBprop, aes(x=Time, y=Estimate, colour = Region)) +
+  geom_point()+
+  geom_line()+
+  #facet_wrap(~Region) + #+ , scales = "free_y"
+  #theme(legend.position = c(1, 0),
+  #      legend.justification = c(1, 0))
+  ggtitle("Annual Prey Index as proportion of Mid-Atlantic and Georges Bank")
+  
+  
+```
+
+### Annual predicted ln-density
+
+![Fall density maps with covariates](pyindex/allagg_annual_500_lennosst_ALLsplit_biascorrect/ln_density-predicted.png)
+ 
+### Annual Diagnostics {.tabset}
+
+```{r, results='asis'}
+
+diagplots <- c("Data_and_knots",
+               "Data_by_year",
+               "quantile_residuals",
+               "quantile_residuals_on_map",
+               "Aniso",
+               "center_of_gravity")
+
+for(p in diagplots){
+  
+    cat("  \n####",  as.character(p),"  \n")
+    cat(paste0("![](pyindex/allagg_annual_500_lennosst_ALLsplit_biascorrect/",
+                      p,
+                      ".png)")) 
+    cat("  \n")   
+    
+  }
+
+```
+
+### {-} 
+
+
+All results in the respective `pyindex/allagg_fall_500_lennosst_ALLsplit_biascorrect`, `pyindex/allagg_spring_500_lennsst_ALLsplit_biascorrect` and `pyindex/allagg_annual_500_lennsst_ALLsplit_biascorrect` folders.
 
 The full results are on [google drive](https://drive.google.com/drive/folders/1PsEk5hhQ7fR0Gq4NnYPvU4V59d4nIR8E) rather than github to save space.
 
 Still to do:
 
-*  Results for annual model
 *  Results as density by strata
 
 ## References
