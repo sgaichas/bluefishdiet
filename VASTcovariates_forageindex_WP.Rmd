@@ -251,7 +251,7 @@ $$ \rho_1(i) = \beta_1(c_i, t_i) + \omega_1^*(s_i, c_i) + \varepsilon_1^*(s_i, c
 @thorson_guidance_2019 lists 15 major decisions for constructing a VAST model. 
 
 ##### Spatial domain
-So is it the whole Northwest Atlantic grid and should I then rerun the REML model selection *one* *more* *time*? to get the same answer...
+Models were run using the full Northwest Atlantic grid built into VAST. 
 
 ##### Categories
 
