@@ -52,4 +52,6 @@ lines(year_labels, fit$Report$mean_D_ctl[1,years_to_plot,3], ylim=c(0,0.5)) #sta
 
 To my eye, state waters forage density was higher pre 1991, was even with federal waters forage density through about 2006, and has been mainly higher than federal waters density again since 2008.
 
+AND the 2007 density estimate is due to a data error. Re running everything now...
+
 It would be nice to get error bars on these.
