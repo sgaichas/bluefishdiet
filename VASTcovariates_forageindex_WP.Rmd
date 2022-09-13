@@ -1077,7 +1077,7 @@ ggplot(MABGBprop, aes(x=Time, y=Estimate, colour = Region)) +
 
 ### Annual predicted ln-density
 
-![Fall density maps with covariates](pyindex/allagg_annual_500_lennosst_ALLsplit_biascorrect/ln_density-predicted.png)
+![FAnnual density maps with covariates](pyindex/allagg_annual_500_lennosst_ALLsplit_biascorrect/ln_density-predicted.png)
  
 ### Annual Diagnostics {.tabset}
 
