@@ -42,16 +42,16 @@ dens_strat1 <- fit$Report$mean_D_ctl[1,years_to_plot,1]
 
 ```
 
-Huge density estimates in year 23 (2007) in any strata containing nearshore Long Island. The relevant comparison for this model is combined MABGB state and federal waters density for comparison with MRIP CPUE.
+Huge density estimates in year 23 (2007) in any strata containing nearshore Long Island (this was a data error fixed by running `datacorrection.R` on 9 September 2022). The relevant comparison for this model is combined MABGB state and federal waters density for comparison with MRIP CPUE.
 
 ```{r}
-plot(year_labels, fit$Report$mean_D_ctl[1,years_to_plot,4], ylim=c(0,0.5)) #fedwaters
-lines(year_labels, fit$Report$mean_D_ctl[1,years_to_plot,3], ylim=c(0,0.5)) #statewaters
+plot(year_labels, fit$Report$mean_D_ctl[1,years_to_plot,4], ylim=c(0,0.3)) #fedwaters
+lines(year_labels, fit$Report$mean_D_ctl[1,years_to_plot,3], ylim=c(0,0.3)) #statewaters
 
 ```
 
 To my eye, state waters forage density was higher pre 1991, was even with federal waters forage density through about 2006, and has been mainly higher than federal waters density again since 2008.
 
-AND the 2007 density estimate is due to a data error. Re running everything now...
-
 It would be nice to get error bars on these.
+
+Is density also bias corrected, or just the index after it is estimated?
