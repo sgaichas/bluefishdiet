@@ -33,11 +33,32 @@ Input NEFSC food habits overlap matrix:
 dietoverlap <- read_csv(here("datfromshiny/tgmat.2022-02-15.csv"))
 ```
 
-Get NEFSC food habits data:
+Get NEFSC food habits data (as of October 8 2022 contains only 1973-2020 data, check years):
 ```{r}
 # object is called `allfh`
 load(url("https://github.com/Laurels1/Condition/raw/master/data/allfh.RData"))
+
+# as of October 8 2022 contains only 1973-2020 data
+unique(allfh$year)
 ```
+
+Load 2021 NEFSC food habits data (October 8 2022, check years):
+
+```{r}
+#object is called allfh21
+load(here("fhdat/allfh21.Rdata"))
+
+# check years
+unique(allfh21$year)
+```
+
+Make new NEFSC dataset 1973-2021: 
+
+```{r}
+allfh <- allfh %>%
+  dplyr::bind_rows(allfh21)
+```
+
 
 Generate the Piscivore list based on clustering with the "complete" algorithm. Identify which species cluster with all 3 sizes of bluefish:
 ```{r, fig.height=12}
@@ -228,7 +249,7 @@ NEAMAP inputs were similarly updated based on this predator size category list. 
 +  Goosefish 5 – 124 cm
 
 
-Read in new inputs, align columns, merge datasets, and save:  
+Read in new inputs, align columns, merge datasets, correct single station with wrong data in original dataset, and save:  
 ```{r}
 neamap_bluepreyagg_stn <- read_csv(here("fhdat/NEAMAP_Mean stomach weights_Bluefish PreyWQ2.csv")) %>%
   mutate(vessel = "NEAMAP") %>%
@@ -247,11 +268,21 @@ neamap_bluepreyagg_stn <- read_csv(here("fhdat/NEAMAP_Mean stomach weights_Bluef
          bottemp = bWT,
          #surftemp = , 
          setdepth = depthm) 
-  
+
   
 # combine  
 bluepyagg_stn <-  nefsc_bluepyagg_stn %>%
   bind_rows(neamap_bluepreyagg_stn) 
+
+# check for incorrect NEAMAP station
+bluepyagg_stn %>% filter(id == "NM20070901011") # has this station
+# if sumbluepywt is 106564.2, this is incorrect
+# corrected by Jim Gartland in September 2022
+
+# correct single NEAMAP station 
+bluepyagg_stn$sumbluepywt[bluepyagg_stn$id == "NM20070901011"] <- 4.8404
+bluepyagg_stn$meanbluepywt[bluepyagg_stn$id == "NM20070901011"] <- 0.186169231
+
 
 saveRDS(bluepyagg_stn, here("fhdat/bluepyagg_stn_all.rds"))
 ```
