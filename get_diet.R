@@ -65,6 +65,12 @@ get_diet <- function(species_code){
   # object is called `allfh`
   load(url("https://github.com/Laurels1/Condition/raw/master/data/allfh.RData"))
   
+  # October 8 2022: add NEFSC 2021 data
+  load(here("fhdat/allfh21.Rdata"))
+  
+  allfh <- allfh %>%
+    dplyr::bind_rows(allfh21)
+  
   
   # spring_strata <- seasonal_strata$stratum[seasonal_strata$season == 'SPRING']
   # summer_strata <- seasonal_strata$stratum[seasonal_strata$season == 'SUMMER']

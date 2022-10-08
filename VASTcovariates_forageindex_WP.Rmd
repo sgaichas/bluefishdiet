@@ -88,13 +88,19 @@ This approach is generalizable to any spatial subset of the full VAST spatial do
 Fish food habits data are collected aboard several regional fishery independent surveys in the Northeast US. The longest time series of diet has been collected by the Northeast Fisheries Science Center (NEFSC) bottom trawl survey [@smith_trophic_2010] from south of Cape Hatteras, NC to the Scotian Shelf at the US/Canada border since the early 1970s, which represents the bulk of the data for this analysis. Using similar survey protocols to the NEFSC survey, the NorthEast Area Monitoring and Assessment Program (NEAMAP) survey has collected fish diet data in inshore waters from Cape Hatteras, NC to Cape Cod, MA since 2008. All analyses were completed in R [@r_core_team_r_2021].
 
 #### Defining bluefish prey  
-Bluefish eat small pelagics that are not well sampled by bottom trawl surveys. Bluefish themselves are not well sampled by bottom trawl surveys. Nevertheless, the diet samples collected for bluefish indicate that anchovies, herrings, squids, butterfish, scup, and small hakes are important prey. See working paper **#XX**, as well as [this web summary page link](https://sgaichas.github.io/bluefishdiet/DietSummary.html) for NEFSC survey and [this presentation link](https://docs.google.com/presentation/d/1VlP0OsSLnoaoFHHt7kJbrqNTgBJqI6Ru/edit#slide=id.p1) for NEAMAP survey bluefish diet composition summaries.
+Bluefish eat small pelagics that are not well sampled by bottom trawl surveys. Bluefish themselves are not well sampled by bottom trawl surveys. Nevertheless, the diet samples collected for bluefish indicate that anchovies, herrings, squids, butterfish, scup, and small hakes are important prey. See the Bluefish Ecosystem Socioeconomic Profile, working paper **#XX**, as well as [this web summary page link](https://sgaichas.github.io/bluefishdiet/DietSummary.html) for NEFSC survey and [this presentation link](https://docs.google.com/presentation/d/1VlP0OsSLnoaoFHHt7kJbrqNTgBJqI6Ru/edit#slide=id.p1) for NEAMAP survey bluefish diet composition summaries.
 
-Using all sampled bluefish stomachs included in the NEFSC food habits database 1973-2020, we created a list of all pelagic nekton bluefish prey that had at least 10 observations (Table 1). Broad categories such as empty stomach, fish unidentified, Osteichthyes, unidentified animal remains, and blown stomach were not included in the prey list.
+Using all sampled bluefish stomachs included in the NEFSC food habits database 1973-2021, we created a list of all pelagic nekton bluefish prey that had at least 10 observations (Table 1). Broad categories such as empty stomach, fish unidentified, Osteichthyes, unidentified animal remains, and blown stomach were not included in the prey list.
 
 ```{r preylist}
 # object is called `allfh`
 load(url("https://github.com/Laurels1/Condition/raw/master/data/allfh.RData"))
+
+# October 8 2022: add NEFSC 2021 data
+load(here("fhdat/allfh21.Rdata"))
+
+allfh <- allfh %>%
+  dplyr::bind_rows(allfh21)
 
 preycount <- allfh %>%
    group_by(pdcomnam, pynam) %>%
@@ -129,7 +135,7 @@ blueprey <- preycount %>%
 
 flextable::flextable(blueprey[,c('pynam','BLUEFISH')]) %>%
   flextable::set_header_labels(pynam = "Prey name", BLUEFISH = "Bluefish stomachs (n)") %>%
-  flextable::set_caption("Prey identified in bluefish stomachs, NEFSC diet database, 1973-2020.") %>%
+  flextable::set_caption("Prey identified in bluefish stomachs, NEFSC diet database, 1973-2021.") %>%
   flextable::autofit()
 ```
 
@@ -509,6 +515,16 @@ neamap_bluepreyagg_stn <- read_csv(here("fhdat/NEAMAP_Mean stomach weights_Bluef
          bottemp = bWT,
          #surftemp = , 
          setdepth = depthm) 
+
+# check for incorrect NEAMAP station
+#bluepyagg_stn %>% filter(id == "NM20070901011") # has this station
+# if sumbluepywt is 106564.2, this is incorrect
+# corrected by Jim Gartland in September 2022
+
+# correct single NEAMAP station 
+neamap_bluepreyagg_stn$sumbluepywt[neamap_bluepreyagg_stn$id == "NM20070901011"] <- 4.8404
+neamap_bluepreyagg_stn$meanbluepywt[neamap_bluepreyagg_stn$id == "NM20070901011"] <- 0.186169231
+
 
 neamap_npisctows <- neamap_bluepreyagg_stn %>%
   nrow()
