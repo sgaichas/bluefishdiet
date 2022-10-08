@@ -164,6 +164,12 @@ albinshore2 <- coast3nmbuffst %>%
   dplyr::select(stratum_number2) %>%
   dplyr::distinct()
 
+# Albold for WHAM input
+albbfinshore <- dplyr::bind_rows(albinshore2, bfinshore2)
+
+# Albnew for WHAM input
+albbfall <- dplyr::bind_rows(albinshore2, bfall2)
+
 # offshore of all bluefish survey strata
 MABGBothoffshore2 <- coast3nmbuffst %>%
   dplyr::filter(stratum_number %in% setdiff(MABGBoffshore, bfoffshore)) %>%
@@ -227,6 +233,8 @@ strata.limits <- as.list(c("AllEPU" = allEPU2,
                            "bfoff" = bfoffshore2,
                            "MABGBalbinshore" = albinshore2,
                            "MABGBothoffshore" = MABGBothoffshore2,
+                           "albbfin" = albbfinshore,
+                           "albbfall" = albbfall,
                            "allother" = allother2))
 
 settings = make_settings( n_x = 500, 
