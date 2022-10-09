@@ -222,6 +222,13 @@ albinshore2 <- coast3nmbuffst %>%
   dplyr::select(stratum_number2) %>%
   dplyr::distinct()
 
+# Albold for WHAM input
+albbfinshore <- dplyr::bind_rows(albinshore2, bfinshore2)
+
+# Albnew for WHAM input
+albbfall <- dplyr::bind_rows(albinshore2, bfall2)
+
+
 # offshore of all bluefish survey strata
 MABGBothoffshore2 <- coast3nmbuffst %>%
   dplyr::filter(stratum_number %in% setdiff(MABGBoffshore, bfoffshore)) %>%
@@ -319,6 +326,8 @@ strata.limits <- as.list(c("AllEPU" = allEPU2,
                            "bfoff" = bfoffshore2,
                            "MABGBalbinshore" = albinshore2,
                            "MABGBothoffshore" = MABGBothoffshore2,
+                           "albbfin" = albbfinshore,
+                           "albbfall" = albbfall,
                            "allother" = allother2))
 
 ```
@@ -382,32 +391,36 @@ Make a lookup table:
 #                            "MABGBothoffshore" = MABGBothoffshore2,
 #                            "allother" = allother2))
 
-stratlook <- data.frame(Stratum = c("Stratum_1",
-                                    "Stratum_2",
-                                    "Stratum_3",
-                                    "Stratum_4",
-                                    "Stratum_5",
-                                    "Stratum_6",
-                                    "Stratum_7",
-                                    "Stratum_8",
-                                    "Stratum_9",
-                                    "Stratum_10",
-                                    "Stratum_11",
-                                    "Stratum_12",
-                                    "Stratum_13"),
-                        Region  = c("AllEPU", 
-                                    "MABGB", 
-                                    "MABGBstate", 
-                                    "MABGBfed", 
-                                    "MAB",
-                                    "GB",
-                                    "GOM",
-                                    "bfall",
-                                    "bfin",
-                                    "bfoff",
-                                    "MABGBalbinshore",
-                                    "MABGBothoffshore",
-                                    "allother"))
+  stratlook <- data.frame(Stratum = c("Stratum_1",
+                                      "Stratum_2",
+                                      "Stratum_3",
+                                      "Stratum_4",
+                                      "Stratum_5",
+                                      "Stratum_6",
+                                      "Stratum_7",
+                                      "Stratum_8",
+                                      "Stratum_9",
+                                      "Stratum_10",
+                                      "Stratum_11",
+                                      "Stratum_12",
+                                      "Stratum_13",
+                                      "Stratum_14",
+                                      "Stratum_15"),
+                          Region  = c("AllEPU", 
+                                      "MABGB", 
+                                      "MABGBstate", 
+                                      "MABGBfed", 
+                                      "MAB",
+                                      "GB",
+                                      "GOM",
+                                      "bfall",
+                                      "bfin",
+                                      "bfoff",
+                                      "MABGBalbinshore",
+                                      "MABGBothoffshore",
+                                      "albbfin",
+                                      "albbfall",
+                                      "allother"))
 
 ```
 
