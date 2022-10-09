@@ -722,7 +722,7 @@ Definitions for strata used in the script `bluefishdiet/VASTunivariate_bfp_allsu
 # consider putting plots of strata sets on maps here
 ```
 
-Bias correction is based on [@thorson_implementing_2016]. 
+Bias correction is based on [@thorson_implementing_2016]. But we are using the new implementation in the VAST dev branch code. 
 
 Run this script, the same used to test catchability covariates, but now has all three covariates (predator mean length, number of predator species, and SSTfill) included and  `bias.correct=TRUE`: 
 
@@ -746,6 +746,8 @@ Make a lookup table:
 #                            "bfoff" = bfoffshore2,
 #                            "MABGBalbinshore" = albinshore2,
 #                            "MABGBothoffshore" = MABGBothoffshore2,
+#                            "albbfin" = albbfinshore,
+#                            "albbfall" = albbfall,
 #                            "allother" = allother2))
 
 stratlook <- data.frame(Stratum = c("Stratum_1",
@@ -760,7 +762,9 @@ stratlook <- data.frame(Stratum = c("Stratum_1",
                                     "Stratum_10",
                                     "Stratum_11",
                                     "Stratum_12",
-                                    "Stratum_13"),
+                                    "Stratum_13",
+                                    "Stratum_14",
+                                    "Stratum_15"),
                         Region  = c("AllEPU", 
                                     "MABGB", 
                                     "MABGBstate", 
@@ -773,6 +777,8 @@ stratlook <- data.frame(Stratum = c("Stratum_1",
                                     "bfoff",
                                     "MABGBalbinshore",
                                     "MABGBothoffshore",
+                                    "albbfin",
+                                    "albbfall",
                                     "allother"))
 
 ```
@@ -1124,6 +1130,16 @@ for(p in diagplots){
 All results in the respective `pyindex/allagg_fall_500_lennosst_ALLsplit_biascorrect`, `pyindex/allagg_spring_500_lennsst_ALLsplit_biascorrect` and `pyindex/allagg_annual_500_lennsst_ALLsplit_biascorrect` folders.
 
 The full results are on [google drive](https://drive.google.com/drive/folders/1PsEk5hhQ7fR0Gq4NnYPvU4V59d4nIR8E) rather than github to save space.
+
+Current inputs for WHAM are processed with the following script:
+```{r, code = readLines(here("WHAMinputs.R")), eval=F}
+```
+
+Visualize WHAM inputs:
+```{r}
+
+```
+
 
 Still to do:
 

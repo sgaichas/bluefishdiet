@@ -23,7 +23,9 @@ WHAMinputs <- function(infile, outfile) {
                                       "Stratum_10",
                                       "Stratum_11",
                                       "Stratum_12",
-                                      "Stratum_13"),
+                                      "Stratum_13",
+                                      "Stratum_14",
+                                      "Stratum_15"),
                           Region  = c("AllEPU", 
                                       "MABGB", 
                                       "MABGBstate", 
@@ -36,6 +38,8 @@ WHAMinputs <- function(infile, outfile) {
                                       "bfoff",
                                       "MABGBalbinshore",
                                       "MABGBothoffshore",
+                                      "albbfin",
+                                      "albbfall",
                                       "allother"))
   
   forageindex <- splitoutput %>%
@@ -46,8 +50,8 @@ WHAMinputs <- function(infile, outfile) {
     tidyr::pivot_wider(names_from = Region, values_from = value) %>%
     dplyr::mutate(BigOld = bfin,
                   BigNew = bfall,
-                  AlbOld = MABGBalbinshore + BigOld, #summed SE a slight overestimate
-                  AlbNew = MABGBalbinshore + BigNew, #summed SE a slight overestimate
+                  AlbOld = albbfin, 
+                  AlbNew = albbfall, 
                   StateWaters = MABGBstate,
                   FedWaters =   MABGBfed) %>%
     dplyr::select(Time, BigOld, BigNew, AlbOld, AlbNew, StateWaters, FedWaters) %>%
@@ -56,7 +60,7 @@ WHAMinputs <- function(infile, outfile) {
     tidyr::pivot_wider(names_from = "Region", values_from = c("Estimate", "SE"),
                        names_glue = "{Region}_{.value}", names_vary = "slowest")
   
-  write_csv(forageindex, outfile)
+  readr::write_csv(forageindex, outfile)
   
 } 
 
