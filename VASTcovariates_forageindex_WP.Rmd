@@ -1137,6 +1137,81 @@ Current inputs for WHAM are processed with the following script:
 
 Visualize WHAM inputs:
 ```{r}
+WHAMinputsviz <- function(infile) {
+  
+  splitoutput <- read.csv(infile)
+  
+  # warning, hardcoded. obviously
+  stratlook <- data.frame(Stratum = c("Stratum_1",
+                                      "Stratum_2",
+                                      "Stratum_3",
+                                      "Stratum_4",
+                                      "Stratum_5",
+                                      "Stratum_6",
+                                      "Stratum_7",
+                                      "Stratum_8",
+                                      "Stratum_9",
+                                      "Stratum_10",
+                                      "Stratum_11",
+                                      "Stratum_12",
+                                      "Stratum_13",
+                                      "Stratum_14",
+                                      "Stratum_15"),
+                          Region  = c("AllEPU", 
+                                      "MABGB", 
+                                      "MABGBstate", 
+                                      "MABGBfed", 
+                                      "MAB",
+                                      "GB",
+                                      "GOM",
+                                      "bfall",
+                                      "bfin",
+                                      "bfoff",
+                                      "MABGBalbinshore",
+                                      "MABGBothoffshore",
+                                      "albbfin",
+                                      "albbfall",
+                                      "allother"))
+  
+  forageindex <- splitoutput %>%
+    left_join(stratlook) %>%
+    dplyr::select(Time, Region, Estimate, SE=Std..Error.for.Estimate) %>%
+    tidyr::pivot_longer(c(Estimate, SE), names_to = "Var") %>%
+    dplyr::group_by(Var) %>%
+    tidyr::pivot_wider(names_from = Region, values_from = value) %>%
+    dplyr::mutate(BigOld = bfin,
+                  BigNew = bfall,
+                  AlbOld = albbfin, 
+                  AlbNew = albbfall, 
+                  StateWaters = MABGBstate,
+                  FedWaters =   MABGBfed) %>%
+    dplyr::select(Time, BigOld, BigNew, AlbOld, AlbNew, StateWaters) %>%
+    tidyr::pivot_longer(!c(Time, Var), names_to = "Region", values_to = "value") %>%
+    tidyr::pivot_wider(names_from = "Var", values_from = "value")
+ 
+  ggplot(forageindex, aes(x=Time, y=Estimate, colour = Region)) +
+    geom_errorbar(aes(ymin=Estimate+SE, ymax=Estimate-SE))+
+    geom_point()+
+    geom_line()
+  
+} 
+```
+
+### WHAM forage index time series Fall
+```{r}
+WHAMinputsviz(infile = "pyindex/allagg_fall_500_lennosst_ALLsplit_biascorrect/Index.csv")
+```
+
+### WHAM forage index time series Spring
+```{r}
+WHAMinputsviz(infile = "pyindex/allagg_spring_500_lennosst_ALLsplit_biascorrect/Index.csv")
+```
+
+### WHAM forage index time series Annual
+```{r}
+WHAMinputsviz(infile = "pyindex/allagg_annual_500_lennosst_ALLsplit_biascorrect/Index.csv")
+```
+
 
 ```
 
