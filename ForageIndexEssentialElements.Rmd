@@ -78,11 +78,11 @@ NEFSC survey strata definitions are built into the VAST `northwest-atlantic` ext
 
 Full VAST model results for Fall, Spring, and Annual models, along with diagnostics, are available at [this link](https://sgaichas.github.io/bluefishdiet/VASTcovariates_forageindex_WP.html). Here we show the forage fish index for the Fall model. The index is calculated for several regions relevant to the bluefish assessment:
 
-1: Alb old strata
-2: Big old strata
-3: Alb new strata (includes offshore strata)
-4: Big new strata (includes offshore strata)
-5: 3 mile index for MRIP
+1.  Albatross New (AlbNew) includes all inshore and new offshore survey strata (largest area)
+1.  Albatross Old (AlbOld) includes all inshore survey strata 
+1.  Bigelow New (BigNew) includes the subset of inshore survey strata that can be sampled by the R/V Henry Bigelow plus new offshore strata
+1.  Bigelow Old (BigOld) includes the subset of inshore survey strata that can be sampled by the R/V Henry Bigelow
+1.  StateWaters includes the coastline to 3 nautical miles offshore (smallest area)
 
 ```{r}
 WHAMinputsviz <- function(infile) {
@@ -121,6 +121,9 @@ WHAMinputsviz <- function(infile) {
                                       "albbfall",
                                       "allother"))
   
+  # The palette with grey:
+cbPalette <- c("#999999",  "#56B4E9", "#E69F00", "#CC79A7", "#009E73", "#F0E442", "#0072B2", "#D55E00")
+  
   forageindex <- splitoutput %>%
     left_join(stratlook) %>%
     dplyr::select(Time, Region, Estimate, SE=Std..Error.for.Estimate) %>%
@@ -140,13 +143,17 @@ WHAMinputsviz <- function(infile) {
   ggplot(forageindex, aes(x=Time, y=Estimate, colour = Region)) +
     geom_errorbar(aes(ymin=Estimate+SE, ymax=Estimate-SE))+
     geom_point()+
-    geom_line()
+    geom_line() +
+    scale_colour_manual(values=cbPalette)
   
 } 
 ```
 
-### WHAM forage index time series Fall
-```{r}
+### WHAM model example covariates: forage index time series Fall
+
+Comparison of inshore and offshore spatial forage indices shows higher abundance of forage fish in state waters than in the subset of inshore surveys that can be sampled by the R/V Henry Bigelow. Highest forage abundance is in the largest area, which includes all inshore survey strata as well as new offshore strata proposed for use in the bluefish assessment. The forage fish indices based on fall, spring, and annual datasets all show fluctuations in forage fish alternating between multiple years or decades with higher and lower levels. 
+
+```{r, fig.cap="Forage fish indices for Fall 1985-2021 in Mid-Atlantic and Georges Bank nearshore and offshore areas. See text for descriptions of areas.", fig.alt="Line graph of VAST model estiamated forage fish biomass showing differences by region. Forage fish show somewhat cyclical trends over the time period."}
 WHAMinputsviz(infile = "pyindex/allagg_fall_500_lennosst_ALLsplit_biascorrect/Index.csv")
 ```
 
