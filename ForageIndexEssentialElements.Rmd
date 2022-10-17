@@ -3,9 +3,11 @@ title: "Forage Fish Index Essential Elements"
 author: Sarah Gaichas, James Gartland, Brian Smith, Elizabeth Ng, Michael Celestino,
   Anthony Wood, Katie Drew, Abigail Tyrell, and James Thorson
 date: "`r Sys.Date()`"
-output: word_document
+output:
+  pdf_document: default
+  word_document: default
 link-citations: yes
-csl: american-fisheries-society.csl
+csl: "american-fisheries-society.csl"
 bibliography: FishDiet_EcoIndicators.bib
 ---
 
@@ -59,7 +61,7 @@ Models were developed combining all data for the year ("Annual") and with separa
 
 VAST is structured to estimate fixed and random effects across two linear predictors, which are then multiplied to estimate an index of the quantity of interest. Following what @ng_predator_2021 did for herring, we apply a Poisson-link delta model to estimate expected prey mass per predator stomach. However, we use a higher resolution (500 knots, estimated by k-means clustering of the data), to define the spatial dimensions of each seasonal model. Two step model selection first compared whether the data supported estimation of spatial and spatio-temporal random effects, and then evaluated whether catchability covariates improved fits. Best fit models included spatial and spatio-temporal random effects, with predator mean length, number of predator species, and sea surface temperature as catchability covariates. See [this link for detailed results of model selection](https://sgaichas.github.io/bluefishdiet/VASTcovariates_forageindex_WP.html). 
 
-Similar to findings of@ng_predator_2021, a vessel effect was not supported, but the predator length covariate may more directly model vessel differences in predator catch that affect stomach contents than modeling a vessel catchability covariate directly. @ng_predator_2021 found that predator length covariates were strongly supported as catchability covariates (larger predators being more likely to have more prey in stomachs). In our aggregate predator dataset, we also found the strong support for including the number of predators as a catchability covariate. The rationale for including number of predator species is that more species "sampling" the prey field at a particular station may result in a higher encounter rate (more stations with positive bluefish prey in stomachs). Water temperature was also supported as a catchability covariate, perhaps because temperature affects predator feeding rate.
+Similar to findings of @ng_predator_2021, a vessel effect was not supported, but the predator length covariate may more directly model vessel differences in predator catch that affect stomach contents than modeling a vessel catchability covariate directly. @ng_predator_2021 found that predator length covariates were strongly supported as catchability covariates (larger predators being more likely to have more prey in stomachs). In our aggregate predator dataset, we also found the strong support for including the number of predators as a catchability covariate. The rationale for including number of predator species is that more species "sampling" the prey field at a particular station may result in a higher encounter rate (more stations with positive bluefish prey in stomachs). Water temperature was also supported as a catchability covariate, perhaps because temperature affects predator feeding rate.
 
 ## Spatial forage indices
 
@@ -151,9 +153,9 @@ cbPalette <- c("#999999",  "#56B4E9", "#E69F00", "#CC79A7", "#009E73", "#F0E442"
 
 ### WHAM model example covariates: forage index time series Fall
 
-Comparison of inshore and offshore spatial forage indices shows higher abundance of forage fish in state waters than in the subset of inshore surveys that can be sampled by the R/V Henry Bigelow. Highest forage abundance is in the largest area, which includes all inshore survey strata as well as new offshore strata proposed for use in the bluefish assessment. The forage fish indices based on fall, spring, and annual datasets all show fluctuations in forage fish alternating between multiple years or decades with higher and lower levels. 
+Comparison of inshore and offshore spatial forage indices shows higher abundance of forage fish in state waters than in the subset of inshore surveys that can be sampled by the R/V Henry Bigelow (Fig. \ref{fig:WHAMinput}). Highest forage abundance is in the largest area, which includes all inshore survey strata as well as new offshore strata proposed for use in the bluefish assessment. The forage fish indices based on fall, spring, and annual datasets all show fluctuations in forage fish alternating between multiple years or decades with higher and lower levels. 
 
-```{r, fig.cap="Forage fish indices for Fall 1985-2021 in Mid-Atlantic and Georges Bank nearshore and offshore areas. See text for descriptions of areas.", fig.alt="Line graph of VAST model estiamated forage fish biomass showing differences by region. Forage fish show somewhat cyclical trends over the time period."}
+```{r WHAMinput, fig.cap="Forage fish indices for Fall 1985-2021 in Mid-Atlantic and Georges Bank nearshore and offshore areas. See text for descriptions of areas.", fig.alt="Line graph of VAST model estiamated forage fish biomass showing differences by region. Forage fish show somewhat cyclical trends over the time period."}
 WHAMinputsviz(infile = "pyindex/allagg_fall_500_lennosst_ALLsplit_biascorrect/Index.csv")
 ```
 

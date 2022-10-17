@@ -1,5 +1,5 @@
 ---
-title: '2022 Bluefish (*Pomatomus saltatrix*) Research Track Working Paper YY: Forage
+title: '2022 Bluefish (*Pomatomus saltatrix*) Research Track Working Paper: Forage
   Index'
 author: Sarah Gaichas, James Gartland, Brian Smith, Elizabeth Ng, Michael Celestino,
   Anthony Wood, Katie Drew, Abigail Tyrell, and James Thorson
@@ -291,7 +291,7 @@ The model has been partitioned into several definitions of "inshore" and "offsho
     
 NEFSC survey strata definitions are built into the VAST `northwest-atlantic` extrapolation grid already. We defined additional new strata to address the recreational inshore-offshore 3 mile boundary. The area within and outside 3 miles of shore was defined using the `sf` R package as a 3 nautical mile (approximated as 5.556 km) buffer from a high resolution coastline from the`rnaturalearth` R package. This buffer was then intersected with the current `FishStatsUtils::northwest_atlantic_grid` built into VAST and saved using code [here](https://github.com/sgaichas/bluefishdiet/blob/main/VASTcovariates_updatedPreds_sst_3mi.Rmd#L49-L94). Then, the new State and Federal waters strata were used to split NEFSC survey strata where applicable, and the new full set of strata were used along with a modified function from `FishStatsUtils::Prepare_NWA_Extrapolation_Data_Fn` to build a custom extrapolation grid for VAST as described in detail [here](https://sgaichas.github.io/bluefishdiet/VASTcovariates_finalmodbiascorrect_3misurvstrat.html). 
 
-While all strata were applied in all models, the survey strata-based definitions are most relevant to the seasonal models, as seasonal survey information is used in the bluefish assessment. The State and Federal waters strata are most relevant to the annual model, as annual recreational catch per unit effort information is used in the bluefish assessment. 
+All strata were applied in both seasonal and annual models. 
 
 
 ## Results  
