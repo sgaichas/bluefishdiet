@@ -113,7 +113,7 @@ preycount <- allfh %>%
    pivot_wider(names_from = pdcomnam, values_from = count) 
 
 gencomlist <- allfh %>%  
-  select(pynam, gencom2) %>%
+  select(pynam, pycomnam2, gencom2) %>%
   distinct()
 
 blueprey <- preycount %>%
@@ -136,8 +136,8 @@ blueprey <- preycount %>%
 #                   col.names = c('Prey name', 'Bluefish stomachs (n)'),
 #                   caption = "Table 1. Prey identified in bluefish stomachs, NEFSC diet database, 1973-2020.")
 
-flextable::flextable(blueprey[,c('pynam','BLUEFISH')]) %>%
-  flextable::set_header_labels(pynam = "Prey name", BLUEFISH = "Bluefish stomachs (n)") %>%
+flextable::flextable(blueprey[,c('pynam', 'pycomnam2','BLUEFISH')]) %>%
+  flextable::set_header_labels(pynam = "Prey name", pycomnam2 = "Prey common name", BLUEFISH = "Bluefish stomachs (n)") %>%
   flextable::set_caption("Prey identified in bluefish stomachs, NEFSC diet database, 1973-2021.") %>%
   flextable::autofit()
 ```
