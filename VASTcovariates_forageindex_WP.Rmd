@@ -271,13 +271,14 @@ ggplot(data = ecodata::coast) +
   ggtitle("Northwest Atlantic Grid")
 ```
 
-##### Categories
+##### Categories, data type, and link model
+We model all bluefish prey in aggregate as a single category. The mean weight of bluefish prey in a stomach at each location is treated as biomass data in the model. Therefore, VAST applies a delta model where the first linear predictor models encounter rate and the second linear predictor models amount of prey (equivalent to positive catch rates on a survey). Following what @ng_predator_2021 did for herring, we apply a Poisson-link delta model to estimate expected prey mass per predator stomach.
 
-##### Which variable --> Which model structure
-Univariate model to produce univariate forage index to be most useful in assessment model.
+##### Spatial variation, resolution, response type, and temporal correlation
+We include spatial and spatio-temporal variation in both linear predictors, but test whether the data support these effects using model selection (see below). Modeling all bluefish prey in aggregate leads to a univariate model, producing a single forage index which is most easily integrated into the bluefish assessment model. We used a higher spatial resolution than @ng_predator_2021 did for herring, specifying 500 knots, estimated by k-means clustering of the data, to define the spatial dimensions of each seasonal model. 
 
 #### Model selection  
-Following what @ng_predator_2021 did for herring, we apply a Poisson-link delta model to estimate expected prey mass per predator stomach. However, we use 500 knots, estimated by k-means clustering of the data, to define the spatial dimensions of each seasonal model. We compared the AIC for the 500 knot models to see if including the spatial and spatio-temporal random effects in the first and second linear predictors improved the model fit. Model structures tested include with and without anistropy (2 fixed parameters), and with and without spatial and spatio-temporal random effects in the second linear predictor or both linear predictors. This follows the model selection process outlined in @ng_predator_2021 using REML. 
+We compared the AIC for the 500 knot models to see if including the spatial and spatio-temporal random effects in the first and second linear predictors improved the model fit. Model structures tested include with and without anistropy (2 fixed parameters), and with and without spatial and spatio-temporal random effects in the second linear predictor or both linear predictors. This follows the model selection process outlined in @ng_predator_2021 using REML. 
 
 Following this, we evaluated catchability covariates using AIC to determine which are best supported by the data. We used the structure selected by the REML model selection, then evaluated vessel effects (overdispersion) and a range of potential catchability covariates using maximum likelihood to calculate AIC instead of REML, because we are not changing the random effects. Catchability covariates explored included mean predator length at each station, number of predator species at each station, and sea surface temperature (SST) at each station. 
 
