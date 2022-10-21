@@ -96,6 +96,9 @@ Using all sampled bluefish stomachs included in the NEFSC food habits database 1
 # object is called `allfh`
 load(url("https://github.com/Laurels1/Condition/raw/master/data/allfh.RData"))
 
+# Oct 21 2022: save it for posterity
+save(allfh, file = "fhdat/allfh.Rdata")
+
 # October 8 2022: add NEFSC 2021 data
 load(here("fhdat/allfh21.Rdata"))
 
