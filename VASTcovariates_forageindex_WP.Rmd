@@ -262,7 +262,7 @@ The full model for the second linear predictor $\rho_2$ has the same structure, 
 @thorson_guidance_2019 lists 15 major decisions for constructing a VAST model. These include decisions on spatial domain, categories modeled (species, ages, etc), data type (presence absence, number, weight), including spatial and or spatio-temporal variation, spatial resolution, univariate vs multivariate response and factors, specifying temporal correlation, including density and or catchability covariates, treatment of area swept calculation, including vessel effects, selecting a link function, specifying derived quantities, bias correcting derived quantities, and model selection. Here we outline the decisions made in developing the forage index.
 
 ##### Spatial domain
-Models were run using the full Northwest Atlantic grid built into VAST (Fig. \ref{fig:nwagrid}). Specific strata sets were used from this full model to develop indices matching the spatial extent of different assessment inputs (see below). 
+Models were run using the full Northwest Atlantic grid built into VAST (Fig. \@ref(fig:nwagrid)). Specific strata sets were used from this full model to develop indices matching the spatial extent of different assessment inputs (see below). 
 
 ```{r nwagrid, fig.cap="Northwest Atlantic Grid (blue outline) from https://github.com/James-Thorson-NOAA/FishStatsUtils"}
 ggplot(data = ecodata::coast) +
@@ -433,6 +433,10 @@ ggplot(data = ecodata::coast) +
 
 #### {-}
 
+Seasonal models were run using the script [`bluefishdiet/VASTunivariate_bfp_allsurvs_lencovSST_ALLinoffsplits.R`](https://github.com/sgaichas/bluefishdiet/blob/main/VASTunivariate_bfp_allsurvs_lencovSST_ALLinoffsplits.R), which contains all stratum definitions. The annual model was run using the script [`bluefishdiet/VASTunivariate_bfp_allsurvsANNUA:_lencovSST_ALLinoffsplits.R`](https://github.com/sgaichas/bluefishdiet/blob/main/VASTunivariate_bfp_allsurvsANNUAL_lencovSST_ALLinoffsplits.R). 
+
+The final model runs included all selected covariates, stratum definitions, and bias correction for the biomass index.  
+
 ## Results  
 
 ### Input dataset overview 
@@ -528,7 +532,7 @@ names(preycol) <- as.factor(preylist)
 
 ```
 
-The list of bluefish prey derived from the most common identifiable prey items in NEFSC diet database (Table 1) includes the majority of bluefish diet composition by decade (Fig. ) and season (Fig. ). Colors in the plots show included prey, while gray sections represent "fish unidentified" and other categories not included in this analysis. Even when evaluated annually and seasonally (where bluefish sample sizes may be small for a year-season combination), a majority of observed diet is included in the dataset for analysis (Fig. ). 
+The list of bluefish prey derived from the most common identifiable prey items in NEFSC diet database (Table 1) includes the majority of bluefish diet composition by decade (Fig. \@ref(fig:decadediet)) and season (Fig. \@ref(fig:seasondiet)). Colors in the plots show included prey, while gray sections represent "fish unidentified" and other categories not included in this analysis. Even when evaluated annually and seasonally (where bluefish sample sizes may be small for a year-season combination), a majority of observed diet is included in the dataset for analysis (Fig. \@ref(fig:yearseasondiet) ). 
 
 ```{r decadediet}
 preycolsel <- preycol[toupper(names(preycol)) %in% blueprey$pynam] 
@@ -680,7 +684,38 @@ The full NEFSC diet database 1985-2021 contains `r ndietNEFSC` survey stations w
 
 NEAMAP survey stations with diet collections for piscivores (n = `r neamap_npisctows`) had a higher proportion with our defined bluefish prey (n = `r neamap_nbfpreytows`, `r (neamap_nbfpreytows/neamap_npisctows)*100`%). 
 
-[add stuff about how many SST values were missing and which years got substituted]
+The number of survey stations missing surface temperature data varied considerably by decade. A large percentage of survey stations lacked in-situ temperature measurements between 1985 and 1990, while the percentage of stations missing temperature was generally below 10% (with a few exceptions) from 1991-2021 (Table 3). Therefore, OISST temperature estimates were more commonly substituted early in the time series. 
+
+```{r}
+#[add stuff about how many SST values were missing and which years got substituted]
+
+inputdat <- readRDS(here("fhdat/bluepyagg_stn_all_OISST.rds"))
+
+stnsummary <- inputdat %>%
+  dplyr::filter(year>1984) %>%
+  dplyr::group_by(year, season_ng) %>%
+  dplyr::summarise(nstation = n(),
+                   hastemp = sum(!is.na(surftemp))) %>%
+  dplyr::ungroup() %>%
+  dplyr::mutate(percentmiss = (nstation - hastemp)/nstation*100) %>%
+  tidyr::pivot_wider(names_from = season_ng,
+    values_from = c(nstation, hastemp, percentmiss)) %>%
+  dplyr::select(year, nstation_SPRING, hastemp_SPRING, percentmiss_SPRING,
+                nstation_FALL, hastemp_FALL, percentmiss_FALL)
+
+flextable::flextable(stnsummary) %>%
+  flextable::set_header_labels(year = 'Year', 
+                               nstation_SPRING = "Spring N stations", 
+                               hastemp_SPRING = "Spring N stations with in situ temperature",
+                               percentmiss_SPRING = "Spring percent missing temperature",
+                               nstation_FALL = "Fall N stations", 
+                               hastemp_FALL = "Fall N stations with in situ temperature",
+                               percentmiss_FALL = "Fall percent missing temperature") %>%
+  flextable::set_caption("Number of survey stations by year and season with in situ sea surface temperature measurements.") %>%
+  flextable::colformat_double(big.mark = "", digits = 0) %>%
+  flextable::autofit()
+
+```
 
 ### VAST model selection  
 
@@ -797,7 +832,7 @@ modselect <- modcompare %>%
          randomcoeff, use_anisotropy, 
          omega1, omega2, epsilon1, epsilon2, 
          beta1, beta2, AIC, converged2) %>%
-  dplyr::arrange(AIC)
+  dplyr::arrange(season, AIC)
 
 DT::datatable(modselect, rownames = FALSE, 
               options= list(pageLength = 25, scrollX = TRUE))
@@ -829,7 +864,7 @@ modselect2 <- modcompare2 %>%
          randomcoeff, use_anisotropy, 
          omega1, omega2, epsilon1, epsilon2, 
          beta1, beta2, AIC, converged2) %>%
-  dplyr::arrange(AIC)
+  dplyr::arrange(season, AIC)
 
 DT::datatable(modselect2, rownames = FALSE, 
               options= list(pageLength = 50, scrollX = TRUE))
@@ -840,35 +875,6 @@ DT::datatable(modselect2, rownames = FALSE,
 Catchability covariates were better supported by the data than vessel effects. Model comparisons above and [here](https://sgaichas.github.io/bluefishdiet/VASTcovariates_updatedPreds_sst.html) led us to the best model fit using mean predator length, number of predator species, and SST at a survey station as catchability covariates. 
 
 ### Bias-corrected spatial forage indices  
-
-The model has been partitioned into several definitions of "inshore" and "offshore" for the stock assessment inputs. First we define a partition that is the MAB and GB areas only as the GOM is not relevant to the bluefish assessment (yet). This is called MABGB, while the full model is AllEPU. Within this partition,
-
-1.  Survey inshore vs offshore to evaluate availability to the survey index. Strata partitions include:
-    + Albatross inshore stations
-    + Bigelow inshore bluefish index stations
-    + offshore bluefish index stations (added this year)
-    + offshore non-bluefish stations
-    
-1.  Recreational fishery inshore vs offshore to evaluate availability to the MRIP CPUE index. Strata partitions include
-    + shoreline to 3 miles out
-    + offshore of 3 miles
-    
-Survey strata definitions are built into VAST already. The results presented here have all splits in one with a newly defined strata set. This required use of the development version of VAST, because the 3 mile split cuts across survey stratum boundaries. 
-
-Definitions for strata used in the script `bluefishdiet/VASTunivariate_bfp_allsurvs_lencovSST_ALLinoffsplits.R`:
-
-```{r}
-# consider putting plots of strata sets on maps here
-```
-
-Run this script, the same used to test catchability covariates, but now has all three covariates (predator mean length, number of predator species, and SSTfill) included and  `bias.correct=TRUE`: 
-
-```{r, code = readLines(here("VASTunivariate_bfp_allsurvs_lencovSST_ALLinoffsplits.R")), eval=F}
-```
-
-## Fall results
-
-Make a lookup table:
 
 ```{r}
 # strata.limits <- as.list(c("AllEPU" = allEPU2, 
@@ -920,7 +926,7 @@ stratlook <- data.frame(Stratum = c("Stratum_1",
 
 ```
 
-### Fall Index  
+#### Fall Index  
 
 Plot individual time series with standard errors:
 
@@ -1003,11 +1009,11 @@ ggplot(MABGBprop, aes(x=Time, y=Estimate, colour = Region)) +
   
 ```
 
-### Fall predicted ln-density
+#### Fall predicted ln-density
 
 ![Fall density maps with covariates](pyindex/allagg_fall_500_lennosst_ALLsplit_biascorrect/ln_density-predicted.png)
  
-### Fall Diagnostics {.tabset}
+#### Fall Diagnostics {.tabset}
 
 ```{r, results='asis'}
 
@@ -1020,7 +1026,7 @@ diagplots <- c("Data_and_knots",
 
 for(p in diagplots){
   
-    cat("  \n####",  as.character(p),"  \n")
+    cat("  \n#####",  as.character(p),"  \n")
     cat(paste0("![](pyindex/allagg_fall_500_lennosst_ALLsplit_biascorrect/",
                       p,
                       ".png)")) 
@@ -1030,9 +1036,9 @@ for(p in diagplots){
 
 ```
 
-### {-} 
+#### {-} 
 
-### Spring Index  
+#### Spring Index  
 
 Plot individual time series
 
@@ -1116,11 +1122,11 @@ ggplot(MABGBprop, aes(x=Time, y=Estimate, colour = Region)) +
 ```
 
 
-### Spring predicted ln-density
+#### Spring predicted ln-density
 
 ![Spring density maps with covariates](pyindex/allagg_spring_500_lennosst_ALLsplit_biascorrect/ln_density-predicted.png)
 
-### Spring Diagnostics {.tabset}
+#### Spring Diagnostics {.tabset}
 
 ```{r, results='asis'}
 
@@ -1133,7 +1139,7 @@ diagplots <- c("Data_and_knots",
 
 for(p in diagplots){
   
-    cat("  \n####",  as.character(p),"  \n")
+    cat("  \n#####",  as.character(p),"  \n")
     cat(paste0("![](pyindex/allagg_spring_500_lennosst_ALLsplit_biascorrect/",
                       p,
                       ".png)")) 
@@ -1143,15 +1149,10 @@ for(p in diagplots){
 
 ```
 
-### {-} 
-
-For annual index, run this script, the same used to test catchability covariates, but now has all three covariates (predator mean length, number of predator species, and SSTfill) included and  `bias.correct=TRUE`: 
-
-```{r, code = readLines(here("VASTunivariate_bfp_allsurvsANNUAL_lencovSST_ALLinoffsplits.R")), eval=F}
-```
+#### {-} 
 
 
-### Annual Index  
+#### Annual Index  
 
 Plot individual time series with standard errors:
 
@@ -1234,11 +1235,11 @@ ggplot(MABGBprop, aes(x=Time, y=Estimate, colour = Region)) +
   
 ```
 
-### Annual predicted ln-density
+#### Annual predicted ln-density
 
-![FAnnual density maps with covariates](pyindex/allagg_annual_500_lennosst_ALLsplit_biascorrect/ln_density-predicted.png)
+![Annual density maps with covariates](pyindex/allagg_annual_500_lennosst_ALLsplit_biascorrect/ln_density-predicted.png)
  
-### Annual Diagnostics {.tabset}
+#### Annual Diagnostics {.tabset}
 
 ```{r, results='asis'}
 
@@ -1251,7 +1252,7 @@ diagplots <- c("Data_and_knots",
 
 for(p in diagplots){
   
-    cat("  \n####",  as.character(p),"  \n")
+    cat("  \n#####",  as.character(p),"  \n")
     cat(paste0("![](pyindex/allagg_annual_500_lennosst_ALLsplit_biascorrect/",
                       p,
                       ".png)")) 
@@ -1261,14 +1262,22 @@ for(p in diagplots){
 
 ```
 
-### {-} 
+#### {-} 
 
+The full results of all models are archived on [google drive](https://drive.google.com/drive/folders/1PsEk5hhQ7fR0Gq4NnYPvU4V59d4nIR8E) rather than github to save space.
 
-All results in the respective `pyindex/allagg_fall_500_lennosst_ALLsplit_biascorrect`, `pyindex/allagg_spring_500_lennsst_ALLsplit_biascorrect` and `pyindex/allagg_annual_500_lennsst_ALLsplit_biascorrect` folders.
+### Woods Hole stock assessment model (WHAM) input time series
 
-The full results are on [google drive](https://drive.google.com/drive/folders/1PsEk5hhQ7fR0Gq4NnYPvU4V59d4nIR8E) rather than github to save space.
+Current inputs for the bluefish assessment implemented in WHAM [@stock_woods_2021] include a subset of the stratum-specific indices calculated above. The index is calculated for each season and the annual model for several regions relevant to the bluefish assessment:
 
-Current inputs for WHAM are processed with the following script:
+1.  Albatross New (AlbNew) includes all inshore and new offshore survey strata (largest area)
+1.  Albatross Old (AlbOld) includes all inshore survey strata 
+1.  Bigelow New (BigNew) includes the subset of inshore survey strata that can be sampled by the R/V Henry Bigelow plus new offshore strata
+1.  Bigelow Old (BigOld) includes the subset of inshore survey strata that can be sampled by the R/V Henry Bigelow
+1.  StateWaters includes the coastline to 3 nautical miles offshore (smallest area)
+
+WHAM model inputs were processed with the [`WHAMinputs.R`](https://github.com/sgaichas/bluefishdiet/blob/main/WHAMinputs.R) script.
+
 ```{r, code = readLines(here("WHAMinputs.R")), eval=F}
 ```
 
@@ -1334,24 +1343,31 @@ WHAMinputsviz <- function(infile) {
 } 
 ```
 
-### WHAM forage index time series Fall
+#### WHAM forage index time series Fall
 ```{r}
 WHAMinputsviz(infile = "pyindex/allagg_fall_500_lennosst_ALLsplit_biascorrect/Index.csv")
 ```
 
-### WHAM forage index time series Spring
+#### WHAM forage index time series Spring
 ```{r}
 WHAMinputsviz(infile = "pyindex/allagg_spring_500_lennosst_ALLsplit_biascorrect/Index.csv")
 ```
 
-### WHAM forage index time series Annual
+#### WHAM forage index time series Annual
 ```{r}
 WHAMinputsviz(infile = "pyindex/allagg_annual_500_lennosst_ALLsplit_biascorrect/Index.csv")
 ```
 
 
+## Discussion
 
-Still to do:
+
+
+Possible future additions:
+
+*  Add ChesMMAP diet data
+*  Investigate other inland waters diet data sources
+*  Investigate diet data sources for the South Atlantic portion of the bluefish range
 
 *  Results as density by strata
 
