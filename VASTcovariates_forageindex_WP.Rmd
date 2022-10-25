@@ -8,12 +8,15 @@ output:
   bookdown::html_document2: 
     toc: true
     toc_float: true
+    pandoc_args: ["--filter", "pandoc-crossref"]
   bookdown::word_document2:
     toc: true
+    pandoc_args: ["--filter", "pandoc-crossref"]
   bookdown::pdf_document2:
     includes: 
        in_header: latex/header1.tex
     keep_tex: true
+    pandoc_args: ["--filter", "pandoc-crossref"]
 subtitle: "Vector Autoregressive Spatio-Temporal (VAST) modeling of piscivore stomach
   contents, 1985-2021"
 link-citations: yes
@@ -320,16 +323,16 @@ Our two-step model selection (1: spatial and spatio-temporal random effects, 2: 
 
 Our main goal is to determine whether bluefish prey availability has changed in inshore waters where the recreational fishery primarily operates.  Our food habits datasets do not extend into inland waters such as bays and sounds, with the exception of Cape Cod Bay. (In the future we might be able to investigate food habits from ChesMMAP or surveys south of Cape Hatteras.) However, there is data from both historical NEFSC surveys and NEAMAP in state coastal waters (0-3 miles from shore), and offshore across the continental shelf. 
 
-The model has been partitioned into several definitions of "inshore" and "offshore" for the stock assessment inputs. First we define a partition that is the MAB and GB areas only as the GOM is not relevant to the bluefish assessment. This is called MABGB, while the full model is AllEPU. Within this partition,
+The model has been partitioned into several definitions of "inshore" and "offshore" for the stock assessment inputs. First we define a partition that is the MAB and GB areas only as the GOM is not relevant to the bluefish assessment. This is called MABGB (Fig. \@ref(fig:MABGB)), while the full model is AllEPU. Within this partition,
 
 1.  Survey inshore vs offshore to evaluate availability to the survey index. Strata partitions include:
-    + Albatross inshore stations
-    + Bigelow inshore bluefish index stations
-    + offshore bluefish index stations (considered for addition in 2022)
+    + Albatross inshore stations (Fig. \@ref(fig:albin))
+    + Bigelow inshore bluefish index stations (Fig. \@ref(fig:bluein))
+    + offshore bluefish index stations (considered for addition in 2022, Fig. \@ref(fig:blueoff))
     + offshore non-bluefish stations
     
 1.  Recreational fishery inshore vs offshore to evaluate availability to the MRIP CPUE index. Strata partitions include
-    + shoreline to 3 miles out (State waters)
+    + shoreline to 3 miles out (State waters, Fig. \@ref(fig:statewaters))
     + offshore of 3 miles (Federal waters)
     
 NEFSC survey strata definitions are built into the VAST `northwest-atlantic` extrapolation grid already. We defined additional new strata to address the recreational inshore-offshore 3 mile boundary. The area within and outside 3 miles of shore was defined using the `sf` R package as a 3 nautical mile (approximated as 5.556 km) buffer from a high resolution coastline from the`rnaturalearth` R package. This buffer was then intersected with the current `FishStatsUtils::northwest_atlantic_grid` built into VAST and saved using code [here](https://github.com/sgaichas/bluefishdiet/blob/main/VASTcovariates_updatedPreds_sst_3mi.Rmd#L49-L94). Then, the new State and Federal waters strata were used to split NEFSC survey strata where applicable, and the new full set of strata were used along with a modified function from `FishStatsUtils::Prepare_NWA_Extrapolation_Data_Fn` to build a custom extrapolation grid for VAST as described in detail [here](https://sgaichas.github.io/bluefishdiet/VASTcovariates_finalmodbiascorrect_3misurvstrat.html). 
@@ -387,7 +390,7 @@ fedwatersgrid <- fedwaters %>%
 ### Key Strata {.tabset}
 
 #### Mid-Atlantic and Georges Bank
-```{r}
+```{r MABGB, fig.cap="Map of Mid-Atlantic and Georges Bank region."}
 
 ggplot(data = ecodata::coast) +
   geom_sf() + 
@@ -399,7 +402,7 @@ ggplot(data = ecodata::coast) +
 ```
 
 #### State waters
-```{r}
+```{r statewaters, fig.cap="Map of state waters: coastline out to 3 nautical miles from shore."}
 
 ggplot(data = ecodata::coast) +
   geom_sf() + 
@@ -411,7 +414,7 @@ ggplot(data = ecodata::coast) +
 ```
 
 #### Albatross inshore survey strata
-```{r}
+```{r albin, fig.cap="Map of inshore survey strata formerly surveyed by the R/V Albatross, now surveyed by NEAMAP."}
 
 ggplot(data = ecodata::coast) +
   geom_sf() + 
@@ -423,7 +426,7 @@ ggplot(data = ecodata::coast) +
 ```
 
 #### Bluefish Inshore Survey Strata (Bigelow)
-```{r}
+```{r bluein, fig.cap="Map of bluefish inshore survey strata accessible to the R/V Bigelow"}
 
 ggplot(data = ecodata::coast) +
   geom_sf() + 
@@ -435,7 +438,7 @@ ggplot(data = ecodata::coast) +
 ```
 
 #### Bluefish Offshore Survey Strata (proposed 2022)
-```{r}
+```{r blueoff, fig.cap="Map of bluefish offshore survey strata proposed for the 2022 assessment"}
 
 ggplot(data = ecodata::coast) +
   geom_sf() + 
@@ -944,7 +947,7 @@ stratlook <- data.frame(Stratum = c("Stratum_1",
 
 ### Fall Index  
 
-Plot individual time series with standard errors:
+Many indices can be derived from the VAST model (Fig. \@ref(fig:fallall)). 
 
 ```{r fallall, fig.cap="All Fall forage indices"}
 splitoutput <- read.csv("pyindex/allagg_fall_500_lennosst_ALLsplit_biascorrect/Index.csv")
@@ -964,7 +967,7 @@ ggplot(splitoutput, aes(x=Time, y=Estimate, colour=Region)) +
 
 ```
 
- or just the indices from inshore (alb), inshore bluefish, offshore bluefish, and further out, plus the state and federal waters split.
+We can compare the indices relevant to bluefish on the same scale: inshore (Albatross strata), inshore bluefish, offshore bluefish, and further out, plus the state and federal waters split (Fig. \@ref(fig:fallsome)).
  
 ```{r fallsome, fig.cap="Bluefish-related Fall forage indices"}
 in2off <- splitoutput %>%
@@ -996,7 +999,7 @@ ggplot(in2off, aes(x=Time, y=Estimate, colour = Region)) +
 
 ```
 
- or as proportions (here proportion of MABGB index).
+Proportions of prey in each bluefish relevant area can be compared (here as a proportion of the full MABGB index; Fig. \@ref(fig:fallprop)).
 
 ```{r fallprop, fig.cap="Fall forage indices as proportion of the Mid Atlantic and Georges Bank area."}
 MABGBprop <- in2off %>%
@@ -1027,7 +1030,9 @@ ggplot(MABGBprop, aes(x=Time, y=Estimate, colour = Region)) +
 
 ### Fall predicted ln-density
 
-![Fall density maps with covariates](pyindex/allagg_fall_500_lennosst_ALLsplit_biascorrect/ln_density-predicted.png)
+The VAST model predicts density of forage fish across the entire model domain for each year (Fig. \@ref(fig:falldens)). 
+
+![Fall density maps with covariates](pyindex/allagg_fall_500_lennosst_ALLsplit_biascorrect/ln_density-predicted.png){#fig:falldens}
  
 ### Fall Diagnostics {.tabset}
 
