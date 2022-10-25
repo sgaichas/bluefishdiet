@@ -5,17 +5,23 @@ author: Sarah Gaichas, James Gartland, Brian Smith, Elizabeth Ng, Michael Celest
   Anthony Wood, Katie Drew, Abigail Tyrell, and James Thorson
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output:
-  html_document:
-    code_fold: hide
-  word_document: default
-subtitle: Vector Autoregressive Spatio-Temporal (VAST) modeling of piscivore stomach
-  contents, 1985-2021
+  bookdown::html_document2: 
+    toc: true
+    toc_float: true
+  bookdown::pdf_document2:
+    keep_tex: true
+    extra_dependencies: ["flafter"]
+subtitle: "Vector Autoregressive Spatio-Temporal (VAST) modeling of piscivore stomach
+  contents, 1985-2021"
 link-citations: yes
-csl: american-fisheries-society.csl
+csl: "american-fisheries-society.csl"
 bibliography: FishDiet_EcoIndicators.bib
 ---
 
 ```{r setup, include=FALSE}
+
+#  word_document: default 
+
 knitr::opts_chunk$set(echo = FALSE, # no code blocks in word doc
                       message = FALSE,
                       warning = FALSE)
@@ -25,7 +31,8 @@ theme_set(theme_bw())
 library(here)
 library(dendextend)
 library(flextable) #hopefully makes actual tables in word
-set_flextable_defaults(font.size = 11, padding = 3)
+set_flextable_defaults(font.size = 11, padding = 3,
+                       fonts_ignore=TRUE) #for latex
 #library(DT)
 #library(pdftools)
 #library(patchwork)
@@ -64,13 +71,13 @@ library(ggiraph)
 
 ```
 
-# Does prey drive availability of bluefish? Assessing small pelagic fish trends in space and time using piscivore diet data
+*Does prey drive availability of bluefish? Assessing small pelagic fish trends in space and time using piscivore diet data*
 
-## Abstract
+# Abstract {-}
 
 Changing distribution and abundance of small pelagics may drive changes in predator distributions, affecting predator availability to fisheries and surveys. However, small pelagic fish are difficult to survey directly, so we developed a novel method of assessing small pelagic fish aggregate abundance via predator diet data. We used piscivore diet data collected from multiple bottom trawl surveys within a Vector Autoregressive Spatio-Temporal (VAST) model to assess trends of small pelagics on the Northeast US shelf. The goal was to develop a spatial “forage index” to inform survey and/or fishery availability in the bluefish (*Pomatomus saltatrix*) stock assessment. Using spring and fall surveys from 1973-2020, 20 small pelagic groups were identified as major bluefish prey using the diet data. Then, predators were grouped by diet similarity to identify 21 piscivore species with the most similar diet to bluefish in the region. Diets from all 22 piscivores were combined for the 20 prey groups at each surveyed location, and the total weight of small pelagic prey per predator stomach at each location was input into a Poisson-link delta model to estimate expected prey mass per predator stomach. Best fit models included spatial and spatio-temporal random effects, with predator mean length, number of predator species, and sea surface temperature as catchability covariates. Spring and fall prey indices were split into inshore and offshore areas to reflect changing prey availability over time in areas available to the recreational fishery and the bottom trawl survey, and also to contribute to regional ecosystem reporting. 
 
-## Introduction
+# Introduction
 
 The objective of this work was to create a "prey index" to evaluate changes in bluefish prey over time and in space using Vector Autoregressive Spatio-Temporal modeling (VAST [@thorson_comparing_2017; @thorson_guidance_2019]). This approach was patterned on @ng_predator_2021, which used predator stomach data to create a biomass index for a single prey, Atlantic herring. Expected biomass of herring per stomach was estimated in VAST with 2 linear predictors, the number of herring per stomach and the average weight of herring in a stomach. 
 
@@ -82,12 +89,12 @@ Therefore, the steps involved to estimate the forage index included defining the
 
 This approach is generalizable to any spatial subset of the full VAST spatial domain, such that forage indices for each ecoregion on the Northeast US continental shelf, or for other piscivore predators can also be generated. 
 
-## Methods
+# Methods
 
-### Input dataset
+## Input dataset
 Fish food habits data are collected aboard several regional fishery independent surveys in the Northeast US. The longest time series of diet has been collected by the Northeast Fisheries Science Center (NEFSC) bottom trawl survey [@smith_trophic_2010] from south of Cape Hatteras, NC to the Scotian Shelf at the US/Canada border since the early 1970s, which represents the bulk of the data for this analysis. Using similar survey protocols to the NEFSC survey, the NorthEast Area Monitoring and Assessment Program (NEAMAP) survey has collected fish diet data in inshore waters from Cape Hatteras, NC to Cape Cod, MA since 2008 [@northeast_area_monitoring__assessment_program_neamap_monitoring_2021]. All analyses were completed in R [@r_core_team_r_2021].
 
-#### Defining bluefish prey  
+### Defining bluefish prey  
 Bluefish eat small pelagics that are not well sampled by bottom trawl surveys. Bluefish themselves are not well sampled by bottom trawl surveys. Nevertheless, the diet samples collected for bluefish indicate that anchovies, herrings, squids, butterfish, scup, and small hakes are important prey. See the Bluefish Ecosystem Socioeconomic Profile working paper, as well as [this web summary page link](https://sgaichas.github.io/bluefishdiet/DietSummary.html) for NEFSC survey and [this presentation link](https://docs.google.com/presentation/d/1VlP0OsSLnoaoFHHt7kJbrqNTgBJqI6Ru/edit#slide=id.p1) for NEAMAP survey bluefish diet composition summaries.
 
 Using all sampled bluefish stomachs included in the NEFSC food habits database 1973-2021, we created a list of all pelagic nekton bluefish prey that had at least 10 observations (Table 1). Broad categories such as empty stomach, fish unidentified, Osteichthyes, unidentified animal remains, and blown stomach were not included in the prey list.
@@ -143,14 +150,14 @@ flextable::flextable(blueprey[,c('pynam', 'pycomnam2','BLUEFISH')]) %>%
 ```
 
 
-#### Defining piscivore predators  
+### Defining piscivore predators  
 The choice of predators is largely intended to balance increasing sample size for modeling bluefish prey with using predators likely to be foraging similarly to bluefish.  One extreme assumption would be to include only bluefish as predators, but there are relatively few bluefish diet samples due to incomplete availability to bottom trawl surveys (see supplemental information). This would miss prey available to bluefish because we have not sampled bluefish adequately. The opposite extreme assumption would be to include all stomachs that contain any of the top bluefish prey, regardless of which species ate the prey. This would include predators that do not forage similarly to bluefish and might therefore "count" prey that are not actually available to bluefish due to habitat differences. The intermediate approach which selects a group of piscivores that forage similarly to bluefish both increases sample size and screens out the most dissimilar predators to bluefish. A further refinement to the input data is only using the prey items identified above as "bluefish prey" across all predators identified as piscivores.
 
 For bluefish forage index modeling, we are selecting a set of predators that have high diet similarity to bluefish. @garrison_dietary_2000 evaluated similarity of predator diets on the Northeast US shelf to develop foraging guilds. The Schoener similarity index [@schoener_nonsynchronous_1970] was applied
 
 >to assess the dietary overlap, $D_{ij}$, between predator pairs:
 
-$$ D_{i,j} = 1 – 0.5 (∑ |p_{i,k} – p_{j,k}|) $$
+$$ D_{i,j} = 1 – 0.5 (\sum |p_{i,k} – p_{j,k}|) $$
 
 >where $p_{i,k}$ = mean proportional volume of prey type $k$ in predator $i$ and $p_{i,k}$ = mean proportional volume of
 prey type $k$ in predator $j$ [@garrison_dietary_2000]. 
@@ -237,10 +244,10 @@ The NEAMAP survey operates closer to shore than the current NEFSC survey. While 
 +  Spiny Dogfish 36 – 117 cm
 +  Goosefish 5 – 124 cm  
 
-#### Integrating regional surveys  
+### Integrating regional surveys  
 For each survey dataset, the full diet database was filtered to include only predators on the list of piscivores with the most diet similarity to bluefish (Table 2). Then, the list of bluefish prey (Table 1) was used to categorize prey items for each predator as "bluefish prey" or "other prey". Each station was given a unique station identifier (cruise and station number), and the total weight (g) of bluefish prey at each station was summed. Total bluefish prey weight was divided by the total number of stomachs across all piscivore predators at the station to get mean bluefish prey weight (g) at each station. In addition, the number of piscivore species and the mean size (total length, cm) across all piscivores was calculated at each station. Seasons were identified as "Spring" (collection months January - June) and "Fall" (collection months July-December) to align with assumptions used in the bluefish stock assessment. Vessel identifiers were assigned based on years and survey, with two vessels used for the NEFSC survey (R/V Albatross prior to 2009 and R/V Bigelow 2009 to present) and a single vessel used for the NEAMAP survey 2008-present. These were used to evaluate whether vessel effects were present. Variable names were reconciled between NEFSC and NEAMAP, and the datasets were appended into a single dataset with one row per station including station ID, year, season, date, latitude, longitude, vessel, mean bluefish prey weight, mean piscivore length, number of piscivore species, and sea surface temperature (degrees C).  
 
-#### Filling gaps in sea surface temperature (SST) data  
+### Filling gaps in sea surface temperature (SST) data  
 Initial dataset checks revealed that approximately 10% of survey stations were missing in-situ sea water temperature measurements. Gaps in temperature information were more prevalent early in the time series (1980s and early 1990s), although stations without temperature data were found in nearly all years (see "SST mismatch by year" section [at this link](https://sgaichas.github.io/bluefishdiet/SSTmethods.html)). Rather than truncate the dataset to only those stations with in-situ temperature measurements, we investigated other sources of SST data to fill gaps.
 
 Two SST data sources were investigated, both based on satellite data: the National Oceanic and Atmospheric Administration Optimum Interpolation Sea Surface Temperature (NOAA OI SST) V2 High Resolution Dataset [@reynolds_daily_2007] data provided by the NOAA PSL, Boulder, Colorado, USA, from their website at https://psl.noaa.gov, and the higher resolution source data for the OI SST, the [AVHRR Pathfinder SST data linked here](https://www.ncei.noaa.gov/products/avhrr-pathfinder-sst) [@saha_avhrr_2018]. Both sources provide global daily SST at different spatial resolutions (OI SST uses a 25 km grid, and AVHRR uses a 4 km grid) from 1981-present. 
@@ -251,17 +258,17 @@ AVHRR data is organized into year/data folders with 2 nc files for each date, on
 
 For survey stations with in-situ temperature measurements, the in-situ measurement was retained. For survey stations with missing temperature data (~10% of all stations), OI SST was substituted for input into VAST models.
 
-### VAST modeling  
+## VAST modeling  
 We used VAST [@thorson_comparing_2017; @thorson_guidance_2019] to evaluate changes in bluefish prey biomass and distribution over time. VAST is structured to estimate fixed and random effects across two linear predictors, which are then multiplied to estimate an index of the quantity of interest. Using notation from @thorson_guidance_2019, a full model for the first linear predictor $\rho_1$ for each observation ($i$) can include fixed intercepts ($\beta$) for each category ($c$) and time ($t$), spatial random effects ($\omega$) for each location ($s$) and time, spatio-temporal random effects ($\varepsilon$) for each location, category, and time, fixed vessel effects ($\eta$) by vessel ($v$) and category, and fixed catchability impacts ($\lambda$) of covariates ($Q$) for each observation and variable ($k$): 
 
 $$ \rho_1(i) = \beta_1(c_i, t_i) + \omega_1^*(s_i, c_i) + \varepsilon_1^*(s_i, c_i, t_i) + \eta_1(v_i, c_i) + \sum_{k=1}^{n_k} \lambda_1(k) Q(i,k)$$
 
 The full model for the second linear predictor $\rho_2$ has the same structure, estimating $\beta_2$, $\omega_2$, $\varepsilon_2$, $\eta_2$, and $\lambda_2$ using the observations, categories, locations, times, and covariates.  VAST models can also include habitat (density) covariates, which we did not implement here, and have left out of the equation for simplicity.
 
-#### Structural decisions  
+### Structural decisions  
 @thorson_guidance_2019 lists 15 major decisions for constructing a VAST model. These include decisions on spatial domain, categories modeled (species, ages, etc), data type (presence absence, number, weight), including spatial and or spatio-temporal variation, spatial resolution, univariate vs multivariate response and factors, specifying temporal correlation, including density and or catchability covariates, treatment of area swept calculation, including vessel effects, selecting a link function, specifying derived quantities, bias correcting derived quantities, and model selection. Here we outline the decisions made in developing the forage index.
 
-##### Spatial domain
+#### Spatial domain
 Models were run using the full Northwest Atlantic grid built into VAST (Fig. \@ref(fig:nwagrid)). Specific strata sets were used from this full model to develop indices matching the spatial extent of different assessment inputs (see below). 
 
 ```{r nwagrid, fig.cap="Northwest Atlantic Grid (blue outline) from https://github.com/James-Thorson-NOAA/FishStatsUtils"}
@@ -273,15 +280,15 @@ ggplot(data = ecodata::coast) +
   ggtitle("Northwest Atlantic Grid")
 ```
 
-##### Categories, data type, and link function
+#### Categories, data type, and link function
 We model all bluefish prey in aggregate as a single category. The mean weight of bluefish prey in a stomach at each location is treated as biomass data in the model. Therefore, VAST applies a delta model where the first linear predictor models encounter rate and the second linear predictor models amount of prey (equivalent to positive catch rates on a survey). Following what @ng_predator_2021 did for herring, as well as recommended practice for biomass data [@thorson_guidance_2019], we apply a Poisson-link delta model to estimate expected prey mass per predator stomach.
 
-##### Spatial variation, resolution, response type, and temporal correlation
-We include spatial and spatio-temporal variation in both linear predictors, but test whether the data support these effects using model selection (see below). Similar to @ng_predator_2021 we used the default spatial smoother in VAST, the stochastic partial differential equation (SPDE) approximation to the Matérn correlation function (method = "mesh"; @thorson_guidance_2019). Although directional correlation (anistropy) can be common in fishery collections with depth gradients along a continental shelf [@thorson_guidance_2019], we tested whether the inclusion of anistropy as a fixed effect was supported using model selection (see below). We used a higher spatial resolution than @ng_predator_2021 did for herring-predator pairs, here defining 500 "knots" or standardized locations optimally allocated among all observed survey stations in the full dataset as estimated by k-means clustering of the data, to define the spatial dimensions of each seasonal model and the annual model.
+#### Spatial variation, resolution, response type, and temporal correlation
+We include spatial and spatio-temporal variation in both linear predictors, but test whether the data support these effects using model selection (see below). Similar to @ng_predator_2021 we used the default spatial smoother in VAST, the stochastic partial differential equation (SPDE) approximation to the Mat\'ern correlation function (method = "mesh"; @thorson_guidance_2019). Although directional correlation (anistropy) can be common in fishery collections with depth gradients along a continental shelf [@thorson_guidance_2019], we tested whether the inclusion of anistropy as a fixed effect was supported using model selection (see below). We used a higher spatial resolution than @ng_predator_2021 did for herring-predator pairs, here defining 500 "knots" or standardized locations optimally allocated among all observed survey stations in the full dataset as estimated by k-means clustering of the data, to define the spatial dimensions of each seasonal model and the annual model.
 
 Modeling all bluefish prey in aggregate leads to a univariate model, producing a single forage index which is most easily integrated into the bluefish assessment model. We did not include temporal correlation in fixed intercepts to maintain independence of forage abundance in each modeled year [@thorson_guidance_2019]. We did not include temporal correlation in spatio-temporal random effects because most survey areas were sampled each year, so projecting forage "hotspots" between years using temporal correlation was not desirable for this application. 
 
-##### Including covariates, vessel effects, area swept, and other decisions
+#### Including covariates, vessel effects, area swept, and other decisions
 We explored multiple combinations of catchability covariates and vessel effects. Surveys were conducted aboard multiple vessels over time and between NEFSC and NEAMAP, so we investigated vessel effects for the NEAMAP vessel and NEFSC vessels Albatross and Bigelow (commonly included in regional stock assessments when survey indices are not modeled separately). Vessel effects were modeled as overdispersion parameters.  Catchability covariates explored included mean predator length at each station, number of predator species at each station, and sea surface temperature (SST) at each station. 
 
 The predator length covariate may more directly model vessel differences in predator survey catch that affect stomach contents than modeling a vessel catchability covariate directly. @ng_predator_2021 found that predator length covariates were strongly supported as catchability covariates (larger predators being more likely to have more prey in stomachs). The rationale for including number of predator species is that more species "sampling" the prey field at a particular station may result in a higher encounter rate (more stations with positive bluefish prey in stomachs). Water temperature was also included as a potential catchability covariate, because temperature affects predator feeding rate.
@@ -294,14 +301,14 @@ The derived quantity of interest here is a biomass index for each of spring, fal
 
 Bias correction of the forage fish biomass index for each model (and spatial subdivisions, see below) is based on @thorson_implementing_2016, as implemented in the VAST development branch code (https://github.com/James-Thorson-NOAA/VAST/tree/dev). 
 
-#### Model selection  
+### Model selection  
 We compared the AIC for the 500 knot models to see if including the spatial and spatio-temporal random effects in the first and second linear predictors improved the model fit. Model structures tested include with and without anistropy (2 fixed parameters), and with and without spatial and spatio-temporal random effects in the second linear predictor or both linear predictors. This follows the model selection process outlined in @ng_predator_2021 using restricted maximum likelihood (REML; @zuur_mixed_2009). 
 
 Following this, we evaluated catchability covariates using AIC to determine which are best supported by the data. We used the structure selected by the REML model selection, then evaluated vessel effects (overdispersion) and a range of potential catchability covariates using maximum likelihood to calculate AIC instead of REML, because the spatial and spatio-temporal random effects are the same across models. 
 
 Our two-step model selection (1: spatial and spatio-temporal random effects, 2: catchability covariates) was completed using the script [`bluefishdiet/VASTunivariate_bfp_modselection.R`](https://github.com/sgaichas/bluefishdiet/blob/main/VASTunivariate_bfp_modselection.R). 
 
-### Spatial definitions  
+## Spatial definitions  
 
 Our main goal is to determine whether bluefish prey availability has changed in inshore waters where the recreational fishery primarily operates.  Our food habits datasets do not extend into inland waters such as bays and sounds, with the exception of Cape Cod Bay. (In the future we might be able to investigate food habits from ChesMMAP or surveys south of Cape Hatteras.) However, there is data from both historical NEFSC surveys and NEAMAP in state coastal waters (0-3 miles from shore), and offshore across the continental shelf. 
 
@@ -369,9 +376,9 @@ fedwatersgrid <- fedwaters %>%
 
 ```
 
-#### Key Strata {.tabset}
+### Key Strata {.tabset}
 
-##### Mid-Atlantic and Georges Bank
+#### Mid-Atlantic and Georges Bank
 ```{r}
 
 ggplot(data = ecodata::coast) +
@@ -383,7 +390,7 @@ ggplot(data = ecodata::coast) +
 
 ```
 
-##### State waters
+#### State waters
 ```{r}
 
 ggplot(data = ecodata::coast) +
@@ -395,7 +402,7 @@ ggplot(data = ecodata::coast) +
 
 ```
 
-##### Albatross inshore survey strata
+#### Albatross inshore survey strata
 ```{r}
 
 ggplot(data = ecodata::coast) +
@@ -407,7 +414,7 @@ ggplot(data = ecodata::coast) +
 
 ```
 
-##### Bluefish Inshore Survey Strata (Bigelow)
+#### Bluefish Inshore Survey Strata (Bigelow)
 ```{r}
 
 ggplot(data = ecodata::coast) +
@@ -419,7 +426,7 @@ ggplot(data = ecodata::coast) +
 
 ```
 
-##### Bluefish Offshore Survey Strata (proposed 2022)
+#### Bluefish Offshore Survey Strata (proposed 2022)
 ```{r}
 
 ggplot(data = ecodata::coast) +
@@ -431,15 +438,15 @@ ggplot(data = ecodata::coast) +
 
 ```
 
-#### {-}
+### {-}
 
 Seasonal models were run using the script [`bluefishdiet/VASTunivariate_bfp_allsurvs_lencovSST_ALLinoffsplits.R`](https://github.com/sgaichas/bluefishdiet/blob/main/VASTunivariate_bfp_allsurvs_lencovSST_ALLinoffsplits.R), which contains all stratum definitions. The annual model was run using the script [`bluefishdiet/VASTunivariate_bfp_allsurvsANNUA:_lencovSST_ALLinoffsplits.R`](https://github.com/sgaichas/bluefishdiet/blob/main/VASTunivariate_bfp_allsurvsANNUAL_lencovSST_ALLinoffsplits.R). 
 
 The final model runs included all selected covariates, stratum definitions, and bias correction for the biomass index.  
 
-## Results  
+# Results  
 
-### Input dataset overview 
+## Input dataset overview 
 
 ```{r dietsumm}
 bluefishaggdiet <- read_csv(here("datfromshiny","DC.Bluefish (Pomatomus saltatrix).All.2021-10-07.csv"))
@@ -717,7 +724,7 @@ flextable::flextable(stnsummary) %>%
 
 ```
 
-### VAST model selection  
+## VAST model selection  
 
 Comparisons of AIC are presented for both the first (spatial and spatio-temporal random effects) and second (catchability covariates) rounds of model selection. 
 
@@ -874,7 +881,7 @@ DT::datatable(modselect2, rownames = FALSE,
 
 Catchability covariates were better supported by the data than vessel effects. Model comparisons above and [here](https://sgaichas.github.io/bluefishdiet/VASTcovariates_updatedPreds_sst.html) led us to the best model fit using mean predator length, number of predator species, and SST at a survey station as catchability covariates. 
 
-### Bias-corrected spatial forage indices  
+## Bias-corrected spatial forage indices  
 
 ```{r}
 # strata.limits <- as.list(c("AllEPU" = allEPU2, 
@@ -926,7 +933,7 @@ stratlook <- data.frame(Stratum = c("Stratum_1",
 
 ```
 
-#### Fall Index  
+### Fall Index  
 
 Plot individual time series with standard errors:
 
@@ -1009,11 +1016,11 @@ ggplot(MABGBprop, aes(x=Time, y=Estimate, colour = Region)) +
   
 ```
 
-#### Fall predicted ln-density
+### Fall predicted ln-density
 
 ![Fall density maps with covariates](pyindex/allagg_fall_500_lennosst_ALLsplit_biascorrect/ln_density-predicted.png)
  
-#### Fall Diagnostics {.tabset}
+### Fall Diagnostics {.tabset}
 
 ```{r, results='asis'}
 
@@ -1026,7 +1033,7 @@ diagplots <- c("Data_and_knots",
 
 for(p in diagplots){
   
-    cat("  \n#####",  as.character(p),"  \n")
+    cat("  \n####",  as.character(p),"  \n")
     cat(paste0("![](pyindex/allagg_fall_500_lennosst_ALLsplit_biascorrect/",
                       p,
                       ".png)")) 
@@ -1036,9 +1043,9 @@ for(p in diagplots){
 
 ```
 
-#### {-} 
+### {-} 
 
-#### Spring Index  
+### Spring Index  
 
 Plot individual time series
 
@@ -1122,11 +1129,11 @@ ggplot(MABGBprop, aes(x=Time, y=Estimate, colour = Region)) +
 ```
 
 
-#### Spring predicted ln-density
+### Spring predicted ln-density
 
 ![Spring density maps with covariates](pyindex/allagg_spring_500_lennosst_ALLsplit_biascorrect/ln_density-predicted.png)
 
-#### Spring Diagnostics {.tabset}
+### Spring Diagnostics {.tabset}
 
 ```{r, results='asis'}
 
@@ -1139,7 +1146,7 @@ diagplots <- c("Data_and_knots",
 
 for(p in diagplots){
   
-    cat("  \n#####",  as.character(p),"  \n")
+    cat("  \n####",  as.character(p),"  \n")
     cat(paste0("![](pyindex/allagg_spring_500_lennosst_ALLsplit_biascorrect/",
                       p,
                       ".png)")) 
@@ -1149,10 +1156,10 @@ for(p in diagplots){
 
 ```
 
-#### {-} 
+### {-} 
 
 
-#### Annual Index  
+### Annual Index  
 
 Plot individual time series with standard errors:
 
@@ -1235,11 +1242,11 @@ ggplot(MABGBprop, aes(x=Time, y=Estimate, colour = Region)) +
   
 ```
 
-#### Annual predicted ln-density
+### Annual predicted ln-density
 
 ![Annual density maps with covariates](pyindex/allagg_annual_500_lennosst_ALLsplit_biascorrect/ln_density-predicted.png)
  
-#### Annual Diagnostics {.tabset}
+### Annual Diagnostics {.tabset}
 
 ```{r, results='asis'}
 
@@ -1252,7 +1259,7 @@ diagplots <- c("Data_and_knots",
 
 for(p in diagplots){
   
-    cat("  \n#####",  as.character(p),"  \n")
+    cat("  \n####",  as.character(p),"  \n")
     cat(paste0("![](pyindex/allagg_annual_500_lennosst_ALLsplit_biascorrect/",
                       p,
                       ".png)")) 
@@ -1262,11 +1269,11 @@ for(p in diagplots){
 
 ```
 
-#### {-} 
+### {-} 
 
 The full results of all models are archived on [google drive](https://drive.google.com/drive/folders/1PsEk5hhQ7fR0Gq4NnYPvU4V59d4nIR8E) rather than github to save space.
 
-### Woods Hole stock assessment model (WHAM) input time series
+## Woods Hole stock assessment model (WHAM) input time series
 
 Current inputs for the bluefish assessment implemented in WHAM [@stock_woods_2021] include a subset of the stratum-specific indices calculated above. The index is calculated for each season and the annual model for several regions relevant to the bluefish assessment:
 
@@ -1343,27 +1350,39 @@ WHAMinputsviz <- function(infile) {
 } 
 ```
 
-#### WHAM forage index time series Fall
+### WHAM forage index time series Fall
 ```{r}
 WHAMinputsviz(infile = "pyindex/allagg_fall_500_lennosst_ALLsplit_biascorrect/Index.csv")
 ```
 
-#### WHAM forage index time series Spring
+### WHAM forage index time series Spring
 ```{r}
 WHAMinputsviz(infile = "pyindex/allagg_spring_500_lennosst_ALLsplit_biascorrect/Index.csv")
 ```
 
-#### WHAM forage index time series Annual
+### WHAM forage index time series Annual
 ```{r}
 WHAMinputsviz(infile = "pyindex/allagg_annual_500_lennosst_ALLsplit_biascorrect/Index.csv")
 ```
 
 
-## Discussion
+# Discussion
 
+Bluefish are generalist predators. Understanding how bluefish availability may be affected by their prey field means looking across many potential prey species, including species not well sampled by bottom trawl surveys. We characterized aggregate forage fish trends using piscivore stomach data as input observations to a vector autoregressive spatio-temporal (VAST) model. The resulting model-derived forage indices suggest that aggregate forage fish have fluctuated in both space and time in the Northeast US, especially in areas relevant to the bluefish assessment. 
 
+Discussion points
 
-Possible future additions:
+*  Aggregate indices should be more stable than individual species trends, but still show fluctuations.
+      +  Good agreement found between some individual predator (cod) diet derived biomass index and Atlantic herring assessment trends. Other less well sampled individual predators (hake) had poor agreement. 
+      +  Our approach combining across predators was intended to improve sample size for the aggregate prey index. However we don't have an aggregate forage fish time series for comparison. 
+      +  Nevertheless, we think due to good sample sizes and model diagnostics, this is the best representation we have of aggregate forage fish trends in this region.
+*  Sampling process is fish predation, which we somewhat controlled for as catchability covariates for number of predators, predator size, and temperature. 
+      +  Fish id in stomachs could be improved; had to leave out  "Fish unidentified". Increased use of this id category would degrade the use of this index in the future. 
+      +  Aggregated predators most similar to bluefish, but some differences in predator sampling over time (e.g. squid stomachs sampled up to 2000s, not thereafter) 
+      +  
+*  What drives forage fish? Comparison of these indices with zooplankton and other environmental drivers in progress for state of the ecosystem report. 
+
+Possible future additions to benefit use in the bluefish assessment:
 
 *  Add ChesMMAP diet data
 *  Investigate other inland waters diet data sources
@@ -1371,4 +1390,4 @@ Possible future additions:
 
 *  Results as density by strata
 
-## References
+# References
