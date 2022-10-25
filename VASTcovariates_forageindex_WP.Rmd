@@ -5,11 +5,11 @@ author: "Sarah Gaichas, James Gartland, Brian Smith, Elizabeth Ng, Michael Celes
   Anthony Wood, Katie Drew, Abigail Tyrell, and James Thorson"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output:
-  bookdown::word_document2:
-    toc: true
   bookdown::html_document2: 
     toc: true
     toc_float: true
+  bookdown::word_document2:
+    toc: true
   bookdown::pdf_document2:
     includes: 
        in_header: latex/header1.tex
@@ -102,14 +102,15 @@ Fish food habits data are collected aboard several regional fishery independent 
 ### Defining bluefish prey  
 Bluefish eat small pelagics that are not well sampled by bottom trawl surveys. Bluefish themselves are not well sampled by bottom trawl surveys. Nevertheless, the diet samples collected for bluefish indicate that anchovies, herrings, squids, butterfish, scup, and small hakes are important prey. See the Bluefish Ecosystem Socioeconomic Profile working paper, as well as [this web summary page link](https://sgaichas.github.io/bluefishdiet/DietSummary.html) for NEFSC survey and [this presentation link](https://docs.google.com/presentation/d/1VlP0OsSLnoaoFHHt7kJbrqNTgBJqI6Ru/edit#slide=id.p1) for NEAMAP survey bluefish diet composition summaries.
 
-Using all sampled bluefish stomachs included in the NEFSC food habits database 1973-2021, we created a list of all pelagic nekton bluefish prey that had at least 10 observations (Table 1). Broad categories such as empty stomach, fish unidentified, Osteichthyes, unidentified animal remains, and blown stomach were not included in the prey list.
+Using all sampled bluefish stomachs included in the NEFSC food habits database 1973-2021, we created a list of all pelagic nekton bluefish prey that had at least 10 observations (Table \@ref(tab:preylist)). Broad categories such as empty stomach, fish unidentified, Osteichthyes, unidentified animal remains, and blown stomach were not included in the prey list.
 
 ```{r preylist}
 # object is called `allfh`
-load(url("https://github.com/Laurels1/Condition/raw/master/data/allfh.RData"))
+#load(url("https://github.com/Laurels1/Condition/raw/master/data/allfh.RData"))
 
-# Oct 21 2022: save it for posterity
-save(allfh, file = "fhdat/allfh.Rdata")
+# Oct 21 2022: save it for posterity, use in case Laurel's repo updates
+#save(allfh, file = "fhdat/allfh.Rdata")
+load(here("fhdat/allfh.Rdata"))
 
 # October 8 2022: add NEFSC 2021 data
 load(here("fhdat/allfh21.Rdata"))
@@ -151,7 +152,8 @@ blueprey <- preycount %>%
 flextable::flextable(blueprey[,c('pynam', 'pycomnam2','BLUEFISH')]) %>%
   flextable::set_header_labels(pynam = "Prey name", pycomnam2 = "Prey common name", BLUEFISH = "Bluefish stomachs (n)") %>%
   flextable::set_caption("Prey identified in bluefish stomachs, NEFSC diet database, 1973-2021.") %>%
-  flextable::autofit()
+  #flextable::autofit()
+  flextable::width(width = c(2.5,3.5,0.5))
 ```
 
 
@@ -167,7 +169,7 @@ $$ D_{i,j} = 1 – 0.5 (\sum |p_{i,k} – p_{j,k}|) $$
 >where $p_{i,k}$ = mean proportional volume of prey type $k$ in predator $i$ and $p_{i,k}$ = mean proportional volume of
 prey type $k$ in predator $j$ [@garrison_dietary_2000]. 
 
-@garrison_dietary_2000 used NEFSC bottom trawl survey data 1973-1997. We are using diets from 1985-2020 to characterize the forage index. Therefore an additional 20+ years of diet information is available to assess whether predator diet similarity has changed. Diet similarity analysis has been completed (B. Smith, pers. comm.), with a table of prey similarity available via [this link on the NEFSC food habits shiny app](https://fwdp.shinyapps.io/tm2020/#4_DIET_OVERLAP_AND_TROPHIC_GUILDS) that was used to define feeding guilds based on 50 predators. We evaluated results from several clustering algorithms (see [this link](https://sgaichas.github.io/bluefishdiet/PreySimilarityUpdate.html)) to determine how robustly different sets of predators grouped with bluefish. The working group selected the piscivore list based on the "complete" clustering algorithm, including all species that clustered with all 3 sizes of bluefish (Table 2). 
+@garrison_dietary_2000 used NEFSC bottom trawl survey data 1973-1997. We are using diets from 1985-2020 to characterize the forage index. Therefore an additional 20+ years of diet information is available to assess whether predator diet similarity has changed. Diet similarity analysis has been completed (B. Smith, pers. comm.), with a table of prey similarity available via [this link on the NEFSC food habits shiny app](https://fwdp.shinyapps.io/tm2020/#4_DIET_OVERLAP_AND_TROPHIC_GUILDS) that was used to define feeding guilds based on 50 predators. We evaluated results from several clustering algorithms (see [this link](https://sgaichas.github.io/bluefishdiet/PreySimilarityUpdate.html)) to determine how robustly different sets of predators grouped with bluefish. The working group selected the piscivore list based on the "complete" clustering algorithm, including all species that clustered with all 3 sizes of bluefish (Table \@ref(tab:pisclist)). 
 
 ```{r pisclist}
 dietoverlap <- read_csv(here("datfromshiny/tgmat.2022-02-15.csv"))
@@ -230,7 +232,8 @@ flextable::flextable(pisccompletedf[,-3]) %>%
                                minlen = "Minimum length (cm)",
                                maxlen = "Maximum length (cm)") %>%
   flextable::set_caption("Predators with highest diet similarity to Bluefish, NEFSC diet database, 1973-2020.") %>%
-  flextable::autofit()
+  #flextable::autofit()
+  flextable::width(width = c(3, 1, 1, 1))
   
 ```
 
@@ -250,7 +253,7 @@ The NEAMAP survey operates closer to shore than the current NEFSC survey. While 
 +  Goosefish 5 – 124 cm  
 
 ### Integrating regional surveys  
-For each survey dataset, the full diet database was filtered to include only predators on the list of piscivores with the most diet similarity to bluefish (Table 2). Then, the list of bluefish prey (Table 1) was used to categorize prey items for each predator as "bluefish prey" or "other prey". Each station was given a unique station identifier (cruise and station number), and the total weight (g) of bluefish prey at each station was summed. Total bluefish prey weight was divided by the total number of stomachs across all piscivore predators at the station to get mean bluefish prey weight (g) at each station. In addition, the number of piscivore species and the mean size (total length, cm) across all piscivores was calculated at each station. Seasons were identified as "Spring" (collection months January - June) and "Fall" (collection months July-December) to align with assumptions used in the bluefish stock assessment. Vessel identifiers were assigned based on years and survey, with two vessels used for the NEFSC survey (R/V Albatross prior to 2009 and R/V Bigelow 2009 to present) and a single vessel used for the NEAMAP survey 2008-present. These were used to evaluate whether vessel effects were present. Variable names were reconciled between NEFSC and NEAMAP, and the datasets were appended into a single dataset with one row per station including station ID, year, season, date, latitude, longitude, vessel, mean bluefish prey weight, mean piscivore length, number of piscivore species, and sea surface temperature (degrees C).  
+For each survey dataset, the full diet database was filtered to include only predators on the list of piscivores with the most diet similarity to bluefish (Table \@ref(tab:pisclist)). Then, the list of bluefish prey (Table \@ref(tab:preylist)) was used to categorize prey items for each predator as "bluefish prey" or "other prey". Each station was given a unique station identifier (cruise and station number), and the total weight (g) of bluefish prey at each station was summed. Total bluefish prey weight was divided by the total number of stomachs across all piscivore predators at the station to get mean bluefish prey weight (g) at each station. In addition, the number of piscivore species and the mean size (total length, cm) across all piscivores was calculated at each station. Seasons were identified as "Spring" (collection months January - June) and "Fall" (collection months July-December) to align with assumptions used in the bluefish stock assessment. Vessel identifiers were assigned based on years and survey, with two vessels used for the NEFSC survey (R/V Albatross prior to 2009 and R/V Bigelow 2009 to present) and a single vessel used for the NEAMAP survey 2008-present. These were used to evaluate whether vessel effects were present. Variable names were reconciled between NEFSC and NEAMAP, and the datasets were appended into a single dataset with one row per station including station ID, year, season, date, latitude, longitude, vessel, mean bluefish prey weight, mean piscivore length, number of piscivore species, and sea surface temperature (degrees C).  
 
 ### Filling gaps in sea surface temperature (SST) data  
 Initial dataset checks revealed that approximately 10% of survey stations were missing in-situ sea water temperature measurements. Gaps in temperature information were more prevalent early in the time series (1980s and early 1990s), although stations without temperature data were found in nearly all years (see "SST mismatch by year" section [at this link](https://sgaichas.github.io/bluefishdiet/SSTmethods.html)). Rather than truncate the dataset to only those stations with in-situ temperature measurements, we investigated other sources of SST data to fill gaps.
@@ -544,9 +547,9 @@ names(preycol) <- as.factor(preylist)
 
 ```
 
-The list of bluefish prey derived from the most common identifiable prey items in NEFSC diet database (Table 1) includes the majority of bluefish diet composition by decade (Fig. \@ref(fig:decadediet)) and season (Fig. \@ref(fig:seasondiet)). Colors in the plots show included prey, while gray sections represent "fish unidentified" and other categories not included in this analysis. Even when evaluated annually and seasonally (where bluefish sample sizes may be small for a year-season combination), a majority of observed diet is included in the dataset for analysis (Fig. \@ref(fig:yearseasondiet) ). 
+The list of bluefish prey derived from the most common identifiable prey items in NEFSC diet database (Table \@ref(tab:preylist)) includes the majority of bluefish diet composition by decade (Fig. \@ref(fig:decadediet)) and season (Fig. \@ref(fig:seasondiet)). Colors in the plots show included prey, while gray sections represent "fish unidentified" and other categories not included in this analysis. Even when evaluated annually and seasonally (where bluefish sample sizes may be small for a year-season combination), a majority of observed diet is included in the dataset for analysis (Fig. \@ref(fig:yearseasondiet)). 
 
-```{r decadediet}
+```{r decadediet, fig.cap="Bluefish diet by decade, NEFSC bottom trawl surveys."}
 preycolsel <- preycol[toupper(names(preycol)) %in% blueprey$pynam] 
 
 p <- ggplot(bluefishdecadediet, aes(x=as.factor(Decade), y=Pct.m, fill=Prey)) +
@@ -559,7 +562,7 @@ ggiraph(code=print(p))
 ```
 
   
-```{r seasondiet}
+```{r seasondiet, fig.cap="Bluefish diet by season, NEFSC bottom trawl surveys."}
 preycolsel <- preycol[toupper(names(preycol)) %in% blueprey$pynam] 
 
 p <- ggplot(bluefishseasondiet, aes(x=as.factor(Season), y=Pct.m, fill=Prey)) +
@@ -572,7 +575,7 @@ ggiraph(code=print(p))
 ```
 
 
-```{r yearseasondiet}
+```{r yearseasondiet, fig.cap="Bluefish diet by season and year, NEFSC bottom trawl surveys."}
 source(here("get_diet.R"))
 
 bluefish <- get_diet(135) 
@@ -696,9 +699,9 @@ The full NEFSC diet database 1985-2021 contains `r ndietNEFSC` survey stations w
 
 NEAMAP survey stations with diet collections for piscivores (n = `r neamap_npisctows`) had a higher proportion with our defined bluefish prey (n = `r neamap_nbfpreytows`, `r (neamap_nbfpreytows/neamap_npisctows)*100`%). 
 
-The number of survey stations missing surface temperature data varied considerably by decade. A large percentage of survey stations lacked in-situ temperature measurements between 1985 and 1990, while the percentage of stations missing temperature was generally below 10% (with a few exceptions) from 1991-2021 (Table 3). Therefore, OISST temperature estimates were more commonly substituted early in the time series. 
+The number of survey stations missing surface temperature data varied considerably by decade. A large percentage of survey stations lacked in-situ temperature measurements between 1985 and 1990, while the percentage of stations missing temperature was generally below 10% (with a few exceptions) from 1991-2021 (Table \@ref{tab:sstdat}). Therefore, OISST temperature estimates were more commonly substituted early in the time series. 
 
-```{r}
+```{r sstdat}
 #[add stuff about how many SST values were missing and which years got substituted]
 
 inputdat <- readRDS(here("fhdat/bluepyagg_stn_all_OISST.rds"))
@@ -725,13 +728,14 @@ flextable::flextable(stnsummary) %>%
                                percentmiss_FALL = "Fall percent missing temperature") %>%
   flextable::set_caption("Number of survey stations by year and season with in situ sea surface temperature measurements.") %>%
   flextable::colformat_double(big.mark = "", digits = 0) %>%
-  flextable::autofit()
+  #flextable::autofit()
+  flextable::width(width = 1)
 
 ```
 
 ## VAST model selection  
 
-Comparisons of AIC are presented for both the first (spatial and spatio-temporal random effects) and second (catchability covariates) rounds of model selection. 
+Comparisons of AIC are presented for both the first (spatial and spatio-temporal random effects, Table \@ref{tab:mmodsel1}) and second (catchability covariates), Table \@ref{tab:mmodsel2}) rounds of model selection. 
 
 ```{r}
 
@@ -942,7 +946,7 @@ stratlook <- data.frame(Stratum = c("Stratum_1",
 
 Plot individual time series with standard errors:
 
-```{r}
+```{r fallall, fig.cap="All Fall forage indices"}
 splitoutput <- read.csv("pyindex/allagg_fall_500_lennosst_ALLsplit_biascorrect/Index.csv")
 
 splitoutput <- splitoutput %>%
@@ -962,7 +966,7 @@ ggplot(splitoutput, aes(x=Time, y=Estimate, colour=Region)) +
 
  or just the indices from inshore (alb), inshore bluefish, offshore bluefish, and further out, plus the state and federal waters split.
  
-```{r}
+```{r fallsome, fig.cap="Bluefish-related Fall forage indices"}
 in2off <- splitoutput %>%
   dplyr::select(Time, Region, Estimate, Std..Error.for.Estimate) %>%
   tidyr::pivot_longer(c(Estimate, Std..Error.for.Estimate), names_to = "Var") %>%
@@ -994,7 +998,7 @@ ggplot(in2off, aes(x=Time, y=Estimate, colour = Region)) +
 
  or as proportions (here proportion of MABGB index).
 
-```{r}
+```{r fallprop, fig.cap="Fall forage indices as proportion of the Mid Atlantic and Georges Bank area."}
 MABGBprop <- in2off %>%
   #dplyr::filter(Region != "AllEPU") %>%
   dplyr::select(Time, Region, Estimate) %>%
@@ -1039,7 +1043,9 @@ diagplots <- c("Data_and_knots",
 for(p in diagplots){
   
     cat("  \n####",  as.character(p),"  \n")
-    cat(paste0("![](pyindex/allagg_fall_500_lennosst_ALLsplit_biascorrect/",
+    cat(paste0("![Fall diagnostics:",
+               p,
+               "](pyindex/allagg_fall_500_lennosst_ALLsplit_biascorrect/",
                       p,
                       ".png)")) 
     cat("  \n")   
