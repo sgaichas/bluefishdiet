@@ -841,14 +841,14 @@ Model selection 1 (spatial, spatio-temporal effects, no covariates) options (fol
 *  All models set Use_REML = TRUE in fit_model specifications.  
 *  Modeled effects, model name suffix, and VAST settings by model:  
 
-1.  Spatial and spatio-temporal random effects plus anisotropy in both linear predictors;  "_alleffectson"; FieldConfig default (all IID)
-1.  Spatial and spatio-temporal random effects in both linear predictors with anisotopy turned off;  "_noaniso" ; FieldConfig default (all IID) and `use_anisotopy = FALSE`
-1.  Spatial and spatio-temporal random effects plus anisotropy only in linear predictor 1;  "_noomeps2"; FieldConfig = 0 for Omega2, Epsilon2
-1.  Spatial and spatio-temporal random effects only in linear predictor 1 with anisotopy turned off; "_noomeps2_noaniso";  FieldConfig = 0 for Omega2, Epsilon2 and `use_anisotopy = FALSE`
-1.  Spatial random effects plus anisotropy only in linear predictor 1;  "_noomeps2_noeps1"; FieldConfig = 0 for Omega2, Epsilon2, Epsilon1
-1.  Spatial random effects only in linear predictor 1 with anisotopy turned off;  "_noomeps2_noeps1_noaniso"; FieldConfig = 0 for Omega2, Epsilon2, Epsilon1 and `use_anisotopy = FALSE`
-1.  Anisotropy, but no spatial or spatio-temporal random effects in either linear predictor;  "_noomeps12"; FieldConfig = 0 for both Omega, Epsilon 
-1.  No spatial or spatio-temporal random effects in either linear predictor;  "_noomeps12_noaniso"; FieldConfig = 0 for both Omega, Epsilon  and `use_anisotopy = FALSE`
+1.  "_alleffectson" = Spatial and spatio-temporal random effects plus anisotropy in both linear predictors; FieldConfig default (all IID)
+1.  "_noaniso" = Spatial and spatio-temporal random effects in both linear predictors with anisotopy turned off; FieldConfig default (all IID) and `use_anisotopy = FALSE`
+1.  "_noomeps2" = Spatial and spatio-temporal random effects plus anisotropy only in linear predictor 1;   FieldConfig = 0 for Omega2, Epsilon2
+1.  "_noomeps2_noaniso" = Spatial and spatio-temporal random effects only in linear predictor 1 with anisotopy turned off;  FieldConfig = 0 for Omega2, Epsilon2 and `use_anisotopy = FALSE`
+1. "_noomeps2_noeps1" =  Spatial random effects plus anisotropy only in linear predictor 1;   FieldConfig = 0 for Omega2, Epsilon2, Epsilon1
+1.  "_noomeps2_noeps1_noaniso" = Spatial random effects only in linear predictor 1 with anisotopy turned off;   FieldConfig = 0 for Omega2, Epsilon2, Epsilon1 and `use_anisotopy = FALSE`
+1.  "_noomeps12" = Anisotropy, but no spatial or spatio-temporal random effects in either linear predictor;   FieldConfig = 0 for both Omega, Epsilon 
+1.  "_noomeps12_noaniso" = No spatial or spatio-temporal random effects in either linear predictor;  FieldConfig = 0 for both Omega, Epsilon  and `use_anisotopy = FALSE`
 
 
 ```{r modsel1}
@@ -879,16 +879,16 @@ For the second round of model selection with different combinations of vessel ef
 
 Model selection 2 (covariates) options, FieldConfig default (all IID), with anisotropy:
 
-1. "_base";          No vessel overdispersion or length/number covariates   
-1.  "_len";           Predator mean length covariate
-1.  "_num";           Number of predator species covariate
-1.  "_lennum";        Predator mean length and number of predator species covariates
-1.  "_sst";           Combined in situ and OISST covariate
-1.  "_lensst";        Predator mean length and SST covariates
-1.  "_numsst";        Number of predator species and SST covariates
-1.  "_lennumsst";     Predator mean length, number of predator species, and SST covariates
-1.  "_eta10";         Overdispersion (vessel effect) in first linear predictor (prey encounter)
-1.  "_eta11";         Overdispersion (vessel effect) in both linear predictors (prey encounter and weight)
+1.  "_base" =          No vessel overdispersion or length/number covariates   
+1.  "_len" =           Predator mean length covariate
+1.  "_num" =           Number of predator species covariate
+1.  "_lennum" =        Predator mean length and number of predator species covariates
+1.  "_sst" =           Combined in situ and OISST covariate
+1.  "_lensst" =        Predator mean length and SST covariates
+1.  "_numsst" =        Number of predator species and SST covariates
+1.  "_lennumsst" =     Predator mean length, number of predator species, and SST covariates
+1.  "_eta10" =         Overdispersion (vessel effect) in first linear predictor (prey encounter)
+1.  "_eta11" =         Overdispersion (vessel effect) in both linear predictors (prey encounter and weight)
 
 
 ```{r modsel2}
