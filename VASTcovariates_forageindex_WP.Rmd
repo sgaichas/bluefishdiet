@@ -980,7 +980,7 @@ stratlook <- data.frame(Stratum = c("Stratum_1",
 
 ### Fall Index  
 
-Many indices can be derived from the VAST model (Fig. \@ref(fig:fallall)). 
+Many indices for different spatial strata can be derived from the VAST model. Fall indices (Fig. \@ref(fig:fallall)) for the full spatial domain (AllEPU) through smaller strata were produced. The same regions are used for all models. 
 
 ```{r fallall, fig.cap="All Fall forage indices"}
 splitoutput <- read.csv("pyindex/allagg_fall_500_lennosst_ALLsplit_biascorrect/Index.csv")
@@ -1065,9 +1065,15 @@ ggplot(MABGBprop, aes(x=Time, y=Estimate, colour = Region)) +
 
 The VAST model predicts density of forage fish across the entire model domain for each year (Fig. \@ref(fig:falldens)). 
 
-![Fall density maps with covariates](pyindex/allagg_fall_500_lennosst_ALLsplit_biascorrect/ln_density-predicted.png){#fig:falldens}
+```{r falldens, fig.cap="Yearly maps of VAST model estimated forage fish density for Fall (months 7-12)."}
+knitr::include_graphics("pyindex/allagg_fall_500_lennosst_ALLsplit_biascorrect/ln_density-predicted.png")
+```
+
+<!--![Fall density maps with covariates](pyindex/allagg_fall_500_lennosst_ALLsplit_biascorrect/ln_density-predicted.png){#fig:falldens}-->
  
 ### Fall Diagnostics {.tabset}
+
+Basic VAST diagnostics include maps of the spatial grid knot placement ("Data_and_knots"), maps of included station locations for each year ("Data_by_year"), residual plots ("quantile residuals"), maps of residuals for each station ("quantile_residuals_on_map"), an anisotropy plot indicating directional correlation ("Aniso"), and a plot of the estimated change in forage fish center of gravity over time ("center_of_gravity"). We present these plots for each of the models in numbered sections below.
 
 ```{r, results='asis'}
 
@@ -1096,9 +1102,9 @@ for(p in diagplots){
 
 ### Spring Index  
 
-Plot individual time series
+Spring indices (Fig. \@ref(fig:springall)) for the full spatial domain (AllEPU) through smaller strata were produced.
 
-```{r}
+```{r springall, fig.cap="All Spring forage indices"}
 splitoutput <- read.csv("pyindex/allagg_spring_500_lennosst_ALLsplit_biascorrect/Index.csv")
 
 splitoutput <- splitoutput %>%
@@ -1116,9 +1122,9 @@ ggplot(splitoutput, aes(x=Time, y=Estimate, colour=Region)) +
 
 ```
 
- or just the indices from inshore (alb), inshore bluefish, offshore bluefish, and further out, plus the state and federal waters split.
- 
-```{r}
+We can compare the indices relevant to bluefish on the same scale: inshore (Albatross strata), inshore bluefish, offshore bluefish, and further out, plus the state and federal waters split (Fig. \@ref(fig:springsome)).
+
+```{r springsome, fig.cap="Bluefish-related Spring forage indices"}
 in2off <- splitoutput %>%
   dplyr::select(Time, Region, Estimate, Std..Error.for.Estimate) %>%
   tidyr::pivot_longer(c(Estimate, Std..Error.for.Estimate), names_to = "Var") %>%
@@ -1148,9 +1154,9 @@ ggplot(in2off, aes(x=Time, y=Estimate, colour = Region)) +
 
 ```
 
- or as proportions (here proportion of MABGB index).
+Proportions of prey in each bluefish relevant area for spring can be compared (here as a proportion of the full MABGB index; Fig. \@ref(fig:springprop)).
 
-```{r}
+```{r springprop, fig.cap="Spring forage indices as proportion of the Mid Atlantic and Georges Bank area."}
 MABGBprop <- in2off %>%
   #dplyr::filter(Region != "AllEPU") %>%
   dplyr::select(Time, Region, Estimate) %>%
@@ -1180,9 +1186,17 @@ ggplot(MABGBprop, aes(x=Time, y=Estimate, colour = Region)) +
 
 ### Spring predicted ln-density
 
-![Spring density maps with covariates](pyindex/allagg_spring_500_lennosst_ALLsplit_biascorrect/ln_density-predicted.png)
+The VAST model predicts density of forage fish across the entire model domain for each year (Fig. \@ref(fig:springdens)). 
+
+```{r springdens, fig.cap="Yearly maps of VAST model estimated forage fish density for Spring (months 1-6)."}
+knitr::include_graphics("pyindex/allagg_spring_500_lennosst_ALLsplit_biascorrect/ln_density-predicted.png")
+```
+
+<!--![Spring density maps with covariates](pyindex/allagg_spring_500_lennosst_ALLsplit_biascorrect/ln_density-predicted.png)-->
 
 ### Spring Diagnostics {.tabset}
+
+Diagnostics shown for the spring model are as described above for the fall model. 
 
 ```{r, results='asis'}
 
@@ -1196,7 +1210,9 @@ diagplots <- c("Data_and_knots",
 for(p in diagplots){
   
     cat("  \n####",  as.character(p),"  \n")
-    cat(paste0("![](pyindex/allagg_spring_500_lennosst_ALLsplit_biascorrect/",
+    cat(paste0("![Spring diagnostics:",
+               p,
+               "](pyindex/allagg_spring_500_lennosst_ALLsplit_biascorrect/",
                       p,
                       ".png)")) 
     cat("  \n")   
@@ -1210,9 +1226,9 @@ for(p in diagplots){
 
 ### Annual Index  
 
-Plot individual time series with standard errors:
+The Annual forage index uses data from all months each year (1-12). The same plots are presented as those above for Fall and Spring indices. Fig. \@ref(fig:annualall) shows all annual forage index time series with standard errors.
 
-```{r}
+```{r annualall, fig.cap="All Annual forage indices"}
 splitoutput <- read.csv("pyindex/allagg_annual_500_lennosst_ALLsplit_biascorrect/Index.csv")
 
 splitoutput <- splitoutput %>%
@@ -1230,9 +1246,10 @@ ggplot(splitoutput, aes(x=Time, y=Estimate, colour=Region)) +
 
 ```
 
- or just the indices from inshore (alb), inshore bluefish, offshore bluefish, and further out, plus the state and federal waters split.
- 
-```{r}
+We can compare the annual indices relevant to bluefish on the same scale: inshore (Albatross strata), inshore bluefish, offshore bluefish, and further out, plus the state and federal waters split (Fig. \@ref(fig:annualsome)).
+
+```{r anualsome, fig.cap="Bluefish-related Annual forage indices"}
+
 in2off <- splitoutput %>%
   dplyr::select(Time, Region, Estimate, Std..Error.for.Estimate) %>%
   tidyr::pivot_longer(c(Estimate, Std..Error.for.Estimate), names_to = "Var") %>%
@@ -1262,9 +1279,9 @@ ggplot(in2off, aes(x=Time, y=Estimate, colour = Region)) +
 
 ```
 
- or as proportions (here proportion of MABGB index).
+Proportions of prey in each bluefish relevant area for the annual model can be compared (here as a proportion of the full MABGB index; Fig. \@ref(fig:annualprop)).
 
-```{r}
+```{r annualprop, fig.cap="Annual forage indices as proportion of the Mid Atlantic and Georges Bank area."}
 MABGBprop <- in2off %>%
   #dplyr::filter(Region != "AllEPU") %>%
   dplyr::select(Time, Region, Estimate) %>%
@@ -1293,9 +1310,17 @@ ggplot(MABGBprop, aes(x=Time, y=Estimate, colour = Region)) +
 
 ### Annual predicted ln-density
 
-![Annual density maps with covariates](pyindex/allagg_annual_500_lennosst_ALLsplit_biascorrect/ln_density-predicted.png)
+The VAST model predicts density of forage fish across the entire model domain for each year (Fig. \@ref(fig:annualdens)). 
+
+```{r annualdens, fig.cap="Yearly maps of VAST model estimated annual forage fish density (months 1-12)."}
+knitr::include_graphics("pyindex/allagg_annual_500_lennosst_ALLsplit_biascorrect/ln_density-predicted.png")
+```
+
+<!--![Annual density maps with covariates](pyindex/allagg_annual_500_lennosst_ALLsplit_biascorrect/ln_density-predicted.png)-->
  
 ### Annual Diagnostics {.tabset}
+
+Diagnostics shown for the annual model are as described above for the falland spring models. 
 
 ```{r, results='asis'}
 
@@ -1309,7 +1334,9 @@ diagplots <- c("Data_and_knots",
 for(p in diagplots){
   
     cat("  \n####",  as.character(p),"  \n")
-    cat(paste0("![](pyindex/allagg_annual_500_lennosst_ALLsplit_biascorrect/",
+    cat(paste0("![Annual diagnostics:",
+               p,
+               "](pyindex/allagg_annual_500_lennosst_ALLsplit_biascorrect/",
                       p,
                       ".png)")) 
     cat("  \n")   
@@ -1326,18 +1353,19 @@ The full results of all models are archived on [google drive](https://drive.goog
 
 Current inputs for the bluefish assessment implemented in WHAM [@stock_woods_2021] include a subset of the stratum-specific indices calculated above. The index is calculated for each season and the annual model for several regions relevant to the bluefish assessment:
 
-1.  Albatross New (AlbNew) includes all inshore and new offshore survey strata (largest area)
-1.  Albatross Old (AlbOld) includes all inshore survey strata 
-1.  Bigelow New (BigNew) includes the subset of inshore survey strata that can be sampled by the R/V Henry Bigelow plus new offshore strata
-1.  Bigelow Old (BigOld) includes the subset of inshore survey strata that can be sampled by the R/V Henry Bigelow
-1.  StateWaters includes the coastline to 3 nautical miles offshore (smallest area)
+1.  Albatross New (AlbNew) includes all inshore and new offshore survey strata (largest area, combines area in Figs. \@ref(fig:albin), \@ref(fig:bluein), and \@ref(fig:blueoff))
+1.  Albatross Old (AlbOld) includes all inshore survey strata (combines area in Figs. \@ref(fig:albin) and \@ref(fig:bluein))
+1.  Bigelow New (BigNew) includes the subset of inshore survey strata that can be sampled by the R/V Henry Bigelow plus new offshore strata (combines area in Figs. \@ref(fig:bluein) and \@ref(fig:blueoff))
+1.  Bigelow Old (BigOld) includes the subset of inshore survey strata that can be sampled by the R/V Henry Bigelow (area in Fig. \@ref(fig:bluein))
+1.  StateWaters includes the coastline to 3 nautical miles offshore (smallest area, in Fig. \@ref(fig:statewaters))
 
 WHAM model inputs were processed with the [`WHAMinputs.R`](https://github.com/sgaichas/bluefishdiet/blob/main/WHAMinputs.R) script.
 
 ```{r, code = readLines(here("WHAMinputs.R")), eval=F}
 ```
 
-Visualize WHAM inputs:
+Indices in the strata above for input in to WHAM are plotted below (Figs. \@ref(fig:WHAMfall), \@ref(fig:WHAMspring), \@ref(fig:WHAMannual)).
+
 ```{r}
 WHAMinputsviz <- function(infile) {
   
@@ -1400,24 +1428,28 @@ WHAMinputsviz <- function(infile) {
 ```
 
 ### WHAM forage index time series Fall
-```{r}
+
+```{r WHAMfall, fig.cap="Time series of VAST estimated fall forage indices for input into WHAM, 1985-2021"}
 WHAMinputsviz(infile = "pyindex/allagg_fall_500_lennosst_ALLsplit_biascorrect/Index.csv")
 ```
 
 ### WHAM forage index time series Spring
-```{r}
+
+```{r WHAMspring, fig.cap="Time series of VAST estimated spring forage indices for input into WHAM, 1985-2021"}
 WHAMinputsviz(infile = "pyindex/allagg_spring_500_lennosst_ALLsplit_biascorrect/Index.csv")
 ```
 
 ### WHAM forage index time series Annual
-```{r}
+
+```{r WHAMannual, fig.cap="Time series of VAST estimated annual forage indices for input into WHAM, 1985-2021"}
 WHAMinputsviz(infile = "pyindex/allagg_annual_500_lennosst_ALLsplit_biascorrect/Index.csv")
 ```
 
+All of the above indices were provided for testing within the WHAM-based bluefish assessment model.
 
 # Discussion
 
-Bluefish are generalist predators. Understanding how bluefish availability may be affected by their prey field means looking across many potential prey species, including species not well sampled by bottom trawl surveys. We characterized aggregate forage fish trends using piscivore stomach data as input observations to a vector autoregressive spatio-temporal (VAST) model. The resulting model-derived forage indices suggest that aggregate forage fish have fluctuated in both space and time in the Northeast US, especially in areas relevant to the bluefish assessment. 
+Bluefish are generalist predators. Understanding how bluefish availability may be affected by their prey field means looking across many potential prey species, including species not well sampled by bottom trawl surveys. We characterized aggregate forage fish trends using piscivore stomach data as input observations to a vector autoregressive spatio-temporal (VAST) model. The resulting model-derived forage indices suggest that aggregate forage fish biomass has fluctuated in both space and time in the Northeast US, especially in areas relevant to the bluefish assessment. Incorporating these indices into the bluefish assessment model is in progress.
 
 Discussion points
 
