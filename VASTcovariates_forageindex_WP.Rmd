@@ -8,15 +8,12 @@ output:
   bookdown::html_document2: 
     toc: true
     toc_float: true
-    pandoc_args: ["--filter", "pandoc-crossref"]
   bookdown::word_document2:
     toc: true
-    pandoc_args: ["--filter", "pandoc-crossref"]
   bookdown::pdf_document2:
     includes: 
        in_header: latex/header1.tex
     keep_tex: true
-    pandoc_args: ["--filter", "pandoc-crossref"]
 subtitle: "Vector Autoregressive Spatio-Temporal (VAST) modeling of piscivore stomach
   contents, 1985-2021"
 link-citations: yes
@@ -28,6 +25,8 @@ bibliography: FishDiet_EcoIndicators.bib
 
 #  word_document: default 
 #    extra_dependencies: ["flafter"]
+#    pandoc_args: ["--filter", "pandoc-crossref"]
+
 
 knitr::opts_chunk$set(echo = FALSE, # no code blocks in word doc
                       message = FALSE,
@@ -295,7 +294,7 @@ ggplot(data = ecodata::coast) +
 We model all bluefish prey in aggregate as a single category. The mean weight of bluefish prey in a stomach at each location is treated as biomass data in the model. Therefore, VAST applies a delta model where the first linear predictor models encounter rate and the second linear predictor models amount of prey (equivalent to positive catch rates on a survey). Following what @ng_predator_2021 did for herring, as well as recommended practice for biomass data [@thorson_guidance_2019], we apply a Poisson-link delta model to estimate expected prey mass per predator stomach.
 
 #### Spatial variation, resolution, response type, and temporal correlation
-We include spatial and spatio-temporal variation in both linear predictors, but test whether the data support these effects using model selection (see below). Similar to @ng_predator_2021 we used the default spatial smoother in VAST, the stochastic partial differential equation (SPDE) approximation to the Mat\'ern correlation function (method = "mesh"; @thorson_guidance_2019). Although directional correlation (anistropy) can be common in fishery collections with depth gradients along a continental shelf [@thorson_guidance_2019], we tested whether the inclusion of anistropy as a fixed effect was supported using model selection (see below). We used a higher spatial resolution than @ng_predator_2021 did for herring-predator pairs, here defining 500 "knots" or standardized locations optimally allocated among all observed survey stations in the full dataset as estimated by k-means clustering of the data, to define the spatial dimensions of each seasonal model and the annual model.
+We include spatial and spatio-temporal variation in both linear predictors, but test whether the data support these effects using model selection (see below). Similar to @ng_predator_2021 we used the default spatial smoother in VAST, the stochastic partial differential equation (SPDE) approximation to the Mat\'ern correlation function (method = "mesh"; @thorson_guidance_2019). Although directional correlation (anisotopy) can be common in fishery collections with depth gradients along a continental shelf [@thorson_guidance_2019], we tested whether the inclusion of anisotopy as a fixed effect was supported using model selection (see below). We used a higher spatial resolution than @ng_predator_2021 did for herring-predator pairs, here defining 500 "knots" or standardized locations optimally allocated among all observed survey stations in the full dataset as estimated by k-means clustering of the data, to define the spatial dimensions of each seasonal model and the annual model.
 
 Modeling all bluefish prey in aggregate leads to a univariate model, producing a single forage index which is most easily integrated into the bluefish assessment model. We did not include temporal correlation in fixed intercepts to maintain independence of forage abundance in each modeled year [@thorson_guidance_2019]. We did not include temporal correlation in spatio-temporal random effects because most survey areas were sampled each year, so projecting forage "hotspots" between years using temporal correlation was not desirable for this application. 
 
@@ -313,7 +312,7 @@ The derived quantity of interest here is a biomass index for each of spring, fal
 Bias correction of the forage fish biomass index for each model (and spatial subdivisions, see below) is based on @thorson_implementing_2016, as implemented in the VAST development branch code (https://github.com/James-Thorson-NOAA/VAST/tree/dev). 
 
 ### Model selection  
-We compared the AIC for the 500 knot models to see if including the spatial and spatio-temporal random effects in the first and second linear predictors improved the model fit. Model structures tested include with and without anistropy (2 fixed parameters), and with and without spatial and spatio-temporal random effects in the second linear predictor or both linear predictors. This follows the model selection process outlined in @ng_predator_2021 using restricted maximum likelihood (REML; @zuur_mixed_2009). 
+We compared the AIC for the 500 knot models to see if including the spatial and spatio-temporal random effects in the first and second linear predictors improved the model fit. Model structures tested include with and without anisotopy (2 fixed parameters), and with and without spatial and spatio-temporal random effects in the second linear predictor or both linear predictors. This follows the model selection process outlined in @ng_predator_2021 using restricted maximum likelihood (REML; @zuur_mixed_2009). 
 
 Following this, we evaluated catchability covariates using AIC to determine which are best supported by the data. We used the structure selected by the REML model selection, then evaluated vessel effects (overdispersion) and a range of potential catchability covariates using maximum likelihood to calculate AIC instead of REML, because the spatial and spatio-temporal random effects are the same across models. 
 
@@ -401,18 +400,6 @@ ggplot(data = ecodata::coast) +
 
 ```
 
-#### State waters
-```{r statewaters, fig.cap="Map of state waters: coastline out to 3 nautical miles from shore."}
-
-ggplot(data = ecodata::coast) +
-  geom_sf() + 
-  geom_point(data = FishStatsUtils::northwest_atlantic_grid, aes(x = Lon, y = Lat), size=0.05, alpha=0.1) +
-  geom_point(data = statewatersgrid, aes(x = Lon, y = Lat), size=0.05, colour = "green",  alpha=0.1) +
-  coord_sf(xlim = c(-79, -65.5), ylim = c(33, 45)) #+
-  #ggtitle("Federal waters")
-
-```
-
 #### Albatross inshore survey strata
 ```{r albin, fig.cap="Map of inshore survey strata formerly surveyed by the R/V Albatross, now surveyed by NEAMAP."}
 
@@ -444,6 +431,18 @@ ggplot(data = ecodata::coast) +
   geom_sf() + 
   geom_point(data = FishStatsUtils::northwest_atlantic_grid, aes(x = Lon, y = Lat), size=0.05, alpha=0.1) +
   geom_point(data = bfoffshoregrid, aes(x = Lon, y = Lat), size=0.05, colour = "green",  alpha=0.1) +
+  coord_sf(xlim = c(-79, -65.5), ylim = c(33, 45)) #+
+  #ggtitle("Federal waters")
+
+```
+
+#### State waters
+```{r statewaters, fig.cap="Map of state waters: coastline out to 3 nautical miles from shore."}
+
+ggplot(data = ecodata::coast) +
+  geom_sf() + 
+  geom_point(data = FishStatsUtils::northwest_atlantic_grid, aes(x = Lon, y = Lat), size=0.05, alpha=0.1) +
+  geom_point(data = statewatersgrid, aes(x = Lon, y = Lat), size=0.05, colour = "green",  alpha=0.1) +
   coord_sf(xlim = c(-79, -65.5), ylim = c(33, 45)) #+
   #ggtitle("Federal waters")
 
@@ -702,7 +701,7 @@ The full NEFSC diet database 1985-2021 contains `r ndietNEFSC` survey stations w
 
 NEAMAP survey stations with diet collections for piscivores (n = `r neamap_npisctows`) had a higher proportion with our defined bluefish prey (n = `r neamap_nbfpreytows`, `r (neamap_nbfpreytows/neamap_npisctows)*100`%). 
 
-The number of survey stations missing surface temperature data varied considerably by decade. A large percentage of survey stations lacked in-situ temperature measurements between 1985 and 1990, while the percentage of stations missing temperature was generally below 10% (with a few exceptions) from 1991-2021 (Table \@ref{tab:sstdat}). Therefore, OISST temperature estimates were more commonly substituted early in the time series. 
+The number of survey stations missing surface temperature data varied considerably by decade. A large percentage of survey stations lacked in-situ temperature measurements between 1985 and 1990, while the percentage of stations missing temperature was generally below 10% (with a few exceptions) from 1991-2021 (Table \@ref(tab:sstdat)). Therefore, OISST temperature estimates were more commonly substituted early in the time series. 
 
 ```{r sstdat}
 #[add stuff about how many SST values were missing and which years got substituted]
@@ -738,7 +737,7 @@ flextable::flextable(stnsummary) %>%
 
 ## VAST model selection  
 
-Comparisons of AIC are presented for both the first (spatial and spatio-temporal random effects, Table \@ref{tab:mmodsel1}) and second (catchability covariates), Table \@ref{tab:mmodsel2}) rounds of model selection. 
+Comparisons of AIC are presented for both the first (spatial and spatio-temporal random effects, Table \@ref(tab:modsel1)) and second (catchability covariates, Table \@ref(tab:modsel2)) rounds of model selection. 
 
 ```{r}
 
@@ -836,6 +835,22 @@ getmodinfo <- function(d.name){
 modcompare <- purrr::map_dfr(moddirs, getmodinfo)
 ```
 
+Models compared using REML are identified by model name ("modname" in Tables \@ref(tab:modsel1)) which includes all prey aggregated ("allagg" for all models), season ("all" for annual models of months 1-12, "fall" for models of months 7-12, and "spring" for models of months 1-6), number of knots (500 for all models), and which fixed and random spatial and spatio-temporal effects were included in which linear predictor (1 or 2). The names for model options and associated VAST model settings are:
+
+Model selection 1 (spatial, spatio-temporal effects, no covariates) options (following @ng_predator_2021) and naming:
+*  All models set Use_REML = TRUE in fit_model specifications.  
+*  Modeled effects, model name suffix, and VAST settings by model:  
+
+1.  Spatial and spatio-temporal random effects plus anisotropy in both linear predictors;  "_alleffectson"; FieldConfig default (all IID)
+1.  Spatial and spatio-temporal random effects in both linear predictors with anisotopy turned off;  "_noaniso" ; FieldConfig default (all IID) and `use_anisotopy = FALSE`
+1.  Spatial and spatio-temporal random effects plus anisotropy only in linear predictor 1;  "_noomeps2"; FieldConfig = 0 for Omega2, Epsilon2
+1.  Spatial and spatio-temporal random effects only in linear predictor 1 with anisotopy turned off; "_noomeps2_noaniso";  FieldConfig = 0 for Omega2, Epsilon2 and `use_anisotopy = FALSE`
+1.  Spatial random effects plus anisotropy only in linear predictor 1;  "_noomeps2_noeps1"; FieldConfig = 0 for Omega2, Epsilon2, Epsilon1
+1.  Spatial random effects only in linear predictor 1 with anisotopy turned off;  "_noomeps2_noeps1_noaniso"; FieldConfig = 0 for Omega2, Epsilon2, Epsilon1 and `use_anisotopy = FALSE`
+1.  Anisotropy, but no spatial or spatio-temporal random effects in either linear predictor;  "_noomeps12"; FieldConfig = 0 for both Omega, Epsilon 
+1.  No spatial or spatio-temporal random effects in either linear predictor;  "_noomeps12_noaniso"; FieldConfig = 0 for both Omega, Epsilon  and `use_anisotopy = FALSE`
+
+
 ```{r modsel1}
 modselect <- modcompare %>%
   dplyr::mutate(season = case_when(str_detect(modname, "_fall_") ~ "Fall",
@@ -854,12 +869,29 @@ modselect <- modcompare %>%
   dplyr::arrange(season, AIC)
 
 DT::datatable(modselect, rownames = FALSE, 
-              options= list(pageLength = 25, scrollX = TRUE))
+              options= list(pageLength = 25, scrollX = TRUE),
+              caption = "Comparison of delta AIC values using Restricted Maxiumum Likelihood (REML) for alternative fixed and random effects model structures. See text for model descriptions.")
 ```
 
-Using REML, models including spatial and spatio-temporal random effects as well as anistropy were best supported by the data. This was true for the spring dataset, the fall dataset, and the annual (seasons combined) dataset. 
+Using REML, models including spatial and spatio-temporal random effects as well as anisotropy were best supported by the data. This was true for the spring dataset, the fall dataset, and the annual (seasons combined) dataset. 
 
-```{r modesel2}
+For the second round of model selection with different combinations of vessel effects and or catchability covariates, "modname" in \@ref(tab:modsel2) follows a similar pattern as above, with  all prey aggregated ("allagg" for all models), season ("all" for annual models of months 1-12, "fall" for models of months 7-12, and "spring" for models of months 1-6), number of knots (500 for all models), and which vessel effects or covariates were included. The names for model options and associated VAST model settings are: 
+
+Model selection 2 (covariates) options, FieldConfig default (all IID), with anisotropy:
+
+1. "_base";          No vessel overdispersion or length/number covariates   
+1.  "_len";           Predator mean length covariate
+1.  "_num";           Number of predator species covariate
+1.  "_lennum";        Predator mean length and number of predator species covariates
+1.  "_sst";           Combined in situ and OISST covariate
+1.  "_lensst";        Predator mean length and SST covariates
+1.  "_numsst";        Number of predator species and SST covariates
+1.  "_lennumsst";     Predator mean length, number of predator species, and SST covariates
+1.  "_eta10";         Overdispersion (vessel effect) in first linear predictor (prey encounter)
+1.  "_eta11";         Overdispersion (vessel effect) in both linear predictors (prey encounter and weight)
+
+
+```{r modsel2}
 # from each output folder in pyindex, 
 outdir <- here("pyindex_modsel2")
 moddirs <- list.dirs(outdir) 
@@ -886,7 +918,8 @@ modselect2 <- modcompare2 %>%
   dplyr::arrange(season, AIC)
 
 DT::datatable(modselect2, rownames = FALSE, 
-              options= list(pageLength = 50, scrollX = TRUE))
+              options= list(pageLength = 50, scrollX = TRUE),
+              caption = "Comparison of delta AIC values for alternative vessel effects and catchability covariates. See text for model descriptions.")
 
 ```
 
