@@ -1248,7 +1248,7 @@ ggplot(splitoutput, aes(x=Time, y=Estimate, colour=Region)) +
 
 We can compare the annual indices relevant to bluefish on the same scale: inshore (Albatross strata), inshore bluefish, offshore bluefish, and further out, plus the state and federal waters split (Fig. \@ref(fig:annualsome)).
 
-```{r anualsome, fig.cap="Bluefish-related Annual forage indices"}
+```{r annualsome, fig.cap="Bluefish-related Annual forage indices"}
 
 in2off <- splitoutput %>%
   dplyr::select(Time, Region, Estimate, Std..Error.for.Estimate) %>%
@@ -1451,16 +1451,15 @@ All of the above indices were provided for testing within the WHAM-based bluefis
 
 Bluefish are generalist predators. Understanding how bluefish availability may be affected by their prey field means looking across many potential prey species, including species not well sampled by bottom trawl surveys. We characterized aggregate forage fish trends using piscivore stomach data as input observations to a vector autoregressive spatio-temporal (VAST) model. The resulting model-derived forage indices suggest that aggregate forage fish biomass has fluctuated in both space and time in the Northeast US, especially in areas relevant to the bluefish assessment. Incorporating these indices into the bluefish assessment model is in progress.
 
-Discussion points
+Although time series of aggregate forage biomass for direct comparison with this work are lacking, we think, due to good sample sizes and VAST model diagnostics, that this is the best representation we have of aggregate forage fish trends in this region.  Integrating fish stomach content information within a VAST model to index prey biomass was shown to be successful with selected predators of Atlantic herring in the Northeast US [@ng_predator_2021], using a subset of the data we used here. In particular, reasonable agreement was found between the Atlantic cod diet-derived Atlantic herring biomass index and Atlantic herring assessment biomass trends. However, herring indices based on stomach contents from other predators (e.g., silver hake) had poor agreement with herring assessment trends [@ng_predator_2021]. @ng_predator_2021 noted that decadal trends generally agreed between diet-based and stock assessment Atlantic herring biomass indices, but that shorter term trends varied considerably by season and predator. Our approach combining stomach data across multiple piscivore predators was intended to improve sample size for the aggregate prey index so that our results integrate across individual predator sampling variability, and perhaps clarify the longer term, decadal trends in forage fish. However, we don't have an aggregate forage fish assessment time series for comparison. Using survey biomass catch of forage fish directly can be problematic, including issues with poor sample size or missing data for these small pelagic fish and squids. Further, survey biomass time series for assessed forage fish (Atlantic mackerel and Atlantic herring) can be at odds with other assessment inputs and assessment-estimated biomass trends. Therefore, our forage index represents an alternative, possibly more complete assessment of aggregate forage fish in this region. 
 
-*  Aggregate indices should be more stable than individual species trends, but still show fluctuations.
-      +  Good agreement found between some individual predator (cod) diet derived biomass index and Atlantic herring assessment trends. Other less well sampled individual predators (hake) had poor agreement. 
-      +  Our approach combining across predators was intended to improve sample size for the aggregate prey index. However we don't have an aggregate forage fish time series for comparison. 
-      +  Nevertheless, we think due to good sample sizes and model diagnostics, this is the best representation we have of aggregate forage fish trends in this region.
 *  Sampling process is fish predation, which we somewhat controlled for as catchability covariates for number of predators, predator size, and temperature. 
       +  Fish id in stomachs could be improved; had to leave out  "Fish unidentified". Increased use of this id category would degrade the use of this index in the future. 
       +  Aggregated predators most similar to bluefish, but some differences in predator sampling over time (e.g. squid stomachs sampled up to 2000s, not thereafter) 
-      +  
+
+
+*  Aggregate indices should be more stable than individual species trends, but still show fluctuations.
+
 *  What drives forage fish? Comparison of these indices with zooplankton and other environmental drivers in progress for state of the ecosystem report. 
 
 Possible future additions to benefit use in the bluefish assessment:
