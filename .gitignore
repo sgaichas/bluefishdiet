@@ -57,6 +57,10 @@ vignettes/*.pdf
 /pyindex_testspatial
 /testdev
 
+/pyindex-local
+/pyindex_modsel1
+/pyindex_modsel2
+
 /spatialdat/World_Internal_Waters_v3_20191118.zip  
 /spatialdat/World_Internal_Waters_v3_20191118
 /spatialdat/CoastalZoneManagementActBoundary
