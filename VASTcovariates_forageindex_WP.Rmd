@@ -5,15 +5,15 @@ author: "Sarah Gaichas, James Gartland, Brian Smith, Elizabeth Ng, Michael Celes
   Anthony Wood, Katie Drew, Abigail Tyrell, and James Thorson"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output:
+  bookdown::pdf_document2:
+    includes: 
+       in_header: latex/header1.tex
+    keep_tex: true
   bookdown::html_document2: 
     toc: true
     toc_float: true
   bookdown::word_document2:
     toc: true
-  bookdown::pdf_document2:
-    includes: 
-       in_header: latex/header1.tex
-    keep_tex: true
 subtitle: "Vector Autoregressive Spatio-Temporal (VAST) modeling of piscivore stomach
   contents, 1985-2021"
 link-citations: yes
