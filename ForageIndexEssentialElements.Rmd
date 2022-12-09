@@ -141,12 +141,16 @@ cbPalette <- c("#999999",  "#56B4E9", "#E69F00", "#CC79A7", "#009E73", "#F0E442"
     dplyr::select(Time, BigOld, BigNew, AlbOld, AlbNew, StateWaters) %>%
     tidyr::pivot_longer(!c(Time, Var), names_to = "Region", values_to = "value") %>%
     tidyr::pivot_wider(names_from = "Var", values_from = "value")
+  
+  foragemax <- max(forageindex$Estimate)
  
   ggplot(forageindex, aes(x=Time, y=Estimate, colour = Region)) +
     geom_errorbar(aes(ymin=Estimate+SE, ymax=Estimate-SE))+
     geom_point()+
     geom_line() +
-    scale_colour_manual(values=cbPalette)
+    scale_colour_manual(values=cbPalette) +
+    scale_y_continuous(labels=function(x)round(x/foragemax, digits = 1))+
+    ylab("Relative forage biomass scaled to maximum")
   
 } 
 ```
