@@ -1,6 +1,6 @@
 ---
 title: "Compare VAST and survey planktivores"
-author: "Sarah Giachas"
+author: "Sarah Gaichas"
 date: "2022-12-07"
 output: html_document
 ---
@@ -11,13 +11,12 @@ knitr::opts_chunk$set(echo = TRUE)
 library(dplyr)
 ```
 
-Compare SOE aggregate survey bio indices to VAST forage indez
 
-Caveats: may not contain same species, wont be on same scale
+Compare SOE aggregate survey bio indices to VAST forage index. Caveats: may not contain same species, wont be on same scale
 
-Compare indices scaled to mean
+## Compare indices scaled to mean for each EPU
 
-Compare species lists
+Use Kim B's code to extract planktivores from `ecodata::aggregate_biomass`, modify code to calculate time series sd, rescale
 
 ```{r SOEplanktivores}
 planktivores <- ecodata::aggregate_biomass %>%
@@ -38,16 +37,20 @@ planktivores <- ecodata::aggregate_biomass %>%
   dplyr::mutate(Mean = as.numeric(Mean))
 
 
-agg_bio<-planktivores %>% dplyr::filter(EPU %in% c("MAB", "GB"),
+agg_bio<-planktivores %>% dplyr::filter(EPU %in% c("MAB", "GB", "GOM"),
          Time >= 1968) %>%
   dplyr::group_by(Var, EPU) %>%
   dplyr::mutate(hline = mean(Mean, na.rm = T), 
+                tssd = sd(SD, na.rm = T),
                  upper = Mean + (2*SD),
                 lower = Mean - (2*SD)) %>%
   dplyr::ungroup()  
 
 agg_bio_std <- agg_bio %>%
-  dplyr::mutate(cMean = Mean-hline,
-                cv = SD/Mean)
+  dplyr::mutate(stdPlank = (Mean-hline)/tssd,
+                cv = SD/Mean,
+                stdPlankupper = ,
+                stdPlanklower = )
 ```
 
+## Compare species lists
