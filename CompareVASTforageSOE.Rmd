@@ -202,7 +202,24 @@ Rescale forage indices and add to rescaled SOE plot
 
 ```{r VASTrescaleSOE}
 
-
+ecodata::forage_index %>%
+  dplyr::filter(Var %in% c("Annual Forage Fish Biomass Estimate",
+                           "Annual Forage Fish Biomass Estimate SE",
+                           "Fall Forage Fish Biomass Estimate",
+                           "Fall Forage Fish Biomass Estimate SE",
+                           "Spring Forage Fish Biomass Estimate",
+                           "Spring Forage Fish Biomass Estimate SE"))%>%
+  tidyr::separate(Var, c("season", "feeding.guild", "Null","Biomass", "Null", "SE"), sep = " ") %>% #here
+  tidyr::unite("Var", feeding.guild:season, sep = " ") %>%
+  dplyr::mutate(stat = recode(Var1, Index = "Mean",
+                      Standard = "SD")) %>%
+  dplyr::select(-Biomass, -Var1, -Null, -Units) %>%
+  # dplyr::filter(!Area == "-") %>%
+  dplyr::group_by(Var, Time, EPU, Area) %>%
+  tidyr::pivot_wider(id_cols = c(Var, Time, EPU, Area),names_from =  stat, values_from =  Value) %>%
+  dplyr::filter(!Mean == "NULL") %>%
+  dplyr::ungroup() %>%
+  dplyr::mutate(Mean = as.numeric(Mean))
 
 ```
 
