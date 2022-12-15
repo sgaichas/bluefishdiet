@@ -476,3 +476,39 @@ SOE Planktivores is currently missing both squids and all species of anchovies w
 
 Can we redo the survdat pull with the bluefish prey list? or close to it
 
+## New Survdat Aggbio with Forage species
+
+Need the script that does the aggregation with survey-based EPUs. This script uses original EPUs and older species groupings: https://github.com/NOAA-EDAB/ecodata/blob/master/data-raw/get_nefsc_survey.R
+
+```{r survdat}
+
+#object name is survdat
+#load(url("https://github.com/NOAA-EDAB/ms-keyrun/raw/master/data-raw/data/survdat.RData"))
+
+MAB <- c(1010:1080, 1100:1120, 1600:1750, 3010:3450, 3470, 3500, 3510)
+GB  <- c(1090, 1130:1210, 1230, 1250, 3460, 3480, 3490, 3520:3550)
+GOM <- c(1220, 1240, 1260:1290, 1360:1400, 3560:3830)
+
+MABgrid <-  FishStatsUtils::northwest_atlantic_grid %>%
+  filter(stratum_number %in% c(MAB))
+
+GBgrid <-  FishStatsUtils::northwest_atlantic_grid %>%
+  filter(stratum_number %in% c(GB))
+
+GOMgrid <-  FishStatsUtils::northwest_atlantic_grid %>%
+  filter(stratum_number %in% c(GOM))
+
+
+ggplot(data = ecodata::coast) +
+  geom_sf() +   
+  geom_point(data = MABgrid, aes(x = Lon, y = Lat), colour = "red", size=0.05, alpha=0.1) +
+  geom_point(data = GBgrid, aes(x = Lon, y = Lat), colour = "green", size=0.05, alpha=0.1) +
+  geom_point(data = GOMgrid, aes(x = Lon, y = Lat), colour = "blue", size=0.05, alpha=0.1) +
+  coord_sf(xlim = c(-79, -65.5), ylim = c(33, 45))+
+  ggtitle("Survey Strata Based EPUs")
+
+# shows builtin epus are not survey strata based
+#plot(sf::st_geometry(ecodata::epu_sf))
+
+```
+
