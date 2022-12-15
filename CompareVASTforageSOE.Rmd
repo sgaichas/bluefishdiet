@@ -1,7 +1,7 @@
 ---
 title: "Compare VAST and survey planktivores"
 author: "Sarah Gaichas"
-date: "2022-12-07"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
 output:
   html_document:
     code_fold: hide
@@ -14,8 +14,10 @@ knitr::opts_chunk$set(echo = TRUE,
                       results='hide')
 
 library(dplyr)
+library(tidyr)
 library(ggplot2)
 library(stringr)
+library(here)
 ```
 
 
@@ -312,6 +314,165 @@ Same plot standardized SOE planktivores and Forage index
 
 
 
+forage_std <- forage_std %>%
+  mutate(CompVar = recode(Var, "Forage Spring" = "Spring",
+                         "Forage Fall" = "Fall")) 
+ 
+forage_std$CompVar <- factor(forage_std$CompVar,levels = c("Spring",
+                                                    "Fall"))
+
+agg_bio_std <- agg_bio_std %>%
+  mutate(CompVar = recode(Var, "Planktivore Spring" = "Spring",
+                         "Planktivore Fall" = "Fall")) 
+  
+
+agg_bio_std$CompVar <- factor(agg_bio_std$CompVar,levels = c("Spring",
+                                                    "Fall"))
+
+
+p6<-agg_bio_std %>%
+  #dplyr::filter(str_detect(Var,"Planktivore")) %>%
+  ggplot2::ggplot() +
+
+  #Highlight last ten years
+  #ggplot2::annotate("rect", fill = shade.fill, alpha = shade.alpha,
+  #    xmin = x.shade.min , xmax = x.shade.max ,
+  #    ymin = -Inf, ymax = Inf) +
+  #Test for trend and add lines
+  ecodata::geom_gls(aes(x = Time, y = stdPlank,
+               color = CompVar),
+             alpha = trend.alpha, size = trend.size) +
+  ecodata::geom_lm(aes(x = Time, y = stdPlank,
+               color = CompVar),
+             alpha = trend.alpha, size = trend.size) +
+  # #ecodata::geom_lm(aes(x = Time, y = Mean))+
+
+  #Add time series
+  ggplot2::geom_ribbon(aes(x = Time, ymin = pmax(stdPlanklower), ymax = stdPlankupper),
+              alpha = 0.5,
+              fill = "grey") +
+  ggplot2::geom_line(aes(x = Time, y = stdPlank),size = lwd-0.5) +
+  ggplot2::geom_point(aes(x = Time, y = stdPlank),size = pcex-0.5) +
+  ggplot2::scale_color_manual(values = series.col, aesthetics = "color")+
+  ggplot2::guides(color = FALSE) +
+  ggplot2::geom_hline(aes(yintercept = 0,
+                 group = CompVar),
+             size = hline.size,
+             alpha = hline.alpha,
+             linetype = hline.lty)+
+       #Add Forage Index
+  ggplot2::geom_ribbon(data = forage_std, aes(ymin = stdForagelower, ymax = stdForageupper, x = Time),
+                fill = "pink", alpha = 0.5) +
+  ggplot2::geom_line(data = forage_std, aes(x = Time, y = stdForage),
+            color = "#ca0020")+
+  ggplot2::geom_point(data = forage_std, aes(x = Time, y = stdForage),
+             size = pcex-0.5,
+             color = "#ca0020")+
+  # trend test forage indices
+  ecodata::geom_gls(data = forage_std, aes(x = Time, y = stdForage,
+               color = CompVar),
+             alpha = trend.alpha, size = trend.size) +
+  ecodata::geom_lm(data = forage_std, aes(x = Time, y = stdForage,
+               color = CompVar),
+             alpha = trend.alpha, size = trend.size) +
+  
+  ggplot2::facet_wrap(EPU ~ CompVar~.,ncol = 2, scales = "free_y") +
+
+  #Axis and theme
+  ggplot2::scale_x_continuous(breaks = seq(1970, 2020, by = 10), expand = c(0.01, 0.01)) +
+  #ylim(0, 600)+
+  ggplot2::ylab(expression("Standardized Biomass Index")) +
+  ecodata::theme_facet()+
+  ggplot2::theme(strip.text=element_text(hjust=0),
+        axis.title.x=element_blank())
+
+p6
+
+
+
 ```
 
+SOE Planktivores show increasing trends for GB and GOM in Fall and GOM in Spring. No trends in the MAB or GB Spring.
+
+Forage index agrees with no trends in MAB or GB Spring, and a positive trend in GOM Spring. 
+
+Forage index disagrees with SOE Planktivores showing a significant decreasing trend in GB Fall and no trend in GOM Fall.
+
+Error bars (supposedly 2XSE for both) are larger for the Forage index overall.
+
+Really these may be tracking different things.
+
 ## Compare species lists
+
+Bluefish prey list in forage index:
+
+```{r blueprey, results='asis'}
+
+load(here("fhdat/allfh.Rdata"))
+
+# October 8 2022: add NEFSC 2021 data
+load(here("fhdat/allfh21.Rdata"))
+
+allfh <- allfh %>%
+  dplyr::bind_rows(allfh21)
+
+preycount <- allfh %>%
+   group_by(pdcomnam, pynam) %>%
+   summarise(count = n()) %>%
+   filter(pdcomnam != "") %>%
+   #arrange(desc(count))
+   pivot_wider(names_from = pdcomnam, values_from = count) 
+
+gencomlist <- allfh %>%  
+  select(pynam, pycomnam2, gencom2) %>%
+  distinct()
+
+blueprey <- preycount %>%
+  filter(BLUEFISH > 9) %>%
+  filter(!pynam %in% c("EMPTY", "BLOWN",
+                       "FISH", "OSTEICHTHYES",
+                       "ANIMAL REMAINS",
+                       "FISH SCALES")) %>%
+  #filter(!str_detect(pynam, "SHRIMP|CRAB")) %>%
+  left_join(gencomlist) %>%
+  filter(!gencom2 %in% c("ARTHROPODA", "ANNELIDA",
+                         "CNIDARIA", "UROCHORDATA",
+                         "ECHINODERMATA", "WORMS",
+                         "BRACHIOPODA", "COMB JELLIES",
+                         "BRYOZOA", "SPONGES",
+                         "MISCELLANEOUS", "OTHER")) %>%
+  arrange(desc(BLUEFISH))
+
+# kableExtra::kable(blueprey[,c('pynam','BLUEFISH')],
+#                   col.names = c('Prey name', 'Bluefish stomachs (n)'),
+#                   caption = "Table 1. Prey identified in bluefish stomachs, NEFSC diet database, 1973-2020.")
+
+flextable::flextable(blueprey[,c('pynam', 'pycomnam2','BLUEFISH')]) %>%
+  flextable::set_header_labels(pynam = "Prey name", pycomnam2 = "Prey common name", BLUEFISH = "Bluefish stomachs (n)") %>%
+  flextable::set_caption("Prey identified in bluefish stomachs, NEFSC diet database, 1973-2021.") %>%
+  #flextable::autofit()
+  flextable::width(width = c(2.5,3.5,0.5))
+
+```
+
+
+Planktivores in SOE:
+
+```{r SOEtab, results='asis'}
+
+SOEplank <- ecodata::species_groupings %>% 
+  dplyr::select(SCINAME, COMNAME, SOE.18, SOE.20) %>% 
+  dplyr::filter(SOE.18 == "Planktivore")
+
+flextable::flextable(SOEplank) %>%
+  flextable::set_header_labels(SCINAME = "Name", COMNAME = "Common name", SOE.18 = "2018-2019 SOE", SOE.20 = "2020 to present SOE") %>%
+  flextable::set_caption("Planktivore category used in State of the Ecosystem (SOE) reports, 2018-present.") %>%
+  flextable::autofit()
+
+```
+
+SOE Planktivores includes sculpins, cusk, searobins, lumpfish, and blackbelly rosefish, which are not in the Forage Index.
+SOE Planktivores is currently missing both squids and all species of anchovies which are common prey species in the Forage Index.
+
+Can we redo the survdat pull with the bluefish prey list? or close to it
+
