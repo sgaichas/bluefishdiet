@@ -556,6 +556,9 @@ Sean's SOE_fish_resource_using_strata.R code from [here](https://github.com/sluc
 
 modified for local survdat.Rdata and local species list
 ```{r}
+
+#remotes::install_github("NOAA-EDAB/survdat",build_vignettes = TRUE)
+
 #SML
 #Required packages----
 library(data.table); library(survdat); library(here)
@@ -565,18 +568,23 @@ library(data.table); library(survdat); library(here)
 # 
 # survey <- survdat::get_survdat_data(channel, getLengths = F)
 # survdat <- survey$survdat
+#object name is survdat
+load(url("https://github.com/NOAA-EDAB/ms-keyrun/raw/master/data-raw/data/survdat.RData"))
 
-survdat <- 
+pulldate <- survdat$pullDate
+functioncall <- survdat$functionCall
+survdat <- survdat$survdat
 
 #Aggregate species----
 #Grab species list
-load(here('data_raw/SOE_species_list.RData'))
+#load(here('data_raw/SOE_species_list.RData'))
+species <- as.data.table(species_groupings_forage)
 
 #Merge to get species group and fed managed status
-survdat <- merge(survdat, unique(species[, list(SVSPP, SOE.20, Fed.Managed)]), 
+survdat <- merge(survdat, unique(species[, list(SVSPP, ForageIndex)]), 
                  by = 'SVSPP', all.x = T)
 #Combine agg group and manage status
-survdat[, SOE.Managed := paste(SOE.20, Fed.Managed)]
+#survdat[, SOE.Managed := paste(SOE.20, Fed.Managed)]
 
 #Change seasons from all caps
 survdat[SEASON == 'FALL',   SEASON := 'Fall']
@@ -601,63 +609,64 @@ for(iepu in 1:length(EPU)){
   #Calculate stratified means
   all <- survdat::calc_stratified_mean(survdat, filterByArea = epu.strata,
                                        filterBySeason = c('Fall', 'Spring'),
-                                       groupDescription = 'SOE.20', tidy = T)
-  all.fmc <- survdat::calc_stratified_mean(survdat, filterByArea = epu.strata, 
-                                           filterBySeason = c('Fall', 'Spring'),
-                                           groupDescription = 'SOE.Managed', tidy = T)
-  inshore.all <- survdat::calc_stratified_mean(survdat, filterByArea = epu.inshore,
-                                               filterBySeason = c('Fall', 'Spring'),
-                                               groupDescription = 'SOE.20',
-                                               tidy = T)
-  offshore.all <- survdat::calc_stratified_mean(survdat, filterByArea = epu.offshore,
-                                                filterBySeason = c('Fall', 'Spring'),
-                                                groupDescription = 'SOE.20',
-                                                tidy = T)
-  inshore.fmc <- survdat::calc_stratified_mean(survdat, filterByArea = epu.inshore,
-                                               filterBySeason = c('Fall', 'Spring'),
-                                               groupDescription = 'SOE.Managed',
-                                               tidy = T)
-  offshore.fmc <- survdat::calc_stratified_mean(survdat, filterByArea = epu.offshore,
-                                                filterBySeason = c('Fall', 'Spring'),
-                                                groupDescription = 'SOE.Managed',
-                                                tidy = T)
-  
+                                       groupDescription = 'ForageIndex', tidy = T)
+  # all.fmc <- survdat::calc_stratified_mean(survdat, filterByArea = epu.strata, 
+  #                                          filterBySeason = c('Fall', 'Spring'),
+  #                                          groupDescription = 'SOE.Managed', tidy = T)
+  # inshore.all <- survdat::calc_stratified_mean(survdat, filterByArea = epu.inshore,
+  #                                              filterBySeason = c('Fall', 'Spring'),
+  #                                              groupDescription = 'SOE.20',
+  #                                              tidy = T)
+  # offshore.all <- survdat::calc_stratified_mean(survdat, filterByArea = epu.offshore,
+  #                                               filterBySeason = c('Fall', 'Spring'),
+  #                                               groupDescription = 'SOE.20',
+  #                                               tidy = T)
+  # inshore.fmc <- survdat::calc_stratified_mean(survdat, filterByArea = epu.inshore,
+  #                                              filterBySeason = c('Fall', 'Spring'),
+  #                                              groupDescription = 'SOE.Managed',
+  #                                              tidy = T)
+  # offshore.fmc <- survdat::calc_stratified_mean(survdat, filterByArea = epu.offshore,
+  #                                               filterBySeason = c('Fall', 'Spring'),
+  #                                               groupDescription = 'SOE.Managed',
+  #                                               tidy = T)
+  # 
   #Correct variable names before combining into one dataset
   #stratified biomass
-  all[variable == 'strat.biomass', Var := paste(SOE.20, SEASON, 'Biomass Index')]
-  all.fmc[variable == 'strat.biomass', Var := paste(SOE.Managed, 'managed species -',
-                                                    SEASON, 'Biomass Index')]
-  inshore.all[variable == 'strat.biomass', Var := paste(SOE.20, SEASON, 
-                                                        'Biomass Index - inshore')]
-  inshore.fmc[variable == 'strat.biomass', Var := paste(SOE.Managed, 'managed species -',
-                                                        SEASON, 
-                                                        'Biomass Index - inshore')]
-  offshore.all[variable == 'strat.biomass', Var := paste(SOE.20, SEASON, 
-                                                         'Biomass Index - offshore')]
-  offshore.fmc[variable == 'strat.biomass', Var := paste(SOE.Managed, 'managed species -',
-                                                         SEASON, 
-                                                         'Biomass Index - offshore')]
+  all[variable == 'strat.biomass', Var := paste(ForageIndex, SEASON, 'Biomass Index')]
+  # all.fmc[variable == 'strat.biomass', Var := paste(SOE.Managed, 'managed species -',
+  #                                                   SEASON, 'Biomass Index')]
+  # inshore.all[variable == 'strat.biomass', Var := paste(SOE.20, SEASON, 
+  #                                                       'Biomass Index - inshore')]
+  # inshore.fmc[variable == 'strat.biomass', Var := paste(SOE.Managed, 'managed species -',
+  #                                                       SEASON, 
+  #                                                       'Biomass Index - inshore')]
+  # offshore.all[variable == 'strat.biomass', Var := paste(SOE.20, SEASON, 
+  #                                                        'Biomass Index - offshore')]
+  # offshore.fmc[variable == 'strat.biomass', Var := paste(SOE.Managed, 'managed species -',
+  #                                                        SEASON, 
+  #                                                        'Biomass Index - offshore')]
   
   #Standard Error
-  all[variable == 'biomass.SE', Var := paste(SOE.20, SEASON, 
+  all[variable == 'biomass.SE', Var := paste(ForageIndex, SEASON, 
                                                      'Biomass Standard Error')]
-  all.fmc[variable == 'biomass.SE', Var := paste(SOE.Managed, 'managed species -',
-                                                     SEASON, 
-                                                     'Biomass Standard Error')]
-  inshore.all[variable == 'biomass.SE', Var := paste(SOE.20, SEASON, 
-                                                     'Biomass Standard Error - inshore')]
-  inshore.fmc[variable == 'biomass.SE', Var := paste(SOE.Managed, 'managed species -',
-                                                     SEASON, 
-                                                     'Biomass Standard Error - inshore')]
-  offshore.all[variable == 'biomass.SE', Var := paste(SOE.20, SEASON, 
-                                                      'Biomass Standard Error - offshore')]
-  offshore.fmc[variable == 'biomass.SE', Var := paste(SOE.Managed, 'managed species -',
-                                                      SEASON, 
-                                                      'Biomass Standard Error - offshore')]
-  
+  # all.fmc[variable == 'biomass.SE', Var := paste(SOE.Managed, 'managed species -',
+  #                                                    SEASON, 
+  #                                                    'Biomass Standard Error')]
+  # inshore.all[variable == 'biomass.SE', Var := paste(SOE.20, SEASON, 
+  #                                                    'Biomass Standard Error - inshore')]
+  # inshore.fmc[variable == 'biomass.SE', Var := paste(SOE.Managed, 'managed species -',
+  #                                                    SEASON, 
+  #                                                    'Biomass Standard Error - inshore')]
+  # offshore.all[variable == 'biomass.SE', Var := paste(SOE.20, SEASON, 
+  #                                                     'Biomass Standard Error - offshore')]
+  # offshore.fmc[variable == 'biomass.SE', Var := paste(SOE.Managed, 'managed species -',
+  #                                                     SEASON, 
+  #                                                     'Biomass Standard Error - offshore')]
+  # 
   #Combine into one dataset
-  epu.all <- rbindlist(list(all, all.fmc, inshore.all, inshore.fmc, offshore.all, 
-                            offshore.fmc), use.names = F)
+  epu.all <- rbindlist(list(all#, all.fmc, inshore.all, inshore.fmc, offshore.all, 
+                             #offshore.fmc
+                            ), use.names = F)
   epu.all[, Region := EPU[iepu]]
   
   #Combine with other EPUs
@@ -665,7 +674,7 @@ for(iepu in 1:length(EPU)){
 }
 
 #Remove unnecessary columns/rows
-survey.data[, c('SOE.20', 'SEASON', 'variable') := NULL]
+survey.data[, c('ForageIndex', 'SEASON', 'variable') := NULL]
 survey.data <- survey.data[!is.na(Var), ]
 
 #Rename columns and add new columns
@@ -675,7 +684,7 @@ survey.data[, Source := 'NEFSC bottom trawl survey (survdat)']
 #Set column order
 setcolorder(survey.data, c('Time', 'Value', 'Var', 'Units', 'Region', 'Source'))
 
-save(survey.data, file = here('data/Aggregate_Survey_biomass_22.RData'))
+save(survey.data, file = here('data-raw/Aggregate_ForageIndex_Survey.RData'))
 ```
 
 What proportion of each bluefish prey species in prey disaggregated diet dataset by %FO and weight? Just saved interim dataset `bluepyall_stn.rds` Compare with the same once aggregate survey index done
