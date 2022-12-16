@@ -519,15 +519,17 @@ Alter ecodata::species_groupings with a new column
 ```{r foragecolumn}
 
 # see https://stackoverflow.com/questions/32914357/dplyr-inner-join-with-a-partial-string-match
-
-as.character(blueprey$pynam)
+# https://stackoverflow.com/questions/60993676/join-data-frames-based-fuzzy-matching-of-strings
 
 library(fuzzyjoin)
 
+my_match_fun <- Vectorize(function(x,y) agrepl(x, y, ignore.case=TRUE, max.distance = 0.12))#, useBytes = TRUE))
+
 foragelist <- ecodata::species_groupings %>%
   mutate(charsciname = as.character(SCINAME)) %>%
-  regex_inner_join(blueprey, by = c(charsciname = "pynam"))
-  
+  #regex_inner_join(blueprey, by = c(charsciname = "pynam"))
+  #fuzzy_inner_join(blueprey, by = c(charsciname = "pynam"), match_fun = str_detect)
+  fuzzy_inner_join(blueprey, by = c(charsciname = "pynam"), match_fun = my_match_fun)
 
 ```
 
