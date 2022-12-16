@@ -414,7 +414,7 @@ load(here("fhdat/allfh.Rdata"))
 load(here("fhdat/allfh21.Rdata"))
 
 allfh <- allfh %>%
-  dplyr::bind_rows(allfh21)
+  dplyr::bind_rows(allfh21) 
 
 preycount <- allfh %>%
    group_by(pdcomnam, pynam) %>%
@@ -511,4 +511,27 @@ ggplot(data = ecodata::coast) +
 #plot(sf::st_geometry(ecodata::epu_sf))
 
 ```
+
+Mapping survey species to prey species. Unfortunately not easy.
+
+Alter ecodata::species_groupings with a new column
+
+```{r foragecolumn}
+
+# see https://stackoverflow.com/questions/32914357/dplyr-inner-join-with-a-partial-string-match
+
+as.character(blueprey$pynam)
+
+library(fuzzyjoin)
+
+foragelist <- ecodata::species_groupings %>%
+  mutate(charsciname = as.character(SCINAME)) %>%
+  regex_inner_join(blueprey, by = c(charsciname = "pynam"))
+  
+
+```
+
+
+What proportion of each bluefish prey species in prey disaggregated diet dataset by %FO and weight? Just saved interim dataset `bluepyall_stn.rds` Compare with the same once aggregate survey index done
+
 
