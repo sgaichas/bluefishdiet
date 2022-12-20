@@ -692,6 +692,8 @@ save(survey.data, file = here('survdat/Aggregate_ForageIndex_Survey.RData'))
 
 ```{r plotsurv}
 
+load(here('survdat/Aggregate_ForageIndex_Survey.RData'))
+
 survforage <- survey.data %>%
   dplyr::filter(Var %in% c("ForageIndex Fall Biomass Index",
                            "ForageIndex Spring Biomass Index",
@@ -871,6 +873,32 @@ p8
 
 ```
 
+Direct comparison, VAST diet based forage index x, survey same species list y
+
+```{r}
+survforage_comp <- survforage %>%
+  tidyr::separate(Var, c(NA, "Season"), sep = " ") %>%
+  dplyr::select(Time, Season, EPU, stdsurvForage, stdsurvForageupper, stdsurvForagelower) %>%
+  dplyr::mutate(Time = as.integer(Time))
+
+compareforageagg <- forage_std %>%
+  tidyr::separate(Var, c(NA, "Season"), sep = " ") %>%
+  dplyr::select(Time, Season, EPU, stdForage, stdForageupper, stdForagelower) %>%
+  left_join(survforage_comp) 
+
+ggplot2::ggplot(compareforageagg, aes(x=stdForage, y=stdsurvForage)) +
+  geom_point(color="blue", alpha=0.1)+
+  geom_abline(intercept = 0, slope = 1, lty=3) +
+  geom_smooth(method=lm) +
+  ecodata::theme_facet() +
+  facet_grid(fct_relevel(EPU,  "GOM", "GB", "MAB")~
+               fct_relevel(Season, "Spring", "Fall")) 
+  
+```
+
+Pretty well correlated in GOM spring, otherwise not, even with the same species list. 
+
+Hypothesis: survey and diet based index species composition should match well in GOM spring but not other seasons. 
 
 What proportion of each bluefish prey species in prey disaggregated diet dataset by %FO and weight? Just saved interim dataset `bluepyall_stn.rds` Compare with the same once aggregate survey index done.
 
