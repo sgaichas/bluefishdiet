@@ -16,6 +16,7 @@ knitr::opts_chunk$set(echo = TRUE,
 library(dplyr)
 library(tidyr)
 library(ggplot2)
+library(forcats)
 library(stringr)
 library(here)
 ```
@@ -569,11 +570,13 @@ library(data.table); library(survdat); library(here)
 # survey <- survdat::get_survdat_data(channel, getLengths = F)
 # survdat <- survey$survdat
 #object name is survdat
-load(url("https://github.com/NOAA-EDAB/ms-keyrun/raw/master/data-raw/data/survdat.RData"))
+#load(url("https://github.com/NOAA-EDAB/ms-keyrun/raw/master/data-raw/data/survdat.RData"))
+#load(url("https://github.com/slucey/SOE_data/raw/main/data_raw/Survdat.RData")) #newer
+load(here("survdat/Survdat.Rdata")) # from repo above, can't pull directly
 
-pulldate <- survdat$pullDate
-functioncall <- survdat$functionCall
-survdat <- survdat$survdat
+pulldate <- survey$pullDate
+functioncall <- survey$functionCall
+survdat <- survey$survdat
 
 #Aggregate species----
 #Grab species list
@@ -869,6 +872,101 @@ p8
 ```
 
 
-What proportion of each bluefish prey species in prey disaggregated diet dataset by %FO and weight? Just saved interim dataset `bluepyall_stn.rds` Compare with the same once aggregate survey index done
+What proportion of each bluefish prey species in prey disaggregated diet dataset by %FO and weight? Just saved interim dataset `bluepyall_stn.rds` Compare with the same once aggregate survey index done.
 
+Define constant colors
 
+Dominant species in diet based index. species comp (raw)
+
+```{r dietspp}
+
+bluepyall_stn <- readRDS(here("fhdat/bluepyall_stn.rds"))
+
+ MAB <- data.frame(stratum = c(1010:1080, 1100:1120, 1600:1750, 3010:3450, 3470, 3500, 3510),
+                      EPU = "MAB")
+ 
+ GB <- data.frame(stratum = c(1090, 1130:1210, 1230, 1250, 3460, 3480, 3490, 3520:3550),
+                  EPU = "GB")
+ 
+ GOM <- data.frame(stratum = c(1220, 1240, 1260:1290, 1360:1400, 3560:3830),
+                   EPU = "GOM")
+  
+EPUlook <- dplyr::bind_rows(MAB, GB, GOM)
+
+foragesppwt <- bluepyall_stn %>%
+  dplyr::left_join(EPUlook) %>%
+  dplyr::filter(blueprey=="blueprey",
+                !is.na(EPU)) %>%
+  dplyr::group_by(year, season_ng, EPU, bluepynam) %>%
+  dplyr::summarise(pysum = sum(bluepywt))
+
+plotDietCompBar <- function(dat, metric, title=NULL){   #defines the name of the function and the requied inputs
+  
+dat %>% 
+  filter(!is.na(.data[[metric]])) %>%          #take out the NA values (literally "not is NA")
+  ggplot(aes(x=year, y=.data[[metric]], fill=bluepynam)) +     #year on x axis, %diet comp on y
+  geom_bar(width = 1, stat = "identity", position="fill") +    #stacked bar chart
+  #scale_fill_manual(values=preycol) +         #custom colors
+  ecodata::theme_facet() +                    #simplify
+  facet_grid(fct_relevel(EPU,  "GOM", "GB", "MAB")~
+               fct_relevel(season_ng, "SPRING", "FALL")) + #separate by ordered epu and season
+  labs(y = "% diet composition",              #add sensible labels
+       title = title) 
+    
+}   
+
+addSmallLegend <- function(myPlot, pointSize = 2, textSize = 8, spaceLegend = 0.5) {
+    myPlot +
+        guides(shape = guide_legend(override.aes = list(size = pointSize)),
+               color = guide_legend(override.aes = list(size = pointSize))) +
+        theme(legend.title = element_text(size = textSize), 
+              legend.text  = element_text(size = textSize),
+              legend.key.size = unit(spaceLegend, "lines"))
+}
+
+pall <- plotDietCompBar(dat=foragesppwt, 
+                          metric="pysum", 
+                          title="Full diet composition")  
+
+addSmallLegend(pall)
+
+```
+
+Dominant species in survey forage index
+
+```{r surveyspp}
+
+load(here("survdat/Survdat.Rdata")) # from repo above, can't pull directly
+
+pulldate <- survey$pullDate
+functioncall <- survey$functionCall
+survdat <- survey$survdat
+
+#Aggregate species----
+#Grab species list
+#load(here('data_raw/SOE_species_list.RData'))
+species <- as.data.table(species_groupings_forage)
+
+#Merge to get species group and fed managed status
+survdat <- merge(survdat, unique(species[, list(SVSPP, SCINAME, ForageIndex)]), 
+                 by = 'SVSPP', all.x = T)
+
+foragesurv <- survdat %>%
+  tibble::as.tibble() %>%
+  dplyr::rename_with(tolower, .cols = everything()) %>%
+  dplyr::mutate(stratum = as.integer(stratum)) %>%
+  dplyr::left_join(EPUlook) %>%
+  dplyr::filter(!is.na(forageindex),
+                !is.na(EPU)) %>%
+  dplyr::group_by(year, season, EPU, sciname) %>%
+  dplyr::summarise(pysum = sum(biomass)) %>%
+  dplyr::rename(season_ng = season, bluepynam = sciname)
+
+psurv <- plotDietCompBar(dat=foragesurv, 
+                          metric="pysum", 
+                          title="Full survey composition")  
+
+addSmallLegend(psurv)
+
+```
+Species by species comparison
