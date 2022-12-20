@@ -180,7 +180,7 @@ bluepyall_stn <- fh.nefsc.pisc.pisccomplete.blueprey %>%
                                month >= 7 ~ "FALL",
                                TRUE ~ as.character(NA))
          ) %>%
-  select(year, season_ng, id, 
+  select(year, season_ng, id, stratum,
          pynam, pyamtw, pywgti, pyvoli, blueprey, 
          pdcomnam, pdid, pdlen, pdsvol, pdswgt, 
          beglat, beglon, declat, declon, 
@@ -191,6 +191,9 @@ bluepyall_stn <- fh.nefsc.pisc.pisccomplete.blueprey %>%
                                TRUE ~ 0.0),
          bluepynam = case_when(blueprey == "blueprey" ~ pynam,
                                TRUE ~ NA_character_)) 
+
+# save at prey disaggregated stage for paper
+saveRDS(bluepyall_stn, here("fhdat/bluepyall_stn.rds"))
 
 stndat <- bluepyall_stn %>%
   select(year, season_ng, id, 
