@@ -19,6 +19,8 @@ library(ggplot2)
 library(forcats)
 library(stringr)
 library(here)
+library(ggpubr)
+
 ```
 
 
@@ -875,7 +877,7 @@ p8
 
 Direct comparison, VAST diet based forage index x, survey same species list y
 
-```{r}
+```{r corr, fig.cap="Diet based forage index (stdForage) compared with survey based index (stdsurvForage) by season and region (GOM = Gulf of Maine, GB = Georges Bank, MAB = Mid Atlantic Bight). Pearson correlation coefficients (*R*) and correlation significance (*p*) are shown for each season/region."}
 survforage_comp <- survforage %>%
   tidyr::separate(Var, c(NA, "Season"), sep = " ") %>%
   dplyr::select(Time, Season, EPU, stdsurvForage, stdsurvForageupper, stdsurvForagelower) %>%
@@ -890,6 +892,7 @@ ggplot2::ggplot(compareforageagg, aes(x=stdForage, y=stdsurvForage)) +
   geom_point(color="blue", alpha=0.1)+
   geom_abline(intercept = 0, slope = 1, lty=3) +
   geom_smooth(method=lm) +
+  stat_cor(method="pearson") +
   ecodata::theme_facet() +
   facet_grid(fct_relevel(EPU,  "GOM", "GB", "MAB")~
                fct_relevel(Season, "Spring", "Fall")) 
@@ -902,7 +905,53 @@ Hypothesis: survey and diet based index species composition should match well in
 
 What proportion of each bluefish prey species in prey disaggregated diet dataset by %FO and weight? Just saved interim dataset `bluepyall_stn.rds` Compare with the same once aggregate survey index done.
 
-Define constant colors
+Define constant colors, similar by family: 
+
+```{r}
+
+sandlances <- data.frame(prey=c(),
+                         preycol=c())
+  
+anchovies <- data.frame(prey=c(),
+                         preycol=c())  
+  
+herrings <- data.frame(prey=c(),
+                         preycol=c()) 
+  
+squids <- data.frame(prey=c(),
+                         preycol=c()) 
+  
+silverhake <- data.frame(prey=c(),
+                         preycol=c())
+
+butterfish <- data.frame(prey=c(),
+                         preycol=c())
+
+bluefish <- data.frame(prey=c(),
+                         preycol=c())
+
+mackerel <- data.frame(prey=c(),
+                         preycol=c())
+
+scup <- data.frame(prey=c(),
+                         preycol=c())
+
+menhaden <- data.frame(prey=c(),
+                         preycol=c())
+
+preycolcode <- rbind(sandlances,
+                     ahchovies,
+                     herrings,
+                     squids,
+                     silverhake,
+                     butterfish,
+                     bluefish,
+                     mackerel,
+                     scup,
+                     menhaden)
+
+```
+
 
 Dominant species in diet based index. species comp (raw)
 
