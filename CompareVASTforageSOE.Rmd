@@ -20,6 +20,7 @@ library(forcats)
 library(stringr)
 library(here)
 library(ggpubr)
+library(data.table)
 
 ```
 
@@ -66,6 +67,7 @@ agg_bio_std <- agg_bio %>%
 
 agg_bio_std$Var <- factor(agg_bio_std$Var,levels = c("Planktivore Spring",
                                                     "Planktivore Fall"))
+agg_bio_std$EPU <- factor(agg_bio_std$EPU, levels = c("GOM", "GB", "MAB"))
 series.col <- rep("black",length(unique(agg_bio_std$Var)))
 facet_names <- list("Planktivores" = expression("Planktivores")
                     )
@@ -248,6 +250,7 @@ forage_std <- forage %>%
 
 forage_std$Var <- factor(forage_std$Var,levels = c("Forage Spring",
                                                     "Forage Fall"))
+forage_std$EPU <- factor(forage_std$EPU, levels = c("GOM", "GB", "MAB"))
 series.col <- rep("black",length(unique(forage_std$Var)))
 facet_names <- list("Forage" = expression("Forage")
                     )
@@ -558,7 +561,7 @@ species_groupings_forage <- ecodata::species_groupings %>%
 Sean's SOE_fish_resource_using_strata.R code from [here](https://github.com/slucey/SOE_data/blob/main/SOE_fish_resource_using_strata.R)
 
 modified for local survdat.Rdata and local species list
-```{r}
+```{r, eval=FALSE}
 
 #remotes::install_github("NOAA-EDAB/survdat",build_vignettes = TRUE)
 
@@ -729,6 +732,8 @@ survforage <- survforage %>%
 
 survforage$Var <- factor(survforage$Var,levels = c("ForageIndex Spring",
                                                     "ForageIndex Fall"))
+survforage$Region <- factor(survforage$Region, levels = c("GOM", "GB", "MAB"))
+
 series.col <- rep("black",length(unique(survforage$Var)))
 facet_names <- list("Forage" = expression("Forage")
                     )
@@ -899,9 +904,9 @@ ggplot2::ggplot(compareforageagg, aes(x=stdForage, y=stdsurvForage)) +
   
 ```
 
-Pretty well correlated in GOM spring, otherwise not, even with the same species list. 
+Pretty well correlated in GOM spring, half correlated in GB spring, otherwise not, even with the same species list. 
 
-Hypothesis: survey and diet based index species composition should match well in GOM spring but not other seasons. 
+Hypothesis: survey and diet based index species composition should match well in GOM spring but not other seasons. A dominant species may be shared in GB spring. 
 
 What proportion of each bluefish prey species in prey disaggregated diet dataset by %FO and weight? Just saved interim dataset `bluepyall_stn.rds` Compare with the same once aggregate survey index done.
 
@@ -909,38 +914,106 @@ Define constant colors, similar by family:
 
 ```{r}
 
-sandlances <- data.frame(prey=c(),
-                         preycol=c())
+#  unique(forageindex$SCINAME)
+#  [1] ENGRAULIDAE           LOLIGO PLEI           CLUPEA HARENGUS       SCOMBER SCOMBRUS     
+#  [5] ANCHOA MITCHILLI      POMATOMUS SALTATRIX   PEPRILUS TRIACANTHUS  PLEURONECTIFORMES    
+#  [9] MERLUCCIUS            PEPRILUS              CLUPEIDAE             AMMODYTES            
+# [13] LOLIGO PEALEII        BREVOORTIA            ETRUMEUS TERES        STENOTOMUS CHRYSOPS  
+# [17] ENGRAULIS EURYSTOLE   MERLUCCIUS BILINEARIS CEPHALOPODA           ANCHOA HEPSETUS      
+# [21] CYNOSCION REGALIS     AMMODYTES AMERICANUS  AMMODYTES DUBIUS      ILLEX ILLECEBROSUS
+
+#  unique(blueprey$pynam)
+#  [1] "LOLIGO SP"             "ENGRAULIDAE"           "ANCHOA MITCHILLI"      "PEPRILUS TRIACANTHUS" 
+#  [5] "CEPHALOPODA"           "ANCHOA HEPSETUS"       "ETRUMEUS TERES"        "AMMODYTES SP"         
+#  [9] "STENOTOMUS CHRYSOPS"   "MERLUCCIUS BILINEARIS" "ILLEX SP"              "CLUPEA HARENGUS"      
+# [13] "CLUPEIDAE"             "POMATOMUS SALTATRIX"   "ENGRAULIS EURYSTOLE"   "LOLIGO PEALEII"       
+# [17] "SCOMBER SCOMBRUS"      "PLEURONECTIFORMES"     "CYNOSCION REGALIS"     "BREVOORTIA TYRANNUS"  
+
+# colors from http://medialab.github.io/iwanthue/ 12 hard(Force vector) colorblind friendly full range H C L
+# sorted by diff
+
+sandlances <- data.frame(prey=c("AMMODYTES",
+                                "AMMODYTES SP",
+                                "AMMODYTES AMERICANUS",  
+                                "AMMODYTES DUBIUS"),
+                         preycol=c("#3b0062",
+                                   "#3b0062",
+                                   "#3b0062",
+                                   "#3b0062"),
+                         mgtcol=c())
   
-anchovies <- data.frame(prey=c(),
-                         preycol=c())  
+anchovies <- data.frame(prey=c("ENGRAULIDAE", 
+                               "ANCHOA MITCHILLI",
+                               "ANCHOA HEPSETUS",
+                               "ENGRAULIS EURYSTOLE"),
+                         preycol=c("#004d15",
+                                   "#004d15",
+                                   "#004d15",
+                                   "#004d15"),
+                         mgtcol=c())  
   
-herrings <- data.frame(prey=c(),
-                         preycol=c()) 
+herrings <- data.frame(prey=c("CLUPEA HARENGUS",
+                              "CLUPEIDAE",
+                              "ETRUMEUS TERES"),
+                         preycol=c("#ff3c98",
+                                   "#ff3c98",
+                                   "#ff3c98"),
+                         mgtcol=c()) 
   
-squids <- data.frame(prey=c(),
-                         preycol=c()) 
+squids <- data.frame(prey=c("LOLIGO SP",
+                            "LOLIGO PLEI",
+                            "LOLIGO PEALEII",
+                            "ILLEX SP",
+                            "ILLEX ILLECEBROSUS",
+                            "CEPHALOPODA"),
+                         preycol=c("#a9f2ff",
+                                   "#a9f2ff",
+                                   "#a9f2ff",
+                                   "#a9f2ff",
+                                   "#a9f2ff",
+                                   "#a9f2ff"),
+                         mgtcol=c()) 
   
-silverhake <- data.frame(prey=c(),
-                         preycol=c())
+silverhake <- data.frame(prey=c("MERLUCCIUS",
+                                "MERLUCCIUS BILINEARIS"),
+                         preycol=c("#be5000",
+                                   "#be5000"),
+                         mgtcol=c())
 
-butterfish <- data.frame(prey=c(),
-                         preycol=c())
+butterfish <- data.frame(prey=c("PEPRILUS",
+                                "PEPRILUS TRIACANTHUS"),
+                         preycol=c("#d6b8ff",
+                                   "#d6b8ff"),
+                         mgtcol=c())
 
-bluefish <- data.frame(prey=c(),
-                         preycol=c())
+bluefish <- data.frame(prey=c("POMATOMUS SALTATRIX"),
+                         preycol=c("#2eff7d"),
+                         mgtcol=c())
 
-mackerel <- data.frame(prey=c(),
-                         preycol=c())
+mackerel <- data.frame(prey=c("SCOMBER SCOMBRUS"),
+                         preycol=c("#ffb4b5"),
+                         mgtcol=c())
 
-scup <- data.frame(prey=c(),
-                         preycol=c())
+scup <- data.frame(prey=c("STENOTOMUS CHRYSOPS"),
+                         preycol=c("#1810b8"),
+                         mgtcol=c())
 
-menhaden <- data.frame(prey=c(),
-                         preycol=c())
+weakfish <- data.frame(prey=c("CYNOSCION REGALIS"),
+                         preycol=c("#759700"),
+                         mgtcol=c())
+
+menhaden <- data.frame(prey=c("BREVOORTIA",
+                              "BREVOORTIA TYRANNUS"),
+                         preycol=c("#547aff",
+                                   "#547aff"),
+                         mgtcol=c())
+
+otherflats <- data.frame(prey=c("PLEURONECTIFORMES"),
+                         preycol=c("#48beff"),
+                         mgtcol=c())
 
 preycolcode <- rbind(sandlances,
-                     ahchovies,
+                     anchovies,
                      herrings,
                      squids,
                      silverhake,
@@ -948,7 +1021,9 @@ preycolcode <- rbind(sandlances,
                      bluefish,
                      mackerel,
                      scup,
-                     menhaden)
+                     weakfish,
+                     menhaden,
+                     otherflats)
 
 ```
 
