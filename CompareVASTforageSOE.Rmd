@@ -932,6 +932,9 @@ Define constant colors, similar by family:
 # colors from http://medialab.github.io/iwanthue/ 12 hard(Force vector) colorblind friendly full range H C L
 # sorted by diff
 
+# unmanaged "#890058",
+# managed "#afe5ff"
+
 sandlances <- data.frame(prey=c("AMMODYTES",
                                 "AMMODYTES SP",
                                 "AMMODYTES AMERICANUS",  
@@ -940,7 +943,10 @@ sandlances <- data.frame(prey=c("AMMODYTES",
                                    "#3b0062",
                                    "#3b0062",
                                    "#3b0062"),
-                         mgtcol=c())
+                         mgtcol=c("#890058",
+                                  "#890058",
+                                  "#890058",
+                                  "#890058"))
   
 anchovies <- data.frame(prey=c("ENGRAULIDAE", 
                                "ANCHOA MITCHILLI",
@@ -950,7 +956,10 @@ anchovies <- data.frame(prey=c("ENGRAULIDAE",
                                    "#004d15",
                                    "#004d15",
                                    "#004d15"),
-                         mgtcol=c())  
+                         mgtcol=c("#890058",
+                                  "#890058",
+                                  "#890058",
+                                  "#890058"))  
   
 herrings <- data.frame(prey=c("CLUPEA HARENGUS",
                               "CLUPEIDAE",
@@ -958,7 +967,9 @@ herrings <- data.frame(prey=c("CLUPEA HARENGUS",
                          preycol=c("#ff3c98",
                                    "#ff3c98",
                                    "#ff3c98"),
-                         mgtcol=c()) 
+                         mgtcol=c("#afe5ff",
+                                  "#afe5ff",
+                                  "#890058")) 
   
 squids <- data.frame(prey=c("LOLIGO SP",
                             "LOLIGO PLEI",
@@ -972,45 +983,53 @@ squids <- data.frame(prey=c("LOLIGO SP",
                                    "#a9f2ff",
                                    "#a9f2ff",
                                    "#a9f2ff"),
-                         mgtcol=c()) 
+                         mgtcol=c("#afe5ff",
+                                  "#890058",
+                                  "#afe5ff",
+                                  "#afe5ff",
+                                  "#afe5ff",
+                                  "#890058")) 
   
 silverhake <- data.frame(prey=c("MERLUCCIUS",
                                 "MERLUCCIUS BILINEARIS"),
                          preycol=c("#be5000",
                                    "#be5000"),
-                         mgtcol=c())
+                         mgtcol=c("#afe5ff",
+                                  "#afe5ff"))
 
 butterfish <- data.frame(prey=c("PEPRILUS",
                                 "PEPRILUS TRIACANTHUS"),
                          preycol=c("#d6b8ff",
                                    "#d6b8ff"),
-                         mgtcol=c())
+                         mgtcol=c("#afe5ff",
+                                  "#afe5ff"))
 
 bluefish <- data.frame(prey=c("POMATOMUS SALTATRIX"),
                          preycol=c("#2eff7d"),
-                         mgtcol=c())
+                         mgtcol=c("#afe5ff"))
 
 mackerel <- data.frame(prey=c("SCOMBER SCOMBRUS"),
                          preycol=c("#ffb4b5"),
-                         mgtcol=c())
+                         mgtcol=c("#afe5ff"))
 
 scup <- data.frame(prey=c("STENOTOMUS CHRYSOPS"),
                          preycol=c("#1810b8"),
-                         mgtcol=c())
+                         mgtcol=c("#afe5ff"))
 
 weakfish <- data.frame(prey=c("CYNOSCION REGALIS"),
                          preycol=c("#759700"),
-                         mgtcol=c())
+                         mgtcol=c("#afe5ff"))
 
 menhaden <- data.frame(prey=c("BREVOORTIA",
                               "BREVOORTIA TYRANNUS"),
                          preycol=c("#547aff",
                                    "#547aff"),
-                         mgtcol=c())
+                         mgtcol=c("#afe5ff",
+                                  "#afe5ff"))
 
-otherflats <- data.frame(prey=c("PLEURONECTIFORMES"),
+otherflats <- data.frame(prey = c("PLEURONECTIFORMES"),
                          preycol=c("#48beff"),
-                         mgtcol=c())
+                         mgtcol=c("#890058"))
 
 preycolcode <- rbind(sandlances,
                      anchovies,
@@ -1024,6 +1043,12 @@ preycolcode <- rbind(sandlances,
                      weakfish,
                      menhaden,
                      otherflats)
+
+preycols <- preycolcode$preycol
+names(preycols) <- as.factor(preycolcode$prey)
+
+mgtcols <- preycolcode$mgtcol
+names(mgtcols) <- as.factor(preycolcode$prey)
 
 ```
 
@@ -1052,25 +1077,26 @@ foragesppwt <- bluepyall_stn %>%
   dplyr::group_by(year, season_ng, EPU, bluepynam) %>%
   dplyr::summarise(pysum = sum(bluepywt))
 
-plotDietCompBar <- function(dat, metric, title=NULL){   #defines the name of the function and the requied inputs
+plotDietCompBar <- function(dat, metric, plotcol, title=NULL){   #defines the name of the function and the requied inputs
   
 dat %>% 
   filter(!is.na(.data[[metric]])) %>%          #take out the NA values (literally "not is NA")
   ggplot(aes(x=year, y=.data[[metric]], fill=bluepynam)) +     #year on x axis, %diet comp on y
   geom_bar(width = 1, stat = "identity", position="fill") +    #stacked bar chart
-  #scale_fill_manual(values=preycol) +         #custom colors
+  scale_fill_manual(values=plotcol) +         #custom colors
   ecodata::theme_facet() +                    #simplify
   facet_grid(fct_relevel(EPU,  "GOM", "GB", "MAB")~
                fct_relevel(season_ng, "SPRING", "FALL")) + #separate by ordered epu and season
-  labs(y = "% diet composition",              #add sensible labels
+  labs(y = "% composition",              #add sensible labels
        title = title) 
     
 }   
 
-addSmallLegend <- function(myPlot, pointSize = 2, textSize = 8, spaceLegend = 0.5) {
+addSmallLegend <- function(myPlot, pointSize = 2, textSize = 6, spaceLegend = 0.5) {
     myPlot +
         guides(shape = guide_legend(override.aes = list(size = pointSize)),
-               color = guide_legend(override.aes = list(size = pointSize))) +
+               color = guide_legend(override.aes = list(size = pointSize)),
+               fill = guide_legend(ncol = 1)) +
         theme(legend.title = element_text(size = textSize), 
               legend.text  = element_text(size = textSize),
               legend.key.size = unit(spaceLegend, "lines"))
@@ -1078,7 +1104,8 @@ addSmallLegend <- function(myPlot, pointSize = 2, textSize = 8, spaceLegend = 0.
 
 pall <- plotDietCompBar(dat=foragesppwt, 
                           metric="pysum", 
-                          title="Full diet composition")  
+                        plotcol=preycols,
+                          title="Diet composition")  
 
 addSmallLegend(pall)
 
@@ -1116,9 +1143,37 @@ foragesurv <- survdat %>%
 
 psurv <- plotDietCompBar(dat=foragesurv, 
                           metric="pysum", 
-                          title="Full survey composition")  
+                          plotcol=preycols,
+                          title="Survey composition")  
 
 addSmallLegend(psurv)
 
 ```
+  
+Managed (light blue) or unmanaged (burgundy)? Diet based forage
+
+```{r}
+
+pall <- plotDietCompBar(dat=foragesppwt, 
+                          metric="pysum", 
+                        plotcol=mgtcols,
+                          title="Diet composition")  
+
+addSmallLegend(pall)
+```
+
+
+Managed (light blue) or unmanaged (burgundy)? Survey based forage
+
+```{r}
+
+psurv <- plotDietCompBar(dat=foragesurv, 
+                          metric="pysum", 
+                          plotcol=mgtcols,
+                          title="Survey composition")  
+
+addSmallLegend(psurv)
+```
+
+
 Species by species comparison
