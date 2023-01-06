@@ -1176,4 +1176,48 @@ addSmallLegend(psurv)
 ```
 
 
-Species by species comparison
+Composition comparison
+
+```{r}
+dietforagemat <- foragesppwt %>%
+  mutate(source = "diet") %>%
+  filter(season_ng == "FALL") %>%
+  pivot_wider(names_from = bluepynam, values_from = pysum, names_sort = TRUE) 
+  
+
+survforagemat <- foragesurv %>%
+  mutate(source = "surv") %>%
+  pivot_wider(names_from = bluepynam, values_from = pysum, names_sort = TRUE) 
+  
+comdiet <- dietforagemat[,5:length(dietforagemat)] %>% replace(is.na(.), 0)
+envdiet <- dietforagemat[,1:4]
+
+library(vegan)
+#convert com to a matrix
+m_com = as.matrix(comdiet)
+
+#nmds code
+set.seed(123)
+nmds = metaMDS(m_com, distance = "bray", k=2)
+nmds
+
+stressplot(nmds)
+
+plot(nmds)
+
+en = envfit(nmds, envdiet, permutations = 999, na.rm = TRUE)
+
+en
+
+plot(nmds)
+plot(en)
+
+data.scores = as.data.frame(scores(nmds)$sites)
+data.scores$season = dietforagemat$season_ng
+data.scores$region = dietforagemat$EPU
+
+gg = ggplot(data = data.scores, aes(x = NMDS1, y = NMDS2)) + 
+     geom_point(data = data.scores, aes(colour = region), size = 3, alpha = 0.5) + 
+     scale_colour_manual(values = c("green", "orange", "steelblue")) 
+```
+
