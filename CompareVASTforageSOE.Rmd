@@ -1,5 +1,5 @@
 ---
-title: "Compare VAST and survey planktivores"
+title: "Compare VAST (diet) forage index and survey indices"
 author: "Sarah Gaichas"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output:
@@ -518,7 +518,7 @@ ggplot(data = ecodata::coast) +
 
 ```
 
-Mapping survey species to prey species. Unfortunately not easy.
+### Mapping survey species to prey species. Unfortunately not easy.
 
 Alter ecodata::species_groupings with a new column
 
@@ -880,7 +880,7 @@ p8
 
 ```
 
-Direct comparison, VAST diet based forage index x, survey same species list y
+### Direct comparison, VAST diet based forage index x, survey same species list y
 
 ```{r corr, fig.cap="Diet based forage index (stdForage) compared with survey based index (stdsurvForage) by season and region (GOM = Gulf of Maine, GB = Georges Bank, MAB = Mid Atlantic Bight). Pearson correlation coefficients (*R*) and correlation significance (*p*) are shown for each season/region."}
 survforage_comp <- survforage %>%
@@ -1175,8 +1175,13 @@ psurv <- plotDietCompBar(dat=foragesurv,
 addSmallLegend(psurv)
 ```
 
+So we see a higher proportion of unmanaged forage species in the diet based raw data than we do the survey based raw data. As hypothesized.
 
-Composition comparison
+Also, silver hake dominate GOM spring in both datasets. 
+
+### Composition comparison, aka rabbithole
+
+This is still all raw data so probably too much detail for naught. The NMDS plots show what we can see from the time series of composition: spring is different from fall and the three regions are different. MAB is more different from GB and GOM than they are from each other but GB and GOM still separate. Fall diet forage plotted below. The NMDS with 2 dimensions isn't great since stress is > 0.2 unless I only look at fall as below. Still borderline at 0.19.
 
 ```{r}
 dietforagemat <- foragesppwt %>%
@@ -1219,5 +1224,52 @@ data.scores$region = dietforagemat$EPU
 gg = ggplot(data = data.scores, aes(x = NMDS1, y = NMDS2)) + 
      geom_point(data = data.scores, aes(colour = region), size = 3, alpha = 0.5) + 
      scale_colour_manual(values = c("green", "orange", "steelblue")) 
+
+gg + ggtitle("Fall diet based forage composition NMDS, points are years")
 ```
+
+
+Looking at survey data we find similar patterns, but stress is better for Fall only with 2 dimensions, 0.14, and separation by region is even more pronounced. 
+
+```{r}
+survforagemat <- foragesurv %>%
+  mutate(source = "surv") %>%
+  filter(season_ng == "FALL") %>%
+  pivot_wider(names_from = bluepynam, values_from = pysum, names_sort = TRUE) 
+  
+comsurv <- survforagemat[,5:length(survforagemat)] %>% replace(is.na(.), 0)
+envsurv <- survforagemat[,1:4]
+
+library(vegan)
+#convert com to a matrix
+m_com = as.matrix(comsurv)
+
+#nmds code
+set.seed(123)
+nmds = metaMDS(m_com, distance = "bray", k=2)
+nmds
+
+stressplot(nmds)
+
+plot(nmds)
+
+en = envfit(nmds, envsurv, permutations = 999, na.rm = TRUE)
+
+en
+
+plot(nmds)
+plot(en)
+
+data.scores = as.data.frame(scores(nmds)$sites)
+data.scores$season = survforagemat$season_ng
+data.scores$region = survforagemat$EPU
+
+gg = ggplot(data = data.scores, aes(x = NMDS1, y = NMDS2)) + 
+     geom_point(data = data.scores, aes(colour = region), size = 3, alpha = 0.5) + 
+     scale_colour_manual(values = c("green", "orange", "steelblue")) 
+
+gg + ggtitle("Fall survey based forage composition NMDS, points are years")
+```
+
+To compare survey and diet derived compositions (the goal) I need to standardize the species.
 
