@@ -1193,6 +1193,8 @@ dietforagemat <- foragesppwt %>%
 survforagemat <- foragesurv %>%
   mutate(source = "surv") %>%
   pivot_wider(names_from = bluepynam, values_from = pysum, names_sort = TRUE) 
+
+# see https://jkzorz.github.io/2020/04/04/NMDS-extras.html
   
 comdiet <- dietforagemat[,5:length(dietforagemat)] %>% replace(is.na(.), 0)
 envdiet <- dietforagemat[,1:4]
