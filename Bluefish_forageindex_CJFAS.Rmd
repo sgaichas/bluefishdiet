@@ -1201,9 +1201,7 @@ All of the above indices were provided for testing within the WHAM-based bluefis
 
 ## Comparisons with design-based survey biomass
 
-Pretty well correlated in GOM spring, half correlated in GB spring, otherwise not, even with the same species list. 
-
-Hypothesis: survey and diet based index species composition should match well in GOM spring but not other seasons. A dominant species may be shared in GB spring. 
+The diet based forage index and survey biomass based index were well correlated in the Gulf of Maine during spring, weakly correlated on Georges Bank during spring, and uncorrelated during fall in all regions and in both seasons in the Mid-Atlantic. To determine what may drive some seasons and regions to have similar forage indices based on diet versus survey biomass, we examined raw species composition over time in each dataset, by region and season. We expected to find similar species compositions in Gulf of Maine during spring, and possibly a shared dominant species on Georges Bank during spring. 
 
 ```{r corr, fig.cap="Diet based forage index (stdForage) compared with survey based index (stdsurvForage) by season and region (GOM = Gulf of Maine, GB = Georges Bank, MAB = Mid Atlantic Bight). Pearson correlation coefficients (*R*) and correlation significance (*p*) are shown for each season/region."}
 
@@ -1537,6 +1535,39 @@ survdat <- survey$survdat
 #Aggregate species----
 #Grab species list
 #load(here('data_raw/SOE_species_list.RData'))
+
+# see https://stackoverflow.com/questions/32914357/dplyr-inner-join-with-a-partial-string-match
+# https://stackoverflow.com/questions/60993676/join-data-frames-based-fuzzy-matching-of-strings
+
+library(fuzzyjoin)
+
+bluepreyonly <- blueprey %>%
+  dplyr::select(pynam)
+
+my_match_fun <- Vectorize(function(x,y) agrepl(x, y, ignore.case=TRUE))#, max.distance = 0.12, useBytes = TRUE))
+
+foragelist <- ecodata::species_groupings %>%
+  mutate(charsciname = as.character(SCINAME)) %>%
+  #regex_inner_join(blueprey, by = c(charsciname = "pynam"))
+  #fuzzy_inner_join(blueprey, by = c(charsciname = "pynam"), match_fun = str_detect)
+  fuzzy_inner_join(bluepreyonly, by = c(charsciname = "pynam"), match_fun = my_match_fun)
+
+# missing specific sandlances, I want all three of these
+sandlances <- ecodata::species_groupings %>% filter(str_detect(SCINAME, "AMMO"))
+
+# missing Illex
+illex <- ecodata::species_groupings %>% filter(str_detect(SCINAME, "ILLEX"),
+                                               !str_detect(SCINAME, "EGG"))
+
+forageindex <- foragelist %>%
+  dplyr::select(-charsciname, -pynam) %>%
+  bind_rows(sandlances, illex) %>%
+  distinct() %>%
+  mutate(ForageIndex = "ForageIndex")
+
+species_groupings_forage <- ecodata::species_groupings %>%
+  left_join(forageindex)
+
 species <- as.data.table(species_groupings_forage)
 
 #Merge to get species group and fed managed status
@@ -1563,9 +1594,9 @@ addSmallLegend(psurv)
 
 ```
   
-The indices are highly correlated when the species composition is similar for the Gulf of Maine in spring, suggesting that the diet based index is at least as reliable as a survey biomass based index, given similar inputs. 
+As hypothesized, silver hake dominate GOM spring in both datasets. The indices are highly correlated when the species composition is similar for the Gulf of Maine in spring, suggesting that the diet based index is at least as reliable as a survey biomass based index, given similar inputs. 
 
-Managed (light blue) or unmanaged (burgundy)? Diet based forage
+Managed (light blue) or unmanaged (burgundy): Diet based forage
 
 ```{r}
 
@@ -1578,7 +1609,7 @@ addSmallLegend(pall)
 ```
 
 
-Managed (light blue) or unmanaged (burgundy)? Survey based forage
+Managed (light blue) or unmanaged (burgundy): Survey based forage
 
 ```{r}
 
@@ -1590,7 +1621,7 @@ psurv <- plotDietCompBar(dat=foragesurv,
 addSmallLegend(psurv)
 ```
 
-So we see a higher proportion of unmanaged forage species in the diet based raw data than we do the survey based raw data. As hypothesized. Also, silver hake dominate GOM spring in both datasets. 
+We see a higher proportion of unmanaged forage species in the diet based raw data than we do the survey based raw data, suggesting that the diet-based forage index better represents species the survey is not designed to sample directly. 
 
 # Discussion
 
@@ -1601,6 +1632,12 @@ Although time series of aggregate forage biomass for direct comparison with this
 Aggregation of predators and seasons was one recommendation for future work from @ng_predator_2021 to address some of the issues with using predator stomach data to evaluate prey biomass. Our approach combining stomach data across multiple piscivore predators was intended to improve sample size for the aggregate prey index so that our results integrate across individual predator sampling variability and changes in predator-prey overlap, and perhaps clarify the longer term, decadal trends in forage fish biomass. Further, evaluating forage species in aggregate should also reduce issues of changing overlap of predators with individual prey species. However, we don't have an aggregate forage fish assessment time series for comparison. Using survey biomass catch of forage fish directly can be problematic, including issues with poor sample size or missing data for key small pelagic fish (anchovies, sandlance) and cephalopods [@mills_diets_2007; @rohan_spatial_2017]. In comparing compositions of diet based and survey based forage species indices, there was a clear dominance of larger managed species in the survey based index. Further, bottom trawl survey biomass time series for assessed forage species can be at odds with other assessment inputs and assessment-estimated biomass trends in the Northeast US. For example, Atlantic mackerel bottom trawl survey indices have generally increased while assessment estimated biomass, largely driven by an egg survey and information on catch, is decreasing [@nefsc_64th_2018]. Therefore, our forage index represents an alternative, possibly more complete assessment of aggregate forage fish in this region than can be obtained directly from bottom trawl surveys. 
 
 Changes in forage fish are of interest across seasons, but changes in the fall index nearshore may be most closely aligned with abundance indices used in the bluefish assessment. Bluefish migrate into northern coastal waters in spring and return south in late fall to overwinter [@collette_bigelow_2002]. Although bluefish catch patterns vary by state, recreational fishing dominates coastwide bluefish landings, and most recreational fishing activity (nearly 70% of landings) takes place in July-October (2022 bluefish research track summary report), months included in the fall forage index (months 7-12). Further, northern states, included in the spatial extent of the forage index, see peak recreational fishing during these months. Therefore, our fall forage indices may provide a reasonable match to the recreational catch per unit effort index used in the assessment. Similarly, fall forage indices for fishery independent survey strata also temporally and spatially align with both the fall NEFSC bottom trawl survey and fall NEAMAP bottom trawl survey stratified mean catch-per-tow used in the bluefish assessment (2022 bluefish research track summary report).
+
+[*Paragraph on preliminary results of including the index in companion model: starting point text from presentation*
+
+Forage fish indices were explored as covariates on catchability for the fishery independent bottom trawl surveys, but either did not improve the assessment, or the exploratory models did not converge. However, the application of the forage fish index to the recreational catch per angler catchability was successful when implemented as an autoregressive process over the time-series with WHAM estimating the standard error.  The inclusion of the forage fish index improved the fit of all models. The use of the forage fish index as a covariate on catchability led to an overall decreasing trend in catchability over time.  The recreational index is important in scaling the biomass results, and the lower availability at the end of the time-series led to higher biomass estimates from the assessment including forage fish.
+
+]
 
 While the fall forage fish indices are temporally aligned with bluefish assessment inputs and spatially aligned with two trawl survey indices used in the assessment, improvements in spatial overlap with recreational fisheries and other survey indices could be considered in the future. A large proportion (51\%) of bluefish recreational landings come from inland waters: bays and estuaries including Chesapeake Bay, Delaware Bay, and Long Island Sound, with the next largest proportion (42\%) coming from state waters extending 3 nautical miles from the coastline (2022 bluefish research track summary report). The current forage index does not cover inland waters, aside from Narragansett Bay and Buzzards Bay. Diet data are available for Chesapeake Bay from the ChesMMAP survey, which could be added to the VAST model in the future. Less diet information is available for the portion of the bluefish range south of Cape Hatteras, although some collections have taken place. Investigation of sources of diet information, or possibly direct forage fish surveys for inland and southern areas would be worthwhile to see whether data are adequate to cover the full range of bluefish. In addition, it is worth exploring whether including indices as area-expanded estimates or as unexpanded forage density in each area of interest provides more information to the bluefish assessment model.
 
