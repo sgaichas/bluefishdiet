@@ -63,7 +63,8 @@ get_diet <- function(species_code){
   #load(here("fhdat", "allfhsg_2016.RData"))
   
   # object is called `allfh`
-  load(url("https://github.com/Laurels1/Condition/raw/master/data/allfh.RData"))
+  #load(url("https://github.com/Laurels1/Condition/raw/master/data/allfh.RData"))
+  load(here("fhdat/allfh.Rdata"))
   
   # October 8 2022: add NEFSC 2021 data
   load(here("fhdat/allfh21.Rdata"))
