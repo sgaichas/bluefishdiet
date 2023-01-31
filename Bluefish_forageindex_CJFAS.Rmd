@@ -625,21 +625,30 @@ bluefishdecseas <- bluefish %>%
 preycolsel <- preycol[toupper(names(preycol)) %in% blueprey$pynam] 
 names(preycolsel) <- toupper(names(preycolsel))
 
-p1 <-   ggplot(bluefishdecseas, aes(decade, relmsw, fill=prey)) +
-   geom_bar(stat = "identity") + #
+preycolaggsel <- replace(preycolsel, names(preycolsel), "blue")
+
+p1 <-   ggplot(bluefishdecseas, aes(decade, relmsw, 
+                                    fill=factor(prey, 
+                                                levels = c(as.factor(names(preycolaggsel)),
+                                                           setdiff(prey, preycolaggsel) 
+                                                           )))) +
+   geom_bar(stat = "identity", position = "fill") + #
    ylab("Percent in Diet") +
    xlab("Decade") +
+   geom_text(aes(label = prey), 
+             position = position_stack(vjust = 0.5),
+             size=1)+
    facet_wrap("season2") +
    theme_bw() +
    #viridis::scale_fill_viridis(discrete = TRUE) +
-   scale_fill_manual(values=preycolsel) + 
+   scale_fill_manual(values=preycolaggsel) + 
    theme(legend.position = "none"
          #legend.position="bottom",
          #legend.text=element_text(size=5)
-         ) +
-    geom_bar_interactive(stat = "identity", aes(tooltip = prey, data_id = prey))
+         ) #+
+    #geom_bar_interactive(stat = "identity", aes(tooltip = prey, data_id = prey))
 
-ggiraph(code = print(p1)) 
+#ggiraph(code = print(p1)) 
 #p1
 ```
 
