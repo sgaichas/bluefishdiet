@@ -561,26 +561,28 @@ names(preycol) <- as.factor(preylist)
 
 The list of bluefish prey derived from the most common identifiable prey items in NEFSC diet database (Table \@ref(tab:preylist)) includes the majority of bluefish diet composition by decade (Fig. \@ref(fig:decadediet)) and season (Fig. \@ref(fig:seasondiet)). Colors in the plots show included prey, while gray sections represent "fish unidentified" and other categories not included in this analysis. Even when evaluated annually and seasonally (where bluefish sample sizes may be small for a year-season combination), a majority of observed diet is included in the dataset for analysis (Fig. \@ref(fig:yearseasondiet)). 
 
-```{r decadediet, fig.cap="Bluefish diet by decade, NEFSC bottom trawl surveys."}
+```{r decadediet, fig.cap="Bluefish diet by decade, NEFSC bottom trawl surveys.", eval=FALSE}
 preycolsel <- preycol[toupper(names(preycol)) %in% blueprey$pynam] 
+
+preycolaggsel <- replace(preycolsel, names(preycolsel), "blue")
 
 p <- ggplot(bluefishdecadediet, aes(x=as.factor(Decade), y=Pct.m, fill=Prey)) +
   geom_bar_interactive(width = 0.95, stat = "identity", show.legend = FALSE,
                        aes(tooltip = Prey, data_id = Prey))+
-  scale_fill_manual(values=preycolsel) +         #custom colors
+  scale_fill_manual(values=preycolaggsel) +         #custom colors
   ggthemes::theme_tufte()
 ggiraph(code=print(p))
 #p
 ```
 
   
-```{r seasondiet, fig.cap="Bluefish diet by season, NEFSC bottom trawl surveys."}
+```{r seasondiet, fig.cap="Bluefish diet by season, NEFSC bottom trawl surveys.", eval=FALSE}
 preycolsel <- preycol[toupper(names(preycol)) %in% blueprey$pynam] 
 
 p <- ggplot(bluefishseasondiet, aes(x=as.factor(Season), y=Pct.m, fill=Prey)) +
   geom_bar_interactive(width = 0.95, stat = "identity", show.legend = FALSE,
                        aes(tooltip = Prey, data_id = Prey))+
-  scale_fill_manual(values=preycolsel) +         #custom colors
+  scale_fill_manual(values=preycolaggsel) +         #custom colors
   ggthemes::theme_tufte()
 ggiraph(code=print(p))
 #p
@@ -592,14 +594,42 @@ source(here("get_diet.R"))
 
 bluefish <- get_diet(135) 
 
+# try for facet decade/season with included prey highlighted in blue
+bluefishdecseastot <- bluefish %>%
+  # make decade column
+  # make 2 seasons winter--> spring and summer--> fall
+  dplyr::mutate(decade = floor(year/10)*10,
+                season2 = case_when(season %in% c("WINTER", "SPRING") ~ "SPRING",
+                                    season %in% c("SUMMER", "FALL") ~ "FALL")) %>%
+  dplyr::select(decade, season2, totwt) %>%
+  dplyr::distinct() %>%
+  dplyr::group_by(decade, season2) %>%
+  dplyr::mutate(totwt2 = sum(totwt, na.rm = TRUE)) %>%
+  dplyr::select(decade, season2, totwt2) %>%
+  dplyr::distinct()
+  
+bluefishdecseas <- bluefish %>%   
+  # make decade column
+  # make 2 seasons winter--> spring and summer--> fall
+  dplyr::mutate(decade = floor(year/10)*10,
+                season2 = case_when(season %in% c("WINTER", "SPRING") ~ "SPRING",
+                                    season %in% c("SUMMER", "FALL") ~ "FALL")) %>%
+  # sum meansw by decade, season, prey
+  dplyr::group_by(decade, season2, prey) %>%
+  # recalculate relmsw
+  dplyr::summarise(meansw = sum(meansw, na.rm = TRUE)) %>%
+  dplyr::left_join(bluefishdecseastot) %>%
+  dplyr::mutate(relmsw = meansw/totwt2)
+
+
 preycolsel <- preycol[toupper(names(preycol)) %in% blueprey$pynam] 
 names(preycolsel) <- toupper(names(preycolsel))
 
-p1 <-   ggplot(bluefish, aes(year, relmsw, fill=prey)) +
+p1 <-   ggplot(bluefishdecseas, aes(decade, relmsw, fill=prey)) +
    geom_bar(stat = "identity") + #
    ylab("Percent in Diet") +
-   xlab("Year") +
-   facet_wrap("season", nrow=4) +
+   xlab("Decade") +
+   facet_wrap("season2") +
    theme_bw() +
    #viridis::scale_fill_viridis(discrete = TRUE) +
    scale_fill_manual(values=preycolsel) + 
@@ -609,7 +639,7 @@ p1 <-   ggplot(bluefish, aes(year, relmsw, fill=prey)) +
          ) +
     geom_bar_interactive(stat = "identity", aes(tooltip = prey, data_id = prey))
 
-ggiraph(code = print(p1), height=14) 
+ggiraph(code = print(p1)) 
 #p1
 ```
 
