@@ -49,6 +49,7 @@ set_flextable_defaults(font.size = 11, padding = 3,
 library(ggiraph)
 library(ggpubr)
 library(data.table)
+library(forcats)
 
 #library(ecodata)
 #library(VAST)
@@ -604,8 +605,9 @@ bluefishdecseastot <- bluefish %>%
   dplyr::select(decade, season2, totwt) %>%
   dplyr::distinct() %>%
   dplyr::group_by(decade, season2) %>%
-  dplyr::mutate(totwt2 = sum(totwt, na.rm = TRUE)) %>%
-  dplyr::select(decade, season2, totwt2) %>%
+  dplyr::mutate(totwt2 = sum(totwt, na.rm = TRUE),
+                nyrs = n_distinct(year)) %>%
+  dplyr::select(decade, season2, totwt2, nyrs) %>%
   dplyr::distinct()
   
 bluefishdecseas <- bluefish %>%   
@@ -619,29 +621,41 @@ bluefishdecseas <- bluefish %>%
   # recalculate relmsw
   dplyr::summarise(meansw = sum(meansw, na.rm = TRUE)) %>%
   dplyr::left_join(bluefishdecseastot) %>%
-  dplyr::mutate(relmsw = meansw/totwt2)
+  dplyr::mutate(relmsw = meansw/totwt2) %>%
+  dplyr::mutate(blueprey = ifelse(prey %in% blueprey$pynam, TRUE, FALSE),
+                plotcol = ifelse(blueprey, "blue", "lightgrey")) %>% 
+  dplyr::group_by(decade, season2) %>%
+  dplyr::arrange(desc(blueprey), .by_group = TRUE)
+  #dplyr::arrange(blueprey, .by_group = TRUE)
+
+# preycolsel <- preycol[toupper(names(preycol)) %in% blueprey$pynam] 
+# names(preycolsel) <- toupper(names(preycolsel))
+# 
+# preycolaggsel <- replace(preycolsel, names(preycolsel), "blue")
+
+bars <- map(unique(bluefishdecseas$decade)
+            , ~geom_bar(aes(width=nyrs), stat = "identity", colour = "white"#, position = "stack"
+                       , data = bluefishdecseas %>% filter(decade == .x)))
 
 
-preycolsel <- preycol[toupper(names(preycol)) %in% blueprey$pynam] 
-names(preycolsel) <- toupper(names(preycolsel))
-
-preycolaggsel <- replace(preycolsel, names(preycolsel), "blue")
-
-p1 <-   ggplot(bluefishdecseas, aes(decade, relmsw, 
-                                    fill=factor(prey, 
-                                                levels = c(as.factor(names(preycolaggsel)),
-                                                           setdiff(prey, preycolaggsel) 
-                                                           )))) +
-   geom_bar(stat = "identity", position = "fill") + #
+p1 <-   ggplot(bluefishdecseas, aes(decade, relmsw, fill=plotcol)) +
+                                    #fill=factor(prey, 
+                                    #            levels = c(as.factor(names(preycolaggsel)),
+                                    #                       setdiff(prey, preycolaggsel)),
+                                    #           ordered = TRUE
+                                    #           ))) +
+   #geom_bar(aes(width=nyrs), stat = "identity") + #
+   bars +
    ylab("Percent in Diet") +
    xlab("Decade") +
-   geom_text(aes(label = prey), 
+   geom_text(aes(y=relmsw, 
+             label = ifelse(relmsw > 0.03, prey, "")),
              position = position_stack(vjust = 0.5),
-             size=1)+
-   facet_wrap("season2") +
+             size=1.5)+
+   facet_wrap(~fct_relevel(season2, "SPRING", "FALL")) +
    theme_bw() +
    #viridis::scale_fill_viridis(discrete = TRUE) +
-   scale_fill_manual(values=preycolaggsel) + 
+   scale_fill_manual(values=c("lightblue", "grey90")) + 
    theme(legend.position = "none"
          #legend.position="bottom",
          #legend.text=element_text(size=5)
