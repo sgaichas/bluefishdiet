@@ -602,6 +602,8 @@ bluefishdecseastot <- bluefish %>%
   dplyr::mutate(decade = floor(year/10)*10,
                 season2 = case_when(season %in% c("WINTER", "SPRING") ~ "SPRING",
                                     season %in% c("SUMMER", "FALL") ~ "FALL")) %>%
+                #season2 = case_when(season %in% c( "SPRING") ~ "SPRING",
+                #                    season %in% c( "FALL") ~ "FALL")) %>%
   dplyr::select(decade, season2, totwt) %>%
   dplyr::distinct() %>%
   dplyr::group_by(decade, season2) %>%
@@ -616,6 +618,8 @@ bluefishdecseas <- bluefish %>%
   dplyr::mutate(decade = floor(year/10)*10,
                 season2 = case_when(season %in% c("WINTER", "SPRING") ~ "SPRING",
                                     season %in% c("SUMMER", "FALL") ~ "FALL")) %>%
+                #season2 = case_when(season %in% c( "SPRING") ~ "SPRING", 
+                #                    season %in% c( "FALL") ~ "FALL")) %>%
   # sum meansw by decade, season, prey
   dplyr::group_by(decade, season2, prey) %>%
   # recalculate relmsw
