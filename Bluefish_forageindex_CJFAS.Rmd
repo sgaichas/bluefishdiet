@@ -246,6 +246,43 @@ flextable::flextable(pisccompletedf[,-3]) %>%
   
 ```
 
+```{r circulardend}
+
+guilds <- hclust(d_dietoverlap)
+
+dend <- as.dendrogram(guilds)
+
+dend <- rotate(dend, 1:136)
+
+dend <- color_branches(dend, k=6)
+
+dend <- color_labels(dend, k=6)
+
+labels(dend) <- paste(as.character(names(dietoverlap[-1]))[order.dendrogram(dend)],
+                           "(",labels(dend),")", 
+                           sep = "")
+
+dend <- hang.dendrogram(dend,hang_height=0.1)
+
+# reduce the size of the labels:
+# dend <- assign_values_to_leaves_nodePar(dend, 0.5, "lab.cex")
+dend <- set(dend, "labels_cex", 0.75)
+# And plot:
+# par(mar = c(3,3,3,7))
+# plot(dend, 
+#      main = "Clustered NEFSC diet data, (complete)
+#      (the labels give the predator species/size)", 
+#      horiz =  TRUE,  nodePar = list(cex = .007))
+
+circlize::circos.par(start.degree = 90)
+par(mar = rep(0,4))
+circlize_dendrogram(dend,
+                    labels_track_height=0.3,
+                    dend_track_height = 0.6)
+
+```
+
+
 This piscivore dataset better captured predators that feed similarly to bluefish (e.g. striped bass), and has a higher proportion of stations with bluefish prey than a dataset based on the @garrison_dietary_2000 piscivore definition. We also evaluated a piscivore definition using only the predators that always cluster with bluefish no matter what clustering algorithm is applied. However, a dataset based on that limited piscivore list excluded predators highlighted by bluefish experts (e.g., striped bass) and resulted in the inclusion of fewer overall stations than the either of the above piscivore definitions, with a lower proportion of included stations with bluefish prey.
 
 The NEAMAP survey operates closer to shore than the current NEFSC survey. While both surveys capture many of the same predators, some are not available close to shore and others are more available close to shore. The NEAMAP dataset includes the following piscivore predators and size ranges, adding two species not captured by the NEFSC survey offshore but included based on working group expert judgement of prey similarity to bluefish (Spanish mackerel and spotted sea trout) and leaving out those not captured inshore:
@@ -590,7 +627,7 @@ ggiraph(code=print(p))
 ```
 
 
-```{r yearseasondiet, fig.cap="Bluefish diet by season and year, NEFSC bottom trawl surveys."}
+```{r yearseasondiet, eval=FALSE}
 source(here("get_diet.R"))
 
 bluefish <- get_diet(135) 
@@ -668,6 +705,56 @@ p1 <-   ggplot(bluefishdecseas, aes(decade, relmsw, fill=plotcol)) +
 
 #ggiraph(code = print(p1)) 
 #p1
+```
+
+```{r seasondecade, fig.cap="Bluefish diet by season and decade, NEFSC bottom trawl surveys."}
+
+briansdat <- read.csv(here("fhdat/allwt_135_seas_dec.csv"))
+
+# add blueprey list
+briansdecadeseason <- briansdat %>%
+  dplyr::mutate(blueprey = ifelse(collsci %in% blueprey$pynam, TRUE, FALSE),
+                plotcol = ifelse(blueprey, "blue", "lightgrey"),
+                decade = as.integer(gsub("s","",decade))) %>%
+  dplyr::left_join(bluefishdecseastot, by=c("seacat" = "season2", 
+                                            "decade" = "decade")) %>%
+  dplyr::group_by(decade, seacat) %>%
+  dplyr::filter(meansw>0) %>%
+  dplyr::arrange(desc(blueprey), .by_group = TRUE)
+
+
+bars <- map(unique(briansdecadeseason$decade)
+            , ~geom_bar(aes(width=nyrs), stat = "identity", colour = "white"#, position = "stack", 
+                       , data = briansdecadeseason %>% filter(decade == .x)))
+
+
+p2 <-   ggplot(briansdecadeseason, aes(decade, relmsw, fill=blueprey)) +
+                                    #fill=factor(prey, 
+                                    #            levels = c(as.factor(names(preycolaggsel)),
+                                    #                       setdiff(prey, preycolaggsel)),
+                                    #           ordered = TRUE
+                                    #           ))) +
+   #geom_bar(aes(width=nyrs), stat = "identity") + #
+   bars +
+   ylab("Percent in Diet") +
+   xlab("Decade") +
+   geom_text(aes(y=relmsw, 
+             label = ifelse(relmsw > 3, collsci, "")),
+             position = position_stack(vjust = 0.5),
+             size=1.5)+
+   facet_wrap(~fct_relevel(seacat, "SPRING", "FALL")) +
+   theme_bw() +
+   #viridis::scale_fill_viridis(discrete = TRUE) +
+   scale_fill_manual(values=c( "grey90", "lightblue")) + 
+   theme(legend.position = "none"
+         #legend.position="bottom",
+         #legend.text=element_text(size=5)
+         ) #+
+    #geom_bar_interactive(stat = "identity", aes(tooltip = prey, data_id = prey))
+
+#ggiraph(code = print(p1)) 
+#p1
+
 ```
 
 
