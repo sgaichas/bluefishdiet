@@ -4,11 +4,11 @@ author: "Sarah Gaichas, James Gartland, Brian Smith, Elizabeth Ng, Michael Celes
   Anthony Wood, Katie Drew, Abigail Tyrell, and James Thorson"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output:
-  bookdown::word_document2:
-    toc: false
   bookdown::html_document2: 
     toc: true
     toc_float: true
+  bookdown::word_document2:
+    toc: false
   bookdown::pdf_document2:
     includes: 
        in_header: latex/header1.tex
@@ -246,7 +246,7 @@ flextable::flextable(pisccompletedf[,-3]) %>%
   
 ```
 
-```{r circulardend}
+```{r circulardend, eval=FALSE}
 
 guilds <- hclust(d_dietoverlap)
 
@@ -411,6 +411,17 @@ bfoffshoregrid <-  FishStatsUtils::northwest_atlantic_grid %>%
 
 MAB <- c(1010:1080, 1100:1120, 1600:1750, 3010:3450, 3470, 3500, 3510)
 GB  <- c(1090, 1130:1210, 1230, 1250, 3460, 3480, 3490, 3520:3550)
+GOM <- c(1220, 1240, 1260:1290, 1360:1400, 3560:3830)
+
+MABgrid <-  FishStatsUtils::northwest_atlantic_grid %>%
+  filter(stratum_number %in% c(MAB))
+
+GBgrid <-  FishStatsUtils::northwest_atlantic_grid %>%
+  filter(stratum_number %in% c(GB))
+
+GOMgrid <-  FishStatsUtils::northwest_atlantic_grid %>%
+  filter(stratum_number %in% c(GOM))
+
 
 MABGBgrid <-  FishStatsUtils::northwest_atlantic_grid %>%
   filter(stratum_number %in% c(MAB, GB))
@@ -430,69 +441,43 @@ fedwatersgrid <- fedwaters %>%
 
 ```
 
-### Key Strata {.tabset}
+```{r maps, crop=TRUE, fig.cap="Maps of key areas for Bluefish assessment indices. The full VAST model grid is shown in brown.", fig.show='hold', out.width="33%"}
 
-#### Mid-Atlantic and Georges Bank
-```{r MABGB, fig.cap="Map of Mid-Atlantic and Georges Bank region."}
+theme_set(theme_bw())
 
 ggplot(data = ecodata::coast) +
   geom_sf() + 
-  geom_point(data = FishStatsUtils::northwest_atlantic_grid, aes(x = Lon, y = Lat), size=0.05, alpha=0.1) +
+  geom_point(data = FishStatsUtils::northwest_atlantic_grid, aes(x = Lon, y = Lat),  colour = "coral4", size=0.05, alpha=0.1) +
+  geom_point(data = MABgrid, aes(x = Lon, y = Lat), colour = "yellow", size=0.05, alpha=0.1) +
+  geom_point(data = GBgrid, aes(x = Lon, y = Lat), colour = "orange", size=0.05, alpha=0.1) +
+  geom_point(data = GOMgrid, aes(x = Lon, y = Lat), colour = "red", size=0.05, alpha=0.1) +
+  #coord_sf(xlim = c(-79, -65.5), ylim = c(33, 45)) + #full extent of VAST model
+  coord_sf(xlim =c(-78, -65.5), ylim = c(35, 45)) + #zoomed to Hatteras and N
+  ggtitle("a. MAB (yellow), GB (orange), GOM (red)")
+
+
+ggplot(data = ecodata::coast) +
+  geom_sf() + 
+  geom_point(data = FishStatsUtils::northwest_atlantic_grid, aes(x = Lon, y = Lat),  colour = "coral4", size=0.05, alpha=0.1) +
   geom_point(data = MABGBgrid, aes(x = Lon, y = Lat), size=0.05, colour = "green",  alpha=0.1) +
-  coord_sf(xlim = c(-79, -65.5), ylim = c(33, 45)) #+
-  #ggtitle("Federal waters")
-
-```
-
-#### Albatross inshore survey strata
-```{r albin, fig.cap="Map of inshore survey strata formerly surveyed by the R/V Albatross, now surveyed by NEAMAP."}
-
-ggplot(data = ecodata::coast) +
-  geom_sf() + 
-  geom_point(data = FishStatsUtils::northwest_atlantic_grid, aes(x = Lon, y = Lat), size=0.05, alpha=0.1) +
-  geom_point(data = albinshoregrid, aes(x = Lon, y = Lat), size=0.05, colour = "green",  alpha=0.1) +
-  coord_sf(xlim = c(-79, -65.5), ylim = c(33, 45)) #+
-  #ggtitle("Federal waters")
-
-```
-
-#### Bluefish Inshore Survey Strata (Bigelow)
-```{r bluein, fig.cap="Map of bluefish inshore survey strata accessible to the R/V Bigelow"}
+  #geom_point(data = albinshoregrid, aes(x = Lon, y = Lat), size=0.03, colour = "blue") +
+  geom_point(data = bfinshoregrid, aes(x = Lon, y = Lat), size=0.05, colour = "blue") +
+  #geom_point(data = bfoffshoregrid, aes(x = Lon, y = Lat), size=0.05, colour = "orange",  alpha=0.3) +
+  #coord_sf(xlim = c(-79, -65.5), ylim = c(33, 45)) +
+  coord_sf(xlim =c(-78, -65.5), ylim = c(35, 45)) +
+  ggtitle("b. Bluefish survey (blue) in MABGB (green)")
 
 ggplot(data = ecodata::coast) +
   geom_sf() + 
-  geom_point(data = FishStatsUtils::northwest_atlantic_grid, aes(x = Lon, y = Lat), size=0.05, alpha=0.1) +
-  geom_point(data = bfinshoregrid, aes(x = Lon, y = Lat), size=0.05, colour = "green",  alpha=0.1) +
-  coord_sf(xlim = c(-79, -65.5), ylim = c(33, 45)) #+
-  #ggtitle("Federal waters")
+  geom_point(data = FishStatsUtils::northwest_atlantic_grid, aes(x = Lon, y = Lat),  colour = "coral4", size=0.05, alpha=0.1) +
+  geom_point(data = MABGBgrid, aes(x = Lon, y = Lat), size=0.05, colour = "green",  alpha=0.1) +
+  geom_point(data = statewatersgrid, aes(x = Lon, y = Lat), size=0.03, colour = "purple",  alpha=0.5) +
+  #coord_sf(xlim = c(-79, -65.5), ylim = c(33, 45)) +
+  coord_sf(xlim =c(-78, -65.5), ylim = c(35, 45)) +
+  ggtitle("c. State waters (purple), in MABGB (green)")
 
 ```
 
-#### Bluefish Offshore Survey Strata (proposed 2022)
-```{r blueoff, fig.cap="Map of bluefish offshore survey strata proposed for the 2022 assessment"}
-
-ggplot(data = ecodata::coast) +
-  geom_sf() + 
-  geom_point(data = FishStatsUtils::northwest_atlantic_grid, aes(x = Lon, y = Lat), size=0.05, alpha=0.1) +
-  geom_point(data = bfoffshoregrid, aes(x = Lon, y = Lat), size=0.05, colour = "green",  alpha=0.1) +
-  coord_sf(xlim = c(-79, -65.5), ylim = c(33, 45)) #+
-  #ggtitle("Federal waters")
-
-```
-
-#### State waters
-```{r statewaters, fig.cap="Map of state waters: coastline out to 3 nautical miles from shore."}
-
-ggplot(data = ecodata::coast) +
-  geom_sf() + 
-  geom_point(data = FishStatsUtils::northwest_atlantic_grid, aes(x = Lon, y = Lat), size=0.05, alpha=0.1) +
-  geom_point(data = statewatersgrid, aes(x = Lon, y = Lat), size=0.05, colour = "green",  alpha=0.1) +
-  coord_sf(xlim = c(-79, -65.5), ylim = c(33, 45)) #+
-  #ggtitle("Federal waters")
-
-```
-
-### {-}
 
 Seasonal models were run using the script [`bluefishdiet/VASTunivariate_bfp_allsurvs_lencovSST_ALLinoffsplits.R`](https://github.com/sgaichas/bluefishdiet/blob/main/VASTunivariate_bfp_allsurvs_lencovSST_ALLinoffsplits.R), which contains all stratum definitions. The annual model was run using the script [`bluefishdiet/VASTunivariate_bfp_allsurvsANNUA:_lencovSST_ALLinoffsplits.R`](https://github.com/sgaichas/bluefishdiet/blob/main/VASTunivariate_bfp_allsurvsANNUAL_lencovSST_ALLinoffsplits.R). 
 
@@ -708,6 +693,26 @@ p1 <-   ggplot(bluefishdecseas, aes(decade, relmsw, fill=plotcol)) +
 ```
 
 ```{r seasondecade, fig.cap="Bluefish diet by season and decade, NEFSC bottom trawl surveys."}
+source(here("get_diet.R"))
+
+bluefish <- get_diet(135) 
+
+# try for facet decade/season with included prey highlighted in blue
+bluefishdecseastot <- bluefish %>%
+  # make decade column
+  # make 2 seasons winter--> spring and summer--> fall
+  dplyr::mutate(decade = floor(year/10)*10,
+                season2 = case_when(season %in% c("WINTER", "SPRING") ~ "SPRING",
+                                    season %in% c("SUMMER", "FALL") ~ "FALL")) %>%
+                #season2 = case_when(season %in% c( "SPRING") ~ "SPRING",
+                #                    season %in% c( "FALL") ~ "FALL")) %>%
+  dplyr::select(decade, season2, totwt) %>%
+  dplyr::distinct() %>%
+  dplyr::group_by(decade, season2) %>%
+  dplyr::mutate(totwt2 = sum(totwt, na.rm = TRUE),
+                nyrs = n_distinct(year)) %>%
+  dplyr::select(decade, season2, totwt2, nyrs) %>%
+  dplyr::distinct()
 
 briansdat <- read.csv(here("fhdat/allwt_135_seas_dec.csv"))
 
@@ -857,7 +862,7 @@ NEAMAP survey stations with diet collections for piscivores (n = `r neamap_npisc
 
 The number of survey stations missing surface temperature data varied considerably by decade. A large percentage of survey stations lacked in-situ temperature measurements between 1985 and 1990, while the percentage of stations missing temperature was generally below 10% (with a few exceptions) from 1991-2021 (Table \@ref(tab:sstdat)). Therefore, OISST temperature estimates were more commonly substituted early in the time series. 
 
-```{r sstdat}
+```{r sstdat, eval=FALSE}
 #[add stuff about how many SST values were missing and which years got substituted]
 
 inputdat <- readRDS(here("fhdat/bluepyagg_stn_all_OISST.rds"))
