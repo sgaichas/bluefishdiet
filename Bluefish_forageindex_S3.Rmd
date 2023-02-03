@@ -1,0 +1,392 @@
+---
+title: "Bluefish Forage Index Supplement 3"
+author: "Sarah Gaichas"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  bookdown::html_document2: 
+    toc: true
+    toc_float: true
+  bookdown::word_document2:
+    toc: false
+  bookdown::pdf_document2:
+    includes: 
+       in_header: latex/header1.tex
+    keep_tex: true
+link-citations: yes
+csl: "canadian-journal-of-fisheries-and-aquatic-sciences.csl"
+bibliography: FishDiet_EcoIndicators.bib
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Fall Diagnostics {.tabset}
+
+Basic VAST diagnostics include maps of the spatial grid knot placement ("Data_and_knots"), maps of included station locations for each year ("Data_by_year"), residual plots ("quantile residuals"), maps of residuals for each station ("quantile_residuals_on_map"), an anisotropy plot indicating directional correlation ("Aniso"), and a plot of the estimated change in forage fish center of gravity over time ("center_of_gravity"). We present these plots for each of the models in numbered sections below.
+
+```{r, results='asis'}
+
+diagplots <- c("Data_and_knots",
+               "Data_by_year",
+               "quantile_residuals",
+               "quantile_residuals_on_map",
+               "Aniso",
+               "center_of_gravity")
+
+for(p in diagplots){
+  
+    cat("  \n####",  as.character(p),"  \n")
+    cat(paste0("![Fall diagnostics:",
+               p,
+               "](pyindex/allagg_fall_500_lennosst_ALLsplit_biascorrect/",
+                      p,
+                      ".png)")) 
+    cat("  \n")   
+    
+  }
+
+```
+
+### {-} 
+
+
+## Woods Hole stock assessment model (WHAM) input time series
+
+Current inputs for the bluefish assessment implemented in WHAM [@stock_woods_2021] include a subset of the stratum-specific indices calculated above. The index is calculated for each season and the annual model for several regions relevant to the bluefish assessment:
+
+1.  Albatross New (AlbNew) includes all inshore and new offshore survey strata (largest area, combines area in Figs. \@ref(fig:albin), \@ref(fig:bluein), and \@ref(fig:blueoff))
+1.  Albatross Old (AlbOld) includes all inshore survey strata (combines area in Figs. \@ref(fig:albin) and \@ref(fig:bluein))
+1.  Bigelow New (BigNew) includes the subset of inshore survey strata that can be sampled by the R/V Henry Bigelow plus new offshore strata (combines area in Figs. \@ref(fig:bluein) and \@ref(fig:blueoff))
+1.  Bigelow Old (BigOld) includes the subset of inshore survey strata that can be sampled by the R/V Henry Bigelow (area in Fig. \@ref(fig:bluein))
+1.  StateWaters includes the coastline to 3 nautical miles offshore (smallest area, in Fig. \@ref(fig:statewaters))
+
+WHAM model inputs were processed with the [`WHAMinputs.R`](https://github.com/sgaichas/bluefishdiet/blob/main/WHAMinputs.R) script.
+
+```{r, code = readLines(here("WHAMinputs.R")), eval=F}
+```
+
+Indices in the strata above for input in to WHAM are plotted below (Fig. \@ref(fig:WHAMfall)).
+
+```{r}
+WHAMinputsviz <- function(infile) {
+  
+  splitoutput <- read.csv(infile)
+  
+  # warning, hardcoded. obviously
+  stratlook <- data.frame(Stratum = c("Stratum_1",
+                                      "Stratum_2",
+                                      "Stratum_3",
+                                      "Stratum_4",
+                                      "Stratum_5",
+                                      "Stratum_6",
+                                      "Stratum_7",
+                                      "Stratum_8",
+                                      "Stratum_9",
+                                      "Stratum_10",
+                                      "Stratum_11",
+                                      "Stratum_12",
+                                      "Stratum_13",
+                                      "Stratum_14",
+                                      "Stratum_15"),
+                          Region  = c("AllEPU", 
+                                      "MABGB", 
+                                      "MABGBstate", 
+                                      "MABGBfed", 
+                                      "MAB",
+                                      "GB",
+                                      "GOM",
+                                      "bfall",
+                                      "bfin",
+                                      "bfoff",
+                                      "MABGBalbinshore",
+                                      "MABGBothoffshore",
+                                      "albbfin",
+                                      "albbfall",
+                                      "allother"))
+  
+  forageindex <- splitoutput %>%
+    left_join(stratlook) %>%
+    dplyr::select(Time, Region, Estimate, SE=Std..Error.for.Estimate) %>%
+    tidyr::pivot_longer(c(Estimate, SE), names_to = "Var") %>%
+    dplyr::group_by(Var) %>%
+    tidyr::pivot_wider(names_from = Region, values_from = value) %>%
+    dplyr::mutate(BigOld = bfin,
+                  BigNew = bfall,
+                  AlbOld = albbfin, 
+                  AlbNew = albbfall, 
+                  StateWaters = MABGBstate,
+                  FedWaters =   MABGBfed) %>%
+    dplyr::select(Time, BigOld, BigNew, AlbOld, AlbNew, StateWaters) %>%
+    tidyr::pivot_longer(!c(Time, Var), names_to = "Region", values_to = "value") %>%
+    tidyr::pivot_wider(names_from = "Var", values_from = "value")
+ 
+  ggplot(forageindex, aes(x=Time, y=Estimate, colour = Region)) +
+    geom_errorbar(aes(ymin=Estimate+SE, ymax=Estimate-SE))+
+    geom_point()+
+    geom_line()
+  
+} 
+```
+
+### Spring Index  
+
+Spring indices (Fig. \@ref(fig:springall)) for the full spatial domain (AllEPU) through smaller strata were produced.
+
+```{r springall, fig.cap="All Spring forage indices"}
+splitoutput <- read.csv("pyindex/allagg_spring_500_lennosst_ALLsplit_biascorrect/Index.csv")
+
+splitoutput <- splitoutput %>%
+  left_join(stratlook)
+
+ggplot(splitoutput, aes(x=Time, y=Estimate, colour=Region)) +
+  geom_errorbar(aes(ymin=Estimate+Std..Error.for.Estimate, ymax=Estimate-Std..Error.for.Estimate))+
+  geom_point()+
+  geom_line()+
+  facet_wrap(~Region, scales = "free_y") +
+  guides(colour = guide_legend(ncol=2)) +
+  #theme(legend.position = c(1, 0),
+   #     legend.justification = c(1, 0))
+  theme(legend.position="none")
+
+```
+
+We can compare the indices relevant to bluefish on the same scale: inshore (Albatross strata), inshore bluefish, offshore bluefish, and further out, plus the state and federal waters split (Fig. \@ref(fig:springsome)).
+
+```{r springsome, fig.cap="Bluefish-related Spring forage indices"}
+in2off <- splitoutput %>%
+  dplyr::select(Time, Region, Estimate, Std..Error.for.Estimate) %>%
+  tidyr::pivot_longer(c(Estimate, Std..Error.for.Estimate), names_to = "Var") %>%
+  dplyr::group_by(Var) %>%
+  tidyr::pivot_wider(names_from = Region, values_from = value) %>%
+  dplyr::mutate(AlbInshore = MABGBalbinshore,
+                BlueInshore = bfin,
+                BlueOffshore = bfoff,
+                #OthOffshore = MABGB - (bfoff + bfin + MABGBalbinshore),
+                OthOffshore = MABGBothoffshore,
+                StateWaters = MABGBstate,
+                FedWaters =   MABGBfed,
+                SumMABGB = AlbInshore + BlueInshore + BlueOffshore + OthOffshore) %>%
+  dplyr::select(Time, AlbInshore, BlueInshore, BlueOffshore, OthOffshore, SumMABGB, StateWaters, FedWaters, MABGB) %>%
+  tidyr::pivot_longer(!c(Time, Var), names_to = "Region", values_to = "value") %>%
+  tidyr::pivot_wider(names_from = "Var", values_from = "value")
+
+ggplot(in2off, aes(x=Time, y=Estimate, colour = Region)) +
+  geom_errorbar(aes(ymin=Estimate+Std..Error.for.Estimate, ymax=Estimate-Std..Error.for.Estimate))+
+  geom_point()+
+  geom_line()+
+  #facet_wrap(~Region) + #+ , scales = "free_y"
+  #theme(legend.position = c(1, 0),
+  #      legend.justification = c(1, 0))
+  ggtitle("Spring Prey Index, Mid-Atlantic and Georges Bank")
+
+
+```
+
+Proportions of prey in each bluefish relevant area for spring can be compared (here as a proportion of the full MABGB index; Fig. \@ref(fig:springprop)).
+
+```{r springprop, fig.cap="Spring forage indices as proportion of the Mid Atlantic and Georges Bank area."}
+MABGBprop <- in2off %>%
+  #dplyr::filter(Region != "AllEPU") %>%
+  dplyr::select(Time, Region, Estimate) %>%
+  tidyr::pivot_wider(names_from = Region, values_from = Estimate) %>%
+  dplyr::mutate(AlbInshoreprop = AlbInshore/MABGB,
+                BlueInshoreprop = BlueInshore/MABGB,
+                BlueOffshoreprop = BlueOffshore/MABGB,
+                OthOffshoreprop = OthOffshore/MABGB,
+                StateWatersprop = StateWaters/MABGB, 
+                FedWatersprop = FedWaters/MABGB) %>%
+  tidyr::pivot_longer(!Time, names_to = "Region", values_to = "Estimate") %>%
+  dplyr::filter(Region %in% c("AlbInshoreprop", "BlueInshoreprop", "BlueOffshoreprop",
+                              "OthOffshoreprop", "StateWatersprop", "FedWatersprop"))
+  
+
+ggplot(MABGBprop, aes(x=Time, y=Estimate, colour = Region)) +
+  geom_point()+
+  geom_line()+
+  #facet_wrap(~Region) + #+ , scales = "free_y"
+  #theme(legend.position = c(1, 0),
+  #      legend.justification = c(1, 0))
+  ggtitle("Spring Prey Index as proportion of Mid-Atlantic and Georges Bank")
+  
+  
+```
+
+
+### Spring predicted ln-density
+
+The VAST model predicts density of forage fish across the entire model domain for each year (Fig. \@ref(fig:springdens)). 
+
+```{r springdens, fig.cap="Yearly maps of VAST model estimated forage fish density for Spring (months 1-6)."}
+knitr::include_graphics("pyindex/allagg_spring_500_lennosst_ALLsplit_biascorrect/ln_density-predicted.png")
+```
+
+<!--![Spring density maps with covariates](pyindex/allagg_spring_500_lennosst_ALLsplit_biascorrect/ln_density-predicted.png)-->
+
+### Spring Diagnostics {.tabset}
+
+Diagnostics shown for the spring model are as described above for the fall model. 
+
+```{r, results='asis'}
+
+diagplots <- c("Data_and_knots",
+               "Data_by_year",
+               "quantile_residuals",
+               "quantile_residuals_on_map",
+               "Aniso",
+               "center_of_gravity")
+
+for(p in diagplots){
+  
+    cat("  \n####",  as.character(p),"  \n")
+    cat(paste0("![Spring diagnostics:",
+               p,
+               "](pyindex/allagg_spring_500_lennosst_ALLsplit_biascorrect/",
+                      p,
+                      ".png)")) 
+    cat("  \n")   
+    
+  }
+
+```
+
+### {-} 
+
+
+### Annual Index  
+
+The Annual forage index uses data from all months each year (1-12). The same plots are presented as those above for Fall and Spring indices. Fig. \@ref(fig:annualall) shows all annual forage index time series with standard errors.
+
+```{r annualall, fig.cap="All Annual forage indices"}
+splitoutput <- read.csv("pyindex/allagg_annual_500_lennosst_ALLsplit_biascorrect/Index.csv")
+
+splitoutput <- splitoutput %>%
+  left_join(stratlook)
+
+ggplot(splitoutput, aes(x=Time, y=Estimate, colour=Region)) +
+  geom_errorbar(aes(ymin=Estimate+Std..Error.for.Estimate, ymax=Estimate-Std..Error.for.Estimate))+
+  geom_point()+
+  geom_line()+
+  facet_wrap(~Region, scales = "free_y") +
+  guides(colour = guide_legend(ncol=2)) +
+  #theme(legend.position = c(1, 0),
+   #     legend.justification = c(1, 0))
+  theme(legend.position="none")
+
+```
+
+We can compare the annual indices relevant to bluefish on the same scale: inshore (Albatross strata), inshore bluefish, offshore bluefish, and further out, plus the state and federal waters split (Fig. \@ref(fig:annualsome)).
+
+```{r annualsome, fig.cap="Bluefish-related Annual forage indices"}
+
+in2off <- splitoutput %>%
+  dplyr::select(Time, Region, Estimate, Std..Error.for.Estimate) %>%
+  tidyr::pivot_longer(c(Estimate, Std..Error.for.Estimate), names_to = "Var") %>%
+  dplyr::group_by(Var) %>%
+  tidyr::pivot_wider(names_from = Region, values_from = value) %>%
+  dplyr::mutate(AlbInshore = MABGBalbinshore,
+                BlueInshore = bfin,
+                BlueOffshore = bfoff,
+                #OthOffshore = MABGB - (bfoff + bfin + MABGBalbinshore),
+                OthOffshore = MABGBothoffshore,
+                StateWaters = MABGBstate,
+                FedWaters =   MABGBfed,
+                SumMABGB = AlbInshore + BlueInshore + BlueOffshore + OthOffshore) %>%
+  dplyr::select(Time, AlbInshore, BlueInshore, BlueOffshore, OthOffshore, SumMABGB, StateWaters, FedWaters, MABGB) %>%
+  tidyr::pivot_longer(!c(Time, Var), names_to = "Region", values_to = "value") %>%
+  tidyr::pivot_wider(names_from = "Var", values_from = "value")
+
+ggplot(in2off, aes(x=Time, y=Estimate, colour = Region)) +
+  geom_errorbar(aes(ymin=Estimate+Std..Error.for.Estimate, ymax=Estimate-Std..Error.for.Estimate))+
+  geom_point()+
+  geom_line()+
+  #facet_wrap(~Region) + #+ , scales = "free_y"
+  #theme(legend.position = c(1, 0),
+  #      legend.justification = c(1, 0))
+  ggtitle("Annual Prey Index, Mid-Atlantic and Georges Bank")
+
+
+```
+
+Proportions of prey in each bluefish relevant area for the annual model can be compared (here as a proportion of the full MABGB index; Fig. \@ref(fig:annualprop)).
+
+```{r annualprop, fig.cap="Annual forage indices as proportion of the Mid Atlantic and Georges Bank area."}
+MABGBprop <- in2off %>%
+  #dplyr::filter(Region != "AllEPU") %>%
+  dplyr::select(Time, Region, Estimate) %>%
+  tidyr::pivot_wider(names_from = Region, values_from = Estimate) %>%
+  dplyr::mutate(AlbInshoreprop = AlbInshore/MABGB,
+                BlueInshoreprop = BlueInshore/MABGB,
+                BlueOffshoreprop = BlueOffshore/MABGB,
+                OthOffshoreprop = OthOffshore/MABGB,
+                StateWatersprop = StateWaters/MABGB, 
+                FedWatersprop = FedWaters/MABGB) %>%
+  tidyr::pivot_longer(!Time, names_to = "Region", values_to = "Estimate") %>%
+  dplyr::filter(Region %in% c("AlbInshoreprop", "BlueInshoreprop", "BlueOffshoreprop",
+                              "OthOffshoreprop", "StateWatersprop", "FedWatersprop"))
+  
+
+ggplot(MABGBprop, aes(x=Time, y=Estimate, colour = Region)) +
+  geom_point()+
+  geom_line()+
+  #facet_wrap(~Region) + #+ , scales = "free_y"
+  #theme(legend.position = c(1, 0),
+  #      legend.justification = c(1, 0))
+  ggtitle("Annual Prey Index as proportion of Mid-Atlantic and Georges Bank")
+  
+  
+```
+
+### Annual predicted ln-density
+
+The VAST model predicts density of forage fish across the entire model domain for each year (Fig. \@ref(fig:annualdens)). 
+
+```{r annualdens, fig.cap="Yearly maps of VAST model estimated annual forage fish density (months 1-12)."}
+knitr::include_graphics("pyindex/allagg_annual_500_lennosst_ALLsplit_biascorrect/ln_density-predicted.png")
+```
+
+<!--![Annual density maps with covariates](pyindex/allagg_annual_500_lennosst_ALLsplit_biascorrect/ln_density-predicted.png)-->
+ 
+### Annual Diagnostics {.tabset}
+
+Diagnostics shown for the annual model are as described above for the falland spring models. 
+
+```{r, results='asis'}
+
+diagplots <- c("Data_and_knots",
+               "Data_by_year",
+               "quantile_residuals",
+               "quantile_residuals_on_map",
+               "Aniso",
+               "center_of_gravity")
+
+for(p in diagplots){
+  
+    cat("  \n####",  as.character(p),"  \n")
+    cat(paste0("![Annual diagnostics:",
+               p,
+               "](pyindex/allagg_annual_500_lennosst_ALLsplit_biascorrect/",
+                      p,
+                      ".png)")) 
+    cat("  \n")   
+    
+  }
+
+```
+
+### {-} 
+
+The full results of all models are archived on [google drive](https://drive.google.com/drive/folders/1PsEk5hhQ7fR0Gq4NnYPvU4V59d4nIR8E) rather than github to save space.
+
+
+### WHAM forage index time series Spring
+
+```{r WHAMspring, fig.cap="Time series of VAST estimated spring forage indices for input into WHAM, 1985-2021"}
+WHAMinputsviz(infile = "pyindex/allagg_spring_500_lennosst_ALLsplit_biascorrect/Index.csv")
+```
+
+### WHAM forage index time series Annual
+
+```{r WHAMannual, fig.cap="Time series of VAST estimated annual forage indices for input into WHAM, 1985-2021"}
+WHAMinputsviz(infile = "pyindex/allagg_annual_500_lennosst_ALLsplit_biascorrect/Index.csv")
+```
