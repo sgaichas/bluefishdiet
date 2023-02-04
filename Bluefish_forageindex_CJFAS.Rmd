@@ -482,206 +482,7 @@ The forage species list based on diet data was matched to survey species lists t
 
 ## Input dataset overview 
 
-```{r dietsumm}
-bluefishaggdiet <- read_csv(here("datfromshiny","DC.Bluefish (Pomatomus saltatrix).All.2021-10-07.csv"))
-
-# decadal diet
-diet70 <- read_csv(here("datfromshiny","DC.Bluefish (Pomatomus saltatrix).1970s.2021-10-07.csv")) %>%
-  mutate(Decade = 1970)
-diet80 <- read_csv(here("datfromshiny","DC.Bluefish (Pomatomus saltatrix).1980s.2021-10-07.csv"))%>%
-  mutate(Decade = 1980)
-diet90 <- read_csv(here("datfromshiny","DC.Bluefish (Pomatomus saltatrix).1990s.2021-10-07.csv"))%>%
-  mutate(Decade = 1990)
-diet00 <- read_csv(here("datfromshiny","DC.Bluefish (Pomatomus saltatrix).2000s.2021-10-07.csv"))%>%
-  mutate(Decade = 2000)
-diet10 <- read_csv(here("datfromshiny","DC.Bluefish (Pomatomus saltatrix).2010s.2021-10-07.csv"))%>%
-  mutate(Decade = 2010)
-
-bluefishdecadediet <- bind_rows(diet70, diet80, diet90, diet00, diet10)
-
-# seasonal diet
-dietspring <- read_csv(here("datfromshiny","DC.Bluefish (Pomatomus saltatrix).SPRING.2021-10-07.csv"))%>%
-  mutate(Season = "Spring")
-dietfall <- read_csv(here("datfromshiny","DC.Bluefish (Pomatomus saltatrix).FALL.2021-10-07.csv"))%>%
-  mutate(Season = "Fall")
-
-bluefishseasondiet <- bind_rows(dietspring, dietfall)
-
-# regional diet
-dietMAB <- read_csv(here("datfromshiny","DC.Bluefish (Pomatomus saltatrix).MID-ATLANTIC BIGHT.2021-10-07.csv")) %>%
-  mutate(Region = "MAB")
-dietSNE <- read_csv(here("datfromshiny","DC.Bluefish (Pomatomus saltatrix).SOUTHERN NEW ENGLAND.2021-10-07.csv"))%>%
-  mutate(Region = "SNE")
-dietGB <- read_csv(here("datfromshiny","DC.Bluefish (Pomatomus saltatrix).GEORGES BANK.2021-10-07.csv"))%>%
-  mutate(Region = "GB")
-
-bluefishregiondiet <- bind_rows(dietMAB, dietSNE, dietGB)
-
-# bluefish size diet
-dietSM <- read_csv(here("datfromshiny","DC.Bluefish (Pomatomus saltatrix).S.2021-10-07.csv")) %>%
-  mutate(Size = "Small")
-dietMED <- read_csv(here("datfromshiny","DC.Bluefish (Pomatomus saltatrix).M.2021-10-07.csv"))%>%
-  mutate(Size = "Medium")
-dietLG <- read_csv(here("datfromshiny","DC.Bluefish (Pomatomus saltatrix).L.2021-10-07.csv"))%>%
-  mutate(Size = "Large")
-
-bluefishsizediet <- bind_rows(dietSM, dietMED, dietLG)
-
-preylist <- unique(c(bluefishaggdiet$Prey, bluefishdecadediet$Prey, bluefishregiondiet$Prey, bluefishseasondiet$Prey, bluefishsizediet$Prey))
-
-```
-
-```{r preycol}
-#from http://medialab.github.io/iwanthue/ using 35 categories, colorblind friendly
-# again from http://medialab.github.io/iwanthue/ All colors colorspace, colorblind friendly, hard
-preycol <- c("#00495d",
-"#3ac100",
-"#a646f7",
-"#72ff75",
-"#8d00a6",
-"#c6ff90",
-"#0268f1",
-"#ff8d23",
-"#0144a6",
-"#01a249",
-"#e1009e",
-"#abffe1",
-"#7e0082",
-"#fffdd4",
-"#24001c",
-"#bbf6ff",
-"#a60029",
-"#0176c8",
-"#8a4700",
-"#a083ff",
-"#454400",
-"#ff7fff",
-"#005d35",
-"#c9005e",
-"#00483e",
-"#ff96e4",
-"#291d00",
-"#d5a5ff",
-"#2e0400",
-"#ffc5d6",
-"#00285f",
-"#ffbb88",
-"#4a002e",
-"#ff8092",
-"#68001a")
-names(preycol) <- as.factor(preylist)
-
-```
-
-The list of bluefish prey derived from the most common identifiable prey items in NEFSC diet database (Table \@ref(tab:preylist)) includes the majority of bluefish diet composition by decade (Fig. \@ref(fig:decadediet)) and season (Fig. \@ref(fig:seasondiet)). Colors in the plots show included prey, while gray sections represent "fish unidentified" and other categories not included in this analysis. Even when evaluated annually and seasonally (where bluefish sample sizes may be small for a year-season combination), a majority of observed diet is included in the dataset for analysis (Fig. \@ref(fig:yearseasondiet)). 
-
-```{r decadediet, fig.cap="Bluefish diet by decade, NEFSC bottom trawl surveys.", eval=FALSE}
-preycolsel <- preycol[toupper(names(preycol)) %in% blueprey$pynam] 
-
-preycolaggsel <- replace(preycolsel, names(preycolsel), "blue")
-
-p <- ggplot(bluefishdecadediet, aes(x=as.factor(Decade), y=Pct.m, fill=Prey)) +
-  geom_bar_interactive(width = 0.95, stat = "identity", show.legend = FALSE,
-                       aes(tooltip = Prey, data_id = Prey))+
-  scale_fill_manual(values=preycolaggsel) +         #custom colors
-  ggthemes::theme_tufte()
-ggiraph(code=print(p))
-#p
-```
-
-  
-```{r seasondiet, fig.cap="Bluefish diet by season, NEFSC bottom trawl surveys.", eval=FALSE}
-preycolsel <- preycol[toupper(names(preycol)) %in% blueprey$pynam] 
-
-p <- ggplot(bluefishseasondiet, aes(x=as.factor(Season), y=Pct.m, fill=Prey)) +
-  geom_bar_interactive(width = 0.95, stat = "identity", show.legend = FALSE,
-                       aes(tooltip = Prey, data_id = Prey))+
-  scale_fill_manual(values=preycolaggsel) +         #custom colors
-  ggthemes::theme_tufte()
-ggiraph(code=print(p))
-#p
-```
-
-
-```{r yearseasondiet, eval=FALSE}
-source(here("get_diet.R"))
-
-bluefish <- get_diet(135) 
-
-# try for facet decade/season with included prey highlighted in blue
-bluefishdecseastot <- bluefish %>%
-  # make decade column
-  # make 2 seasons winter--> spring and summer--> fall
-  dplyr::mutate(decade = floor(year/10)*10,
-                season2 = case_when(season %in% c("WINTER", "SPRING") ~ "SPRING",
-                                    season %in% c("SUMMER", "FALL") ~ "FALL")) %>%
-                #season2 = case_when(season %in% c( "SPRING") ~ "SPRING",
-                #                    season %in% c( "FALL") ~ "FALL")) %>%
-  dplyr::select(decade, season2, totwt) %>%
-  dplyr::distinct() %>%
-  dplyr::group_by(decade, season2) %>%
-  dplyr::mutate(totwt2 = sum(totwt, na.rm = TRUE),
-                nyrs = n_distinct(year)) %>%
-  dplyr::select(decade, season2, totwt2, nyrs) %>%
-  dplyr::distinct()
-  
-bluefishdecseas <- bluefish %>%   
-  # make decade column
-  # make 2 seasons winter--> spring and summer--> fall
-  dplyr::mutate(decade = floor(year/10)*10,
-                season2 = case_when(season %in% c("WINTER", "SPRING") ~ "SPRING",
-                                    season %in% c("SUMMER", "FALL") ~ "FALL")) %>%
-                #season2 = case_when(season %in% c( "SPRING") ~ "SPRING", 
-                #                    season %in% c( "FALL") ~ "FALL")) %>%
-  # sum meansw by decade, season, prey
-  dplyr::group_by(decade, season2, prey) %>%
-  # recalculate relmsw
-  dplyr::summarise(meansw = sum(meansw, na.rm = TRUE)) %>%
-  dplyr::left_join(bluefishdecseastot) %>%
-  dplyr::mutate(relmsw = meansw/totwt2) %>%
-  dplyr::mutate(blueprey = ifelse(prey %in% blueprey$pynam, TRUE, FALSE),
-                plotcol = ifelse(blueprey, "blue", "lightgrey")) %>% 
-  dplyr::group_by(decade, season2) %>%
-  dplyr::arrange(desc(blueprey), .by_group = TRUE)
-  #dplyr::arrange(blueprey, .by_group = TRUE)
-
-# preycolsel <- preycol[toupper(names(preycol)) %in% blueprey$pynam] 
-# names(preycolsel) <- toupper(names(preycolsel))
-# 
-# preycolaggsel <- replace(preycolsel, names(preycolsel), "blue")
-
-bars <- map(unique(bluefishdecseas$decade)
-            , ~geom_bar(aes(width=nyrs), stat = "identity", colour = "white"#, position = "stack"
-                       , data = bluefishdecseas %>% filter(decade == .x)))
-
-
-p1 <-   ggplot(bluefishdecseas, aes(decade, relmsw, fill=plotcol)) +
-                                    #fill=factor(prey, 
-                                    #            levels = c(as.factor(names(preycolaggsel)),
-                                    #                       setdiff(prey, preycolaggsel)),
-                                    #           ordered = TRUE
-                                    #           ))) +
-   #geom_bar(aes(width=nyrs), stat = "identity") + #
-   bars +
-   ylab("Percent in Diet") +
-   xlab("Decade") +
-   geom_text(aes(y=relmsw, 
-             label = ifelse(relmsw > 0.03, prey, "")),
-             position = position_stack(vjust = 0.5),
-             size=1.5)+
-   facet_wrap(~fct_relevel(season2, "SPRING", "FALL")) +
-   theme_bw() +
-   #viridis::scale_fill_viridis(discrete = TRUE) +
-   scale_fill_manual(values=c("lightblue", "grey90")) + 
-   theme(legend.position = "none"
-         #legend.position="bottom",
-         #legend.text=element_text(size=5)
-         ) #+
-    #geom_bar_interactive(stat = "identity", aes(tooltip = prey, data_id = prey))
-
-#ggiraph(code = print(p1)) 
-#p1
-```
+The list of bluefish prey derived from the most common identifiable prey items in NEFSC diet database (Table \@ref(tab:preylist)) includes the majority of bluefish diet composition by decade and season (Fig. \@ref(fig:seasondecade)). Colors in the plots show included prey, while gray sections represent "fish unidentified" and other categories not included in this analysis.  
 
 ```{r seasondecade, fig.cap="Bluefish diet by season and decade, NEFSC bottom trawl surveys."}
 source(here("get_diet.R"))
@@ -843,15 +644,13 @@ neamap_nbfpreytows <- neamap_bluepreyagg_stn %>%
   filter(meanbluepywt>0) %>%
   nrow()
 
-
-
 ```
 
 The full NEFSC diet database 1985-2021 contains `r ndietNEFSC` survey stations with diet collections. When including only piscivores feeding similarly to bluefish, the survey stations with diet collections in this time period is `r ndietpiscNEFSC`. Of these piscivore diet stations, `r nbfpreyNEFSC` included our defined bluefish prey, or `r nbfpreyNEFSC/ndietpiscNEFSC*100`%. For comparison, `r ndietbfNEFSC` stations have diet samples for bluefish alone, with `r ndietbfbfpreyNEFSC` or `r ndietbfbfpreyNEFSC/ndietbfNEFSC*100`% including our defined bluefish prey.
 
 NEAMAP survey stations with diet collections for piscivores (n = `r neamap_npisctows`) had a higher proportion with our defined bluefish prey (n = `r neamap_nbfpreytows`, `r (neamap_nbfpreytows/neamap_npisctows)*100`%). 
 
-The number of survey stations missing surface temperature data varied considerably by decade. A large percentage of survey stations lacked in-situ temperature measurements between 1985 and 1990, while the percentage of stations missing temperature was generally below 10% (with a few exceptions) from 1991-2021 (Table \@ref(tab:sstdat)). Therefore, OISST temperature estimates were more commonly substituted early in the time series. 
+The number of survey stations missing surface temperature data varied considerably by decade. A large percentage of survey stations lacked in-situ temperature measurements between 1985 and 1990, while the percentage of stations missing temperature was generally below 10% (with a few exceptions) from 1991-2021 (Supplement 1). Therefore, OISST temperature estimates were more commonly substituted early in the time series. 
 
 
 ## VAST model selection  
@@ -917,20 +716,30 @@ stratlook <- data.frame(Stratum = c("Stratum_1",
 Many indices for different spatial strata can be derived from the VAST model. Fall indices (Fig. \@ref(fig:fallall)) for the full spatial domain (AllEPU) through smaller strata were produced. The same regions are used for all models. 
 
 ```{r fallall, fig.cap="All Fall forage indices"}
-splitoutput <- read.csv("pyindex/allagg_fall_500_lennosst_ALLsplit_biascorrect/Index.csv")
+splitout <- read.csv("pyindex/allagg_fall_500_lennosst_ALLsplit_biascorrect/Index.csv")
 
-splitoutput <- splitoutput %>%
-  left_join(stratlook)
+splitoutput <- splitout %>%
+  dplyr::left_join(stratlook) %>%
+  dplyr::filter(Region %in% c("GOM", "GB", "MAB","MABGBstate", "bfin")) %>%
+  dplyr::mutate(Type = ifelse(Region %in% c("GOM", "GB", "MAB"), "Ecoregion", "Bluefish"),
+                Region = case_when(Region == "MABGBstate" ~ "StateWaters",
+                                   Region == "bfin" ~ "SurveyBluefish",
+                                   TRUE ~ Region))
+
+foragemax <- max(splitoutput$Estimate)
 
 ggplot(splitoutput, aes(x=Time, y=Estimate, colour=Region)) +
   geom_errorbar(aes(ymin=Estimate+Std..Error.for.Estimate, ymax=Estimate-Std..Error.for.Estimate))+
   geom_point()+
   geom_line()+
-  facet_wrap(~Region, scales = "free_y") +
-  guides(colour = guide_legend(ncol=2)) +
+  facet_wrap(~fct_relevel(Type, "Ecoregion", "Bluefish"), scales = "free_y") +
+  scale_y_continuous(labels=function(x)round(x/foragemax, digits = 1))+
+  ylab("Relative forage biomass scaled to maximum")  
+  
+  #guides(colour = guide_legend(ncol=2)) +
   #theme(legend.position = c(1, 0),
-   #     legend.justification = c(1, 0))
-  theme(legend.position="none")
+  #      legend.justification = c(1, 0))
+  #theme(legend.position="none")
 
 ```
 
