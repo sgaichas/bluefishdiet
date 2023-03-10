@@ -40,12 +40,9 @@ We don't want the non-pelagic prey of these predators in the index, only other p
 
 So we can resort the prey list of the piscivores to see if we would add any other prey and then remove Atlantic mackerel and Atlantic herring from the prey list.
 
-PROBLEM. I can't do that for the NEAMAP data, which I got already aggregated to bluefish prey.
+We checked the NEAMAP prey list and found we didn't include silver hake and Atlantic mackerel due to the 10 stomach cutoff, and Atlantic herring are mixed with Clupeids unident which include higher proportions of river herrings that we want to keep. Therefore we have made no changes to the NEAMAP data at present. 
 
-The index will not be the same without NEAMAP data. 
-
-I need to request a new input dataset from VIMS. 
-
+[However, we may change both inputs in the future to include all species that made the 10 stomach cutoff in either survey. Stay tuned. It doesn't change the input for this purpose though.]
 
 Working group decision after the February 2022 Data Meeting was to update the predator list based on the most recent diet similarity matrix by Smith posted on the [NEFSC shiny app](https://fwdp.shinyapps.io/tm2020/#4_DIET_OVERLAP_AND_TROPHIC_GUILDS), which results in a new Piscivore guild relative to our initial models based on @garrison_dietary_2000. 
 
@@ -129,8 +126,6 @@ Lets call this close enough to define other forage.
 
 ### Create the NEFSC input dataset.
 
-Everything below here needs adjustment.
-
 First filter to the predators and identify the bluefish prey:  
 ```{r}
 pisccompletedf <- data.frame("COMNAME" = toupper(str_remove(pisccomplete, "\\..*")),
@@ -156,20 +151,26 @@ datatable(preycount)
 ```
 
 
+### Remove modeled prey
 
-
-The below is not done yet, looking at table first.
+Now removing the three modeled species from the prey list to create new data files with "_unmod" appended.
+This code removes "MERLUCCIUS BILINEARIS", "SCOMBER SCOMBRUS", "CLUPEA HARENGUS", and "CLUPEIDAE" from the NEFSC dataset, as well as the useless categories empty, blown, fish, animal remains, etc., and the large family level invertebrate categories.
 ```{r, eval=FALSE}
 gencomlist <- allfh %>%
   select(pynam, gencom2) %>%
   distinct()
 
-blueprey <- preycount %>% 
+blueprey.unmod <- preycount %>% 
   filter(BLUEFISH > 9) %>%
   filter(!pynam %in% c("EMPTY", "BLOWN",
                        "FISH", "OSTEICHTHYES",
                        "ANIMAL REMAINS",
-                       "FISH SCALES")) %>%
+                       "FISH SCALES",
+                       "MERLUCCIUS BILINEARIS",  # remove modeled species
+                       "SCOMBER SCOMBRUS",  # remove modeled species
+                       "CLUPEA HARENGUS",  # remove modeled species
+                       "CLUPEIDAE"  # remove modeled species--assumed to be mostly atlantic herring
+                       )) %>%
   #filter(!str_detect(pynam, "SHRIMP|CRAB")) %>%
   left_join(gencomlist) %>%
   filter(!gencom2 %in% c("ARTHROPODA", "ANNELIDA",
@@ -179,11 +180,11 @@ blueprey <- preycount %>%
                          "BRYOZOA", "SPONGES",
                          "MISCELLANEOUS", "OTHER"))
 
-fh.nefsc.pisc.pisccomplete.blueprey <- fh.nefsc.pisc.pisccomplete %>%
-  mutate(blueprey = case_when(pynam %in% blueprey$pynam ~ "blueprey",
+fh.nefsc.pisc.pisccomplete.blueprey.unmod <- fh.nefsc.pisc.pisccomplete %>%
+  mutate(blueprey = case_when(pynam %in% blueprey.unmod$pynam ~ "blueprey",
                               TRUE ~ "othprey"))
 
-preystn.pisccomplete <- fh.nefsc.pisc.pisccomplete.blueprey %>%
+preystn.pisccomplete.unmod <- fh.nefsc.pisc.pisccomplete.blueprey.unmod %>%
   group_by(year, season, station) %>%
   count(blueprey) %>%
   pivot_wider(names_from = blueprey, values_from = n) %>%
@@ -191,7 +192,7 @@ preystn.pisccomplete <- fh.nefsc.pisc.pisccomplete.blueprey %>%
 
 #dim(preystn)[1]
 
-bluepreystn.pisccomplete <- preystn.pisccomplete %>% 
+bluepreystn.pisccomplete.unmod <- preystn.pisccomplete.unmod %>% 
   arrange(desc(blueprey)) %>%
   filter(!is.na(blueprey))
 
@@ -199,9 +200,9 @@ bluepreystn.pisccomplete <- preystn.pisccomplete %>%
 
 ```
 
-Assign station id, change the months for spring and fall to align with the assessment, and calculate mean bluefish prey per station in NEFSC:  
+Assign station id, change the months for spring and fall to align with the assessment, and calculate mean bluefish prey (for unmodeled species) per station in NEFSC:  
 ```{r, eval=FALSE}
-bluepyall_stn <- fh.nefsc.pisc.pisccomplete.blueprey %>%
+bluepyall_stn.unmod <- fh.nefsc.pisc.pisccomplete.blueprey.unmod %>%
   #create id linking cruise6_station
   #create season_ng spring and fall Spring=Jan-May, Fall=June-Dec
   mutate(id = paste0(cruise6, "_", station),
@@ -224,41 +225,41 @@ bluepyall_stn <- fh.nefsc.pisc.pisccomplete.blueprey %>%
                                TRUE ~ NA_character_)) 
 
 # save at prey disaggregated stage for paper
-saveRDS(bluepyall_stn, here("fhdat/bluepyall_stn.rds"))
+saveRDS(bluepyall_stn.unmod, here("fhdat/bluepyall_stn_unmod.rds"))
 
-stndat <- bluepyall_stn %>%
+stndat.unmod <- bluepyall_stn.unmod %>%
   select(year, season_ng, id, 
          beglat, beglon, declat, declon, 
          bottemp, surftemp, setdepth) %>%
   distinct()
 
 #pisc stomachs in tow count pdid for each pred and sum
-piscstom <- bluepyall_stn %>%
+piscstom.unmod <- bluepyall_stn.unmod %>%
   group_by(id, pdcomnam) %>%
   summarise(nstompd = n_distinct(pdid)) %>%
   group_by(id) %>%
   summarise(nstomtot = sum(nstompd))
 
 #mean and var pred length per tow
-pisclen <- bluepyall_stn %>%
+pisclen.unmod <- bluepyall_stn.unmod %>%
   summarise(meanpisclen = mean(pdlen),
             varpisclen = var(pdlen))
 
-bluepyagg_stn <- bluepyall_stn %>%
+bluepyagg_stn.unmod <- bluepyall_stn.unmod %>%
   summarise(sumbluepywt = sum(bluepywt),
             nbluepysp = n_distinct(bluepynam, na.rm = T),
             npreysp = n_distinct(pynam),
             npiscsp = n_distinct(pdcomnam)) %>%
-  left_join(piscstom) %>%
+  left_join(piscstom.unmod) %>%
   mutate(meanbluepywt = sumbluepywt/nstomtot) %>%
-  left_join(pisclen) %>%
-  left_join(stndat)
+  left_join(pisclen.unmod) %>%
+  left_join(stndat.unmod)
 
 # save at same stage as before, writing over old file
-saveRDS(bluepyagg_stn, here("fhdat/bluepyagg_stn.rds"))
+saveRDS(bluepyagg_stn.unmod, here("fhdat/bluepyagg_stn_unmod.rds"))
 
 # current dataset, fix declon, add vessel
-nefsc_bluepyagg_stn <- readRDS(here("fhdat/bluepyagg_stn.rds")) %>%
+nefsc_bluepyagg_stn.unmod <- readRDS(here("fhdat/bluepyagg_stn_unmod.rds")) %>%
   mutate(declon = -declon,
          vessel = case_when(year<2009 ~ "AL",
                             year>=2009 ~ "HB", 
@@ -267,7 +268,9 @@ nefsc_bluepyagg_stn <- readRDS(here("fhdat/bluepyagg_stn.rds")) %>%
 
 ```
 
-### Combine with NEAMAP--can't do! Need new dataset
+### Combine with NEAMAP
+
+Jim Gartland checked the NEAMAP dataset and found that silver hake and Atlantic mackerel are already absent from the prey list. Clupeidae may contain some small portion of Atlantic herring, but also includes river herrings and shads which we would want to keep in. So for NEAMAP we will keep the input data as is including Clupeids, but in the offshore dataset we assume Clupeids are mostly Atlantic herring so we leave them out.
 
 NEAMAP inputs were similarly updated based on this predator size category list. NEAMAP includes the following predators, adding two not captured by the NEFSC survey offshore and leaving out those from NEFSC not captured inshore:
 
@@ -305,20 +308,47 @@ neamap_bluepreyagg_stn <- read_csv(here("fhdat/NEAMAP_Mean stomach weights_Bluef
 
   
 # combine  
-bluepyagg_stn <-  nefsc_bluepyagg_stn %>%
+bluepyagg_stn.unmod <-  nefsc_bluepyagg_stn.unmod %>%
   bind_rows(neamap_bluepreyagg_stn) 
 
 # check for incorrect NEAMAP station
-bluepyagg_stn %>% filter(id == "NM20070901011") # has this station
+bluepyagg_stn.unmod %>% filter(id == "NM20070901011") # has this station
 # if sumbluepywt is 106564.2, this is incorrect
 # corrected by Jim Gartland in September 2022
 
 # correct single NEAMAP station 
-bluepyagg_stn$sumbluepywt[bluepyagg_stn$id == "NM20070901011"] <- 4.8404
-bluepyagg_stn$meanbluepywt[bluepyagg_stn$id == "NM20070901011"] <- 0.186169231
+bluepyagg_stn.unmod$sumbluepywt[bluepyagg_stn.unmod$id == "NM20070901011"] <- 4.8404
+bluepyagg_stn.unmod$meanbluepywt[bluepyagg_stn.unmod$id == "NM20070901011"] <- 0.186169231
 
 
-saveRDS(bluepyagg_stn, here("fhdat/bluepyagg_stn_all.rds"))
+saveRDS(bluepyagg_stn.unmod, here("fhdat/bluepyagg_stn_all_unmod.rds"))
 ```
+
+## Merge with SST data to fill gaps
+Now we take this dataset and add back the OISST data for stations missing surface temperature to apply our catchability covariates in VAST.
+
+We can join this new dataset with the OISST dataset made previoulsy for survey stations, because we have not changed any station locations, only what we classified as bluefish prey at each station.
+
+```{r, eval=FALSE}
+
+#read in diet data and station-OISST
+
+bluepyagg_stn_all.unmod <- readRDS(here("fhdat/bluepyagg_stn_all_unmod.rds"))
+dietstn_OISST <- readRDS(here("data-raw/dietstn_OISST.rds"))
+
+dietstn_OISST_merge <- dietstn_OISST %>%
+  dplyr::rename(declon = declon.x,
+         declat = declat.x,
+         year = year.x,
+         oisst = sst) %>%
+  dplyr::select(id, oisst) %>%
+  sf::st_drop_geometry()
+
+bluepyagg_stn_all_OISST.unmod <- left_join(bluepyagg_stn_all.unmod, dietstn_OISST_merge)
+
+saveRDS(bluepyagg_stn_all_OISST.unmod, here("fhdat/bluepyagg_stn_all_OISST_unmod.rds"))
+```
+
+
 
 ## References
