@@ -748,7 +748,7 @@ ggplot(splitoutput, aes(x=Time, y=Estimate, colour=Region)) +
 
 The diet based forage index and survey biomass based index were well correlated in the Gulf of Maine during spring, weakly correlated on Georges Bank during spring, and uncorrelated during fall in all regions and in both seasons in the Mid-Atlantic. To determine what may drive some seasons and regions to have similar forage indices based on diet versus survey biomass, we examined raw species composition over time in each dataset, by region and season. We expected to find similar species compositions in Gulf of Maine during spring, and possibly a shared dominant species on Georges Bank during spring. 
 
-```{r corr, fig.cap="Diet based forage index (stdForage) compared with survey based index (stdsurvForage) by season and region (GOM = Gulf of Maine, GB = Georges Bank, MAB = Mid Atlantic Bight). Pearson correlation coefficients (*R*) and correlation significance (*p*) are shown for each season/region."}
+```{r tscomp, fig.cap="Time series of diet based forage index (stdForage) compared with survey based index (stdsurvForage) by season and region (GOM = Gulf of Maine, GB = Georges Bank, MAB = Mid Atlantic Bight)."}
 
 ## Survey index I calculated in CompareVASTforageSOE.Rmd 
 
@@ -773,6 +773,8 @@ survforage <- survey.data %>%
   dplyr::mutate(Mean = as.numeric(Mean))
 
 survforage <- survforage %>%
+  dplyr::filter(Time > 1984,
+                Time < 2022) %>%
   dplyr::group_by(Var, Region) %>%
   dplyr::mutate(hline = mean(Mean, na.rm = T), 
                 tssd = sd(SD, na.rm = T),
@@ -782,7 +784,10 @@ survforage <- survforage %>%
   dplyr::mutate(stdsurvForage = (Mean-hline)/tssd,
                 #cv = SD/Mean,
                 stdsurvForageupper = (upper-hline)/tssd,
-                stdsurvForagelower = (lower-hline)/tssd)
+                stdsurvForagelower = (lower-hline)/tssd,
+                censurvForage = (log(Mean)-log(hline)),
+                censurvForageupper = (log(upper)-log(hline)),
+                censurvForagelower = (log(lower)-log(hline)))
 
 survforage$Var <- factor(survforage$Var,levels = c("ForageIndex Spring",
                                                     "ForageIndex Fall"))
@@ -831,7 +836,10 @@ forage_std <- forage %>%
   dplyr::mutate(stdForage = (Mean-hline)/tssd,
                 #cv = SD/Mean,
                 stdForageupper = (upper-hline)/tssd,
-                stdForagelower = (lower-hline)/tssd)
+                stdForagelower = (lower-hline)/tssd,
+                cenForage = (log(Mean)-log(hline)),
+                cenForageupper = (log(upper)-log(hline)),
+                cenForagelower = (log(lower)-log(hline)))
 
 forage_std$Var <- factor(forage_std$Var,levels = c("Forage Spring",
                                                     "Forage Fall"))
@@ -845,17 +853,177 @@ forage_std <- forage_std %>%
  
 forage_std$CompVar <- factor(forage_std$CompVar,levels = c("Spring",
                                                     "Fall"))
+# plot time series together
+
+# ecodata plot constants
+#Time series constants
+shade.alpha <- 0.3
+shade.fill <- "lightgrey"
+lwd <- 1
+pcex <- 2
+trend.alpha <- 0.5
+trend.size <- 2
+hline.size <- 1
+hline.alpha <- 0.35
+hline.lty <- "dashed"
+label.size <- 5
+hjust.label <- 1.5
+letter_size <- 4
+feeding.guilds <- c("Apex Predator","Piscivore","Planktivore","Benthivore","Benthos")
+x.shade.min <- 2011
+x.shade.max <- 2021
+series.col <- c("indianred","black")
+#Function for custom ggplot facet labels
+label <- function(variable,value){
+  return(facet_names[value])
+}
+
+# legend function
+addSmallLegend <- function(myPlot, pointSize = 2, textSize = 6, spaceLegend = 0.5) {
+    myPlot +
+        guides(shape = guide_legend(override.aes = list(size = pointSize)),
+               color = guide_legend(override.aes = list(size = pointSize)),
+               fill = guide_legend(ncol = 1)) +
+        theme(legend.title = element_text(size = textSize), 
+              legend.text  = element_text(size = textSize),
+              legend.key.size = unit(spaceLegend, "lines"))
+}
+
+# actual plot
+
+p8<-survforage %>%
+  #dplyr::filter(str_detect(Var,"Planktivore")) %>%
+  ggplot2::ggplot() +
+
+  #Highlight last ten years
+  #ggplot2::annotate("rect", fill = shade.fill, alpha = shade.alpha,
+  #    xmin = x.shade.min , xmax = x.shade.max ,
+  #    ymin = -Inf, ymax = Inf) +
+  #Test for trend and add lines
+  # ecodata::geom_gls(aes(x = Time, y = stdsurvForage,
+  #              color = CompVar),
+  #            alpha = trend.alpha, size = trend.size) +
+  # ecodata::geom_lm(aes(x = Time, y = stdsurvForage,
+  #              color = CompVar),
+  #            alpha = trend.alpha, size = trend.size) +
+  # #ecodata::geom_lm(aes(x = Time, y = Mean))+
+
+  #Add time series
+  ggplot2::geom_ribbon(aes(x = Time, ymin = pmax(stdsurvForagelower), ymax = stdsurvForageupper),
+              alpha = 0.5,
+              fill = "grey") +
+  ggplot2::geom_line(aes(x = Time, y = stdsurvForage),size = lwd-0.5) +
+  ggplot2::geom_point(aes(x = Time, y = stdsurvForage),size = pcex-0.5) +
+  ggplot2::scale_color_manual(values = series.col, aesthetics = "color")+
+  ggplot2::guides(color = FALSE) +
+  ggplot2::geom_hline(aes(yintercept = 0,
+                 group = CompVar),
+             size = hline.size,
+             alpha = hline.alpha,
+             linetype = hline.lty)+
+       #Add Forage Index
+  ggplot2::geom_ribbon(data = forage_std, aes(ymin = stdForagelower, ymax = stdForageupper, x = Time),
+                fill = "pink", alpha = 0.5) +
+  ggplot2::geom_line(data = forage_std, aes(x = Time, y = stdForage),
+            color = "#ca0020")+
+  ggplot2::geom_point(data = forage_std, aes(x = Time, y = stdForage),
+             size = pcex-0.5,
+             color = "#ca0020")+
+  # # trend test forage indices
+  # ecodata::geom_gls(data = forage_std, aes(x = Time, y = stdForage,
+  #              color = CompVar),
+  #            alpha = trend.alpha, size = trend.size) +
+  # ecodata::geom_lm(data = forage_std, aes(x = Time, y = stdForage,
+  #              color = CompVar),
+  #            alpha = trend.alpha, size = trend.size) +
+  
+  ggplot2::facet_wrap(EPU ~ CompVar~.,ncol = 2, scales = "free_y") +
+
+  #Axis and theme
+  ggplot2::scale_x_continuous(breaks = seq(1980, 2020, by = 10), expand = c(0.01, 0.01)) +
+  #ylim(0, 600)+
+  ggplot2::ylab(expression("Standardized Biomass Index")) +
+  ecodata::theme_facet()+
+  ggplot2::theme(strip.text=element_text(hjust=0),
+        axis.title.x=element_blank())
+
+p8
+
+p9<-survforage %>%
+  #dplyr::filter(str_detect(Var,"Planktivore")) %>%
+  ggplot2::ggplot() +
+
+  #Highlight last ten years
+  #ggplot2::annotate("rect", fill = shade.fill, alpha = shade.alpha,
+  #    xmin = x.shade.min , xmax = x.shade.max ,
+  #    ymin = -Inf, ymax = Inf) +
+  #Test for trend and add lines
+  # ecodata::geom_gls(aes(x = Time, y = censurvForage,
+  #              color = CompVar),
+  #            alpha = trend.alpha, size = trend.size) +
+  # ecodata::geom_lm(aes(x = Time, y = censurvForage,
+  #              color = CompVar),
+  #            alpha = trend.alpha, size = trend.size) +
+  # #ecodata::geom_lm(aes(x = Time, y = Mean))+
+
+  #Add time series
+  ggplot2::geom_ribbon(aes(x = Time, ymin = pmax(censurvForagelower), ymax = censurvForageupper),
+              alpha = 0.5,
+              fill = "grey") +
+  ggplot2::geom_line(aes(x = Time, y = censurvForage),size = lwd-0.5) +
+  ggplot2::geom_point(aes(x = Time, y = censurvForage),size = pcex-0.5) +
+  ggplot2::scale_color_manual(values = series.col, aesthetics = "color")+
+  ggplot2::guides(color = FALSE) +
+  ggplot2::geom_hline(aes(yintercept = 0,
+                 group = CompVar),
+             size = hline.size,
+             alpha = hline.alpha,
+             linetype = hline.lty)+
+       #Add Forage Index
+  ggplot2::geom_ribbon(data = forage_std, aes(ymin = cenForagelower, ymax = cenForageupper, x = Time),
+                fill = "pink", alpha = 0.5) +
+  ggplot2::geom_line(data = forage_std, aes(x = Time, y = cenForage),
+            color = "#ca0020")+
+  ggplot2::geom_point(data = forage_std, aes(x = Time, y = cenForage),
+             size = pcex-0.5,
+             color = "#ca0020")+
+  # # trend test forage indices
+  # ecodata::geom_gls(data = forage_std, aes(x = Time, y = cenForage,
+  #              color = CompVar),
+  #            alpha = trend.alpha, size = trend.size) +
+  # ecodata::geom_lm(data = forage_std, aes(x = Time, y = cenForage,
+  #              color = CompVar),
+  #            alpha = trend.alpha, size = trend.size) +
+  
+  ggplot2::facet_wrap(EPU ~ CompVar~.,ncol = 2, scales = "free_y") +
+
+  #Axis and theme
+  ggplot2::scale_x_continuous(breaks = seq(1980, 2020, by = 10), expand = c(0.01, 0.01)) +
+  #ylim(0, 600)+
+  ggplot2::ylab(expression("Standardized Biomass Index")) +
+  ecodata::theme_facet()+
+  ggplot2::theme(strip.text=element_text(hjust=0),
+        axis.title.x=element_blank())
+
+#p9 check formula
+```
+
+
+```{r corr, fig.cap="Diet based forage index (stdForage) compared with survey based index (stdsurvForage) by season and region (GOM = Gulf of Maine, GB = Georges Bank, MAB = Mid Atlantic Bight). Pearson correlation coefficients (*R*) and correlation significance (*p*) are shown for each season/region."}
+
 
 # compare them
 
 survforage_comp <- survforage %>%
   tidyr::separate(Var, c(NA, "Season"), sep = " ") %>%
-  dplyr::select(Time, Season, EPU, stdsurvForage, stdsurvForageupper, stdsurvForagelower) %>%
+  dplyr::select(Time, Season, EPU, stdsurvForage, stdsurvForageupper, stdsurvForagelower,
+                censurvForage) %>%
   dplyr::mutate(Time = as.integer(Time))
 
 compareforageagg <- forage_std %>%
   tidyr::separate(Var, c(NA, "Season"), sep = " ") %>%
-  dplyr::select(Time, Season, EPU, stdForage, stdForageupper, stdForagelower) %>%
+  dplyr::select(Time, Season, EPU, stdForage, stdForageupper, stdForagelower,
+                cenForage) %>%
   left_join(survforage_comp) 
 
 ggplot2::ggplot(compareforageagg, aes(x=stdForage, y=stdsurvForage)) +
@@ -866,8 +1034,22 @@ ggplot2::ggplot(compareforageagg, aes(x=stdForage, y=stdsurvForage)) +
   ecodata::theme_facet() +
   facet_grid(fct_relevel(EPU,  "GOM", "GB", "MAB")~
                fct_relevel(Season, "Spring", "Fall")) 
+
+# gets same answer but check formula
+# ggplot2::ggplot(compareforageagg, aes(x=cenForage, y=censurvForage)) +
+#   geom_point(color="blue", alpha=0.1)+
+#   geom_abline(intercept = 0, slope = 1, lty=3) +
+#   geom_smooth(method=lm) +
+#   stat_cor(method="pearson") +
+#   ecodata::theme_facet() +
+#   facet_grid(fct_relevel(EPU,  "GOM", "GB", "MAB")~
+#                fct_relevel(Season, "Spring", "Fall")) 
+
   
 ```
+
+We grouped prey into taxonomic groupings as well as management groupings (managed/unmanaged) to characterize similarities and differences between small pelagic forage composition in the forage index and the composition directly sampled by the survey. 
+
 ```{r}
 
 #  unique(forageindex$SCINAME)
@@ -903,6 +1085,8 @@ sandlances <- data.frame(prey=c("AMMODYTES",
                                   "#890058",
                                   "#890058",
                                   "#890058"))
+                                  
+sandlances$group <- "sandlances"
   
 anchovies <- data.frame(prey=c("ENGRAULIDAE", 
                                "ANCHOA MITCHILLI",
@@ -916,6 +1100,8 @@ anchovies <- data.frame(prey=c("ENGRAULIDAE",
                                   "#890058",
                                   "#890058",
                                   "#890058"))  
+                                  
+anchovies$group <- "anchovies"
   
 herrings <- data.frame(prey=c("CLUPEA HARENGUS",
                               "CLUPEIDAE",
@@ -926,6 +1112,8 @@ herrings <- data.frame(prey=c("CLUPEA HARENGUS",
                          mgtcol=c("#afe5ff",
                                   "#afe5ff",
                                   "#890058")) 
+                                  
+herrings$group <- "herrings"
   
 squids <- data.frame(prey=c("LOLIGO SP",
                             "LOLIGO PLEI",
@@ -945,6 +1133,8 @@ squids <- data.frame(prey=c("LOLIGO SP",
                                   "#afe5ff",
                                   "#afe5ff",
                                   "#890058")) 
+                                  
+squids$group <- "squids"
   
 silverhake <- data.frame(prey=c("MERLUCCIUS",
                                 "MERLUCCIUS BILINEARIS"),
@@ -952,6 +1142,8 @@ silverhake <- data.frame(prey=c("MERLUCCIUS",
                                    "#be5000"),
                          mgtcol=c("#afe5ff",
                                   "#afe5ff"))
+                                  
+silverhake$group <- "silverhake"
 
 butterfish <- data.frame(prey=c("PEPRILUS",
                                 "PEPRILUS TRIACANTHUS"),
@@ -959,22 +1151,32 @@ butterfish <- data.frame(prey=c("PEPRILUS",
                                    "#d6b8ff"),
                          mgtcol=c("#afe5ff",
                                   "#afe5ff"))
+                                  
+butterfish$group <- "butterfish"
 
 bluefish <- data.frame(prey=c("POMATOMUS SALTATRIX"),
                          preycol=c("#2eff7d"),
                          mgtcol=c("#afe5ff"))
 
+bluefish$group <- "bluefish"
+
 mackerel <- data.frame(prey=c("SCOMBER SCOMBRUS"),
                          preycol=c("#ffb4b5"),
                          mgtcol=c("#afe5ff"))
+
+mackerel$group <- "mackerel"
 
 scup <- data.frame(prey=c("STENOTOMUS CHRYSOPS"),
                          preycol=c("#1810b8"),
                          mgtcol=c("#afe5ff"))
 
+scup$group <- "scup"
+
 weakfish <- data.frame(prey=c("CYNOSCION REGALIS"),
                          preycol=c("#759700"),
                          mgtcol=c("#afe5ff"))
+
+weakfish$group <- "weakfish"
 
 menhaden <- data.frame(prey=c("BREVOORTIA",
                               "BREVOORTIA TYRANNUS"),
@@ -982,10 +1184,14 @@ menhaden <- data.frame(prey=c("BREVOORTIA",
                                    "#547aff"),
                          mgtcol=c("#afe5ff",
                                   "#afe5ff"))
+                              
+menhaden$group <- "menhaden"
 
 otherflats <- data.frame(prey = c("PLEURONECTIFORMES"),
                          preycol=c("#48beff"),
                          mgtcol=c("#890058"))
+
+otherflats$group <- "otherflats"
 
 preycolcode <- rbind(sandlances,
                      anchovies,
@@ -1000,6 +1206,10 @@ preycolcode <- rbind(sandlances,
                      menhaden,
                      otherflats)
 
+preycolcode <- preycolcode %>% 
+  dplyr::mutate(managed = ifelse(mgtcol=="#afe5ff", TRUE, FALSE)) %>%
+  dplyr::rename(bluepynam = prey)
+
 preycols <- preycolcode$preycol
 names(preycols) <- as.factor(preycolcode$prey)
 
@@ -1008,10 +1218,9 @@ names(mgtcols) <- as.factor(preycolcode$prey)
 
 ```
 
-
-Dominant species in diet based index. species comp (raw)
-
 ```{r dietspp}
+
+#Dominant species in diet based index. species comp (raw)
 
 bluepyall_stn <- readRDS(here("fhdat/bluepyall_stn.rds"))
 
@@ -1031,46 +1240,28 @@ foragesppwt <- bluepyall_stn %>%
   dplyr::filter(blueprey=="blueprey",
                 !is.na(EPU)) %>%
   dplyr::group_by(year, season_ng, EPU, bluepynam) %>%
-  dplyr::summarise(pysum = sum(bluepywt))
+  dplyr::summarise(pysum = sum(bluepywt)) %>%
+  dplyr::mutate(pyprop = pysum / sum(pysum)) %>%
+  dplyr::ungroup() %>%
+  dplyr::left_join(preycolcode)
 
-plotDietCompBar <- function(dat, metric, plotcol, title=NULL){   #defines the name of the function and the requied inputs
+foragegroupprop <- foragesppwt %>%
+  dplyr::group_by(year, season_ng, EPU, group) %>%
+  dplyr::summarise(groupsum = sum(pysum)) %>%
+  dplyr::mutate(groupprop = groupsum / sum(groupsum)) 
+
+foragemanagedprop <- foragesppwt %>%
+  dplyr::group_by(year, season_ng, EPU, managed) %>%
+  dplyr::summarise(mgtsum = sum(pysum)) %>%
+  dplyr::mutate(mgtprop = mgtsum / sum(mgtsum)) 
   
-dat %>% 
-  filter(!is.na(.data[[metric]])) %>%          #take out the NA values (literally "not is NA")
-  ggplot(aes(x=year, y=.data[[metric]], fill=bluepynam)) +     #year on x axis, %diet comp on y
-  geom_bar(width = 1, stat = "identity", position="fill") +    #stacked bar chart
-  scale_fill_manual(values=plotcol) +         #custom colors
-  ecodata::theme_facet() +                    #simplify
-  facet_grid(fct_relevel(EPU,  "GOM", "GB", "MAB")~
-               fct_relevel(season_ng, "SPRING", "FALL")) + #separate by ordered epu and season
-  labs(y = "% composition",              #add sensible labels
-       title = title) 
-    
-}   
-
-addSmallLegend <- function(myPlot, pointSize = 2, textSize = 6, spaceLegend = 0.5) {
-    myPlot +
-        guides(shape = guide_legend(override.aes = list(size = pointSize)),
-               color = guide_legend(override.aes = list(size = pointSize)),
-               fill = guide_legend(ncol = 1)) +
-        theme(legend.title = element_text(size = textSize), 
-              legend.text  = element_text(size = textSize),
-              legend.key.size = unit(spaceLegend, "lines"))
-}
-
-pall <- plotDietCompBar(dat=foragesppwt, 
-                          metric="pysum", 
-                        plotcol=preycols,
-                          title="Diet composition")  
-
-addSmallLegend(pall)
 
 ```
 
-Dominant species in survey forage index
 
 ```{r surveyspp}
 
+#Dominant species in survey forage index
 load(here("survdat/Survdat.Rdata")) # from repo above, can't pull directly
 
 pulldate <- survey$pullDate
@@ -1128,45 +1319,111 @@ foragesurv <- survdat %>%
                 !is.na(EPU)) %>%
   dplyr::group_by(year, season, EPU, sciname) %>%
   dplyr::summarise(pysum = sum(biomass)) %>%
-  dplyr::rename(season_ng = season, bluepynam = sciname)
+  dplyr::rename(season_ng = season, bluepynam = sciname) %>%
+  dplyr::mutate(pyprop = pysum / sum(pysum)) %>%
+  dplyr::ungroup() %>%
+  dplyr::left_join(preycolcode)
 
-psurv <- plotDietCompBar(dat=foragesurv, 
-                          metric="pysum", 
-                          plotcol=preycols,
-                          title="Survey composition")  
 
-addSmallLegend(psurv)
+survforagegroupprop <- foragesurv %>%
+  dplyr::group_by(year, season_ng, EPU, group) %>%
+  dplyr::summarise(groupsum = sum(pysum)) %>%
+  dplyr::mutate(groupprop = groupsum / sum(groupsum)) 
+
+survforagemanagedprop <- foragesurv %>%
+  dplyr::group_by(year, season_ng, EPU, managed) %>%
+  dplyr::summarise(mgtsum = sum(pysum)) %>%
+  dplyr::mutate(mgtprop = mgtsum / sum(mgtsum)) 
+
 
 ```
   
 As hypothesized, silver hake dominate GOM spring in both datasets. The indices are highly correlated when the species composition is similar for the Gulf of Maine in spring, suggesting that the diet based index is at least as reliable as a survey biomass based index, given similar inputs. 
 
-Managed (light blue) or unmanaged (burgundy): Diet based forage
+```{r sppprop}
 
-```{r}
+compgroup <- foragegroupprop %>%
+  dplyr::filter(year > 1984) %>%
+  dplyr::select(-groupsum) %>%
+  dplyr::rename(dietgroupprop = groupprop) %>%
+  dplyr::left_join(survforagegroupprop) %>%
+  dplyr::select(Time=year, Season=season_ng, EPU, group, diet=dietgroupprop, survey=groupprop) %>%
+  tidyr::pivot_longer(c(diet, survey), names_to = "source", values_to = "proportion")
 
-pall <- plotDietCompBar(dat=foragesppwt, 
-                          metric="pysum", 
-                        plotcol=mgtcols,
-                          title="Diet composition")  
+ggplot2::ggplot(compgroup %>% dplyr::filter(group=="silverhake"), 
+                aes(x=Time, y=proportion, colour=source)) +
+  #ggplot2::geom_col() +
+  ggplot2::geom_path() +
+  ggplot2::scale_color_manual(values = c("indianred", "black"), aesthetics = "color")+
+  #ggplot2::scale_fill_manual(values = c("indianred", "black"), aesthetics = "fill")+
+  ggplot2::ylab(expression("Proportion silver hake")) +
+  ecodata::theme_facet() +
+  facet_grid(fct_relevel(EPU,  "GOM", "GB", "MAB")~
+               fct_relevel(Season, "SPRING", "FALL")) 
 
-addSmallLegend(pall)
-```
+ggplot2::ggplot(compgroup %>% dplyr::filter(group=="squids"), 
+                aes(x=Time, y=proportion, colour=source)) +
+  #ggplot2::geom_col() +
+  ggplot2::geom_path() +
+  ggplot2::scale_color_manual(values = c("indianred", "black"), aesthetics = "color")+
+  #ggplot2::scale_fill_manual(values = c("indianred", "black"), aesthetics = "fill")+
+  ggplot2::ylab(expression("Proportion squids")) +
+  ecodata::theme_facet() +
+  facet_grid(fct_relevel(EPU,  "GOM", "GB", "MAB")~
+               fct_relevel(Season, "SPRING", "FALL")) 
+
+ggplot2::ggplot(compgroup %>% dplyr::filter(group=="sandlances"), 
+                aes(x=Time, y=proportion, colour=source)) +
+  #ggplot2::geom_col() +
+  ggplot2::geom_path() +
+  ggplot2::scale_color_manual(values = c("indianred", "black"), aesthetics = "color")+
+  #ggplot2::scale_fill_manual(values = c("indianred", "black"), aesthetics = "fill")+
+  ggplot2::ylab(expression("Proportion sandlances")) +
+  ecodata::theme_facet() +
+  facet_grid(fct_relevel(EPU,  "GOM", "GB", "MAB")~
+               fct_relevel(Season, "SPRING", "FALL")) 
 
 
-Managed (light blue) or unmanaged (burgundy): Survey based forage
+ggplot2::ggplot(compgroup %>% dplyr::filter(group=="herrings"), 
+                aes(x=Time, y=proportion, colour=source)) +
+  #ggplot2::geom_col() +
+  ggplot2::geom_path() +
+  ggplot2::scale_color_manual(values = c("indianred", "black"), aesthetics = "color")+
+  #ggplot2::scale_fill_manual(values = c("indianred", "black"), aesthetics = "fill")+
+  ggplot2::ylab(expression("Proportion herrings")) +
+  ecodata::theme_facet() +
+  facet_grid(fct_relevel(EPU,  "GOM", "GB", "MAB")~
+               fct_relevel(Season, "SPRING", "FALL")) 
 
-```{r}
 
-psurv <- plotDietCompBar(dat=foragesurv, 
-                          metric="pysum", 
-                          plotcol=mgtcols,
-                          title="Survey composition")  
-
-addSmallLegend(psurv)
 ```
 
 We see a higher proportion of unmanaged forage species in the diet based raw data than we do the survey based raw data, suggesting that the diet-based forage index better represents species the survey is not designed to sample directly. 
+
+```{r unmanagedprop, fig.cap=""}
+
+compmanaged <- foragemanagedprop %>%
+  dplyr::filter(year > 1984) %>%
+  dplyr::select(-mgtsum) %>%
+  dplyr::rename(dietmgtprop = mgtprop) %>%
+  dplyr::left_join(survforagemanagedprop) %>%
+  dplyr::select(Time=year, Season=season_ng, EPU, managed, diet=dietmgtprop, survey=mgtprop) %>%
+  tidyr::pivot_longer(c(diet, survey), names_to = "source", values_to = "proportion")
+
+ggplot2::ggplot(compmanaged %>% dplyr::filter(managed==FALSE), 
+                aes(x=Time, y=proportion, colour=source)) +
+  #ggplot2::geom_col() +
+  ggplot2::geom_path() +
+  ggplot2::scale_color_manual(values = c("indianred", "black"), aesthetics = "color")+
+  #ggplot2::scale_fill_manual(values = c("indianred", "black"), aesthetics = "fill")+
+  ggplot2::ylab(expression("Proportion unmanaged forage species")) +
+  ecodata::theme_facet() +
+  facet_grid(fct_relevel(EPU,  "GOM", "GB", "MAB")~
+               fct_relevel(Season, "SPRING", "FALL")) 
+
+```
+
+
 
 # Discussion
 
