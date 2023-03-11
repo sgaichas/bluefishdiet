@@ -746,7 +746,7 @@ ggplot(splitoutput, aes(x=Time, y=Estimate, colour=Region)) +
 
 ## Comparisons with design-based survey biomass
 
-The diet based forage index and survey biomass based index were well correlated in the Gulf of Maine during spring, weakly correlated on Georges Bank during spring, and uncorrelated during fall in all regions and in both seasons in the Mid-Atlantic. To determine what may drive some seasons and regions to have similar forage indices based on diet versus survey biomass, we examined raw species composition over time in each dataset, by region and season. We expected to find similar species compositions in Gulf of Maine during spring, and possibly a shared dominant species on Georges Bank during spring. 
+The standardized diet based forage index and survey biomass based index trends compared well in some seasons and regions, but differed in others (Fig. \@ref(fig:tscomp)). The indices were well correlated in the Gulf of Maine during spring, weakly correlated on Georges Bank during spring, and uncorrelated during fall in all regions and in both seasons in the Mid-Atlantic (Fig. \@ref(fig:corr)). 
 
 ```{r tscomp, fig.cap="Time series of diet based forage index (stdForage) compared with survey based index (stdsurvForage) by season and region (GOM = Gulf of Maine, GB = Georges Bank, MAB = Mid Atlantic Bight)."}
 
@@ -1048,6 +1048,8 @@ ggplot2::ggplot(compareforageagg, aes(x=stdForage, y=stdsurvForage)) +
   
 ```
 
+To determine what may drive some seasons and regions to have similar forage indices based on diet versus survey biomass, we examined patterns in the raw species composition over time in each dataset that were input to the VAST model and used to calculate the design based aggregate survey index, by region and season. We expected to find similar species compositions in Gulf of Maine during spring, and possibly a shared dominant species on Georges Bank during spring between the stomach contents and the survey sampling. 
+
 We grouped prey into taxonomic groupings as well as management groupings (managed/unmanaged) to characterize similarities and differences between small pelagic forage composition in the forage index and the composition directly sampled by the survey. 
 
 ```{r}
@@ -1338,9 +1340,9 @@ survforagemanagedprop <- foragesurv %>%
 
 ```
   
-As hypothesized, silver hake dominate GOM spring in both datasets. The indices are highly correlated when the species composition is similar for the Gulf of Maine in spring, suggesting that the diet based index is at least as reliable as a survey biomass based index, given similar inputs. 
+When aggregated across years, seasons, and regions, it is clear that some small pelagic forage species groups are roughly equally sampled by piscivores and the trawl survey, while others are sampled differently. Anchovies, herrings, menhaden, and sandlances had higher proportions in stomach contents than in trawl surveys, while butterfish, mackerel, scup, and weakfish had higher proportins in trawl surveys than in stomach contents (Fig. \@ref(fig:sppprop)). Silver hake and squids were rougly equally "seen" by both methods.
 
-```{r sppprop}
+```{r sppprop, fig.cap="Overall proportion of prey groups in stomach contents data compared with survey biomass sampling, 1985-2021, all regions and seasons."}
 
 compgroup <- foragegroupprop %>%
   dplyr::filter(year > 1984) %>%
@@ -1350,7 +1352,21 @@ compgroup <- foragegroupprop %>%
   dplyr::select(Time=year, Season=season_ng, EPU, group, diet=dietgroupprop, survey=groupprop) %>%
   tidyr::pivot_longer(c(diet, survey), names_to = "source", values_to = "proportion")
 
-ggplot2::ggplot(compgroup %>% dplyr::filter(group=="silverhake"), 
+aggprop <- compgroup %>%
+  dplyr::group_by(group, source) %>%
+  dplyr::summarise(sumprop = sum(proportion, na.rm=TRUE)) %>%
+  dplyr::group_by(source) %>%
+  dplyr::mutate(newprop = sumprop / sum(sumprop))
+
+agggroups <- ggplot2::ggplot(aggprop, 
+                aes(group, newprop, fill=source)) +
+  ggplot2::geom_bar(stat = "identity", position = 'dodge') +
+  ggplot2::scale_fill_manual(values = c("indianred", "black"), aesthetics = "fill")+
+  ggplot2::ylab(expression("Proportion forage group")) 
+
+agggroups
+
+sliverhake <- ggplot2::ggplot(compgroup %>% dplyr::filter(group=="silverhake"), 
                 aes(x=Time, y=proportion, colour=source)) +
   #ggplot2::geom_col() +
   ggplot2::geom_path() +
@@ -1361,7 +1377,7 @@ ggplot2::ggplot(compgroup %>% dplyr::filter(group=="silverhake"),
   facet_grid(fct_relevel(EPU,  "GOM", "GB", "MAB")~
                fct_relevel(Season, "SPRING", "FALL")) 
 
-ggplot2::ggplot(compgroup %>% dplyr::filter(group=="squids"), 
+squids <- ggplot2::ggplot(compgroup %>% dplyr::filter(group=="squids"), 
                 aes(x=Time, y=proportion, colour=source)) +
   #ggplot2::geom_col() +
   ggplot2::geom_path() +
@@ -1372,7 +1388,7 @@ ggplot2::ggplot(compgroup %>% dplyr::filter(group=="squids"),
   facet_grid(fct_relevel(EPU,  "GOM", "GB", "MAB")~
                fct_relevel(Season, "SPRING", "FALL")) 
 
-ggplot2::ggplot(compgroup %>% dplyr::filter(group=="sandlances"), 
+sandlances <- ggplot2::ggplot(compgroup %>% dplyr::filter(group=="sandlances"), 
                 aes(x=Time, y=proportion, colour=source)) +
   #ggplot2::geom_col() +
   ggplot2::geom_path() +
@@ -1384,7 +1400,7 @@ ggplot2::ggplot(compgroup %>% dplyr::filter(group=="sandlances"),
                fct_relevel(Season, "SPRING", "FALL")) 
 
 
-ggplot2::ggplot(compgroup %>% dplyr::filter(group=="herrings"), 
+herrings <- ggplot2::ggplot(compgroup %>% dplyr::filter(group=="herrings"), 
                 aes(x=Time, y=proportion, colour=source)) +
   #ggplot2::geom_col() +
   ggplot2::geom_path() +
@@ -1398,9 +1414,25 @@ ggplot2::ggplot(compgroup %>% dplyr::filter(group=="herrings"),
 
 ```
 
-We see a higher proportion of unmanaged forage species in the diet based raw data than we do the survey based raw data, suggesting that the diet-based forage index better represents species the survey is not designed to sample directly. 
+Silver hake, which are roughly equally present in stomach contents and in survey trawls, dominate the proportion input to the forage indices GOM spring in both datasets (Fig. \@ref(fig:silver)). The diet and survey based indices are highly correlated when the species composition is similar for the Gulf of Maine in spring, suggesting that the diet based index is at least as reliable as a survey biomass based index, given similar inputs. 
 
-```{r unmanagedprop, fig.cap=""}
+```{r silver, fig.cap="Proportion of silver hake in stomach contents data compared with survey biomass sampling over time by region and season."}
+
+silverhake
+
+```
+
+In contrast, sandlance species are found in much higher proportions in stomach contents than in survey trawls, and are found in higher proportions on Georges Bank and in the Mid-Atlantic Bight during Fall (Fig. \@ref(fig:sandlance)), when the forage indices are not correlated.
+
+```{r sandlance, fig.cap="Proportion of silver hake in stomach contents data compared with survey biomass sampling over time by region and season."}
+
+sandlances
+
+```
+
+We see a higher proportion of unmanaged forage species in the diet based raw data than we do the survey based raw data (Fig. \@ref(fig:unmanagedprop)), suggesting that the diet-based forage index better represents small pelagic forage species that the survey is not designed to sample directly. 
+
+```{r unmanagedprop, fig.cap="Proportion of unmanaged forage species in stomach contents data compared with survey biomass sampling over time by region and season."}
 
 compmanaged <- foragemanagedprop %>%
   dplyr::filter(year > 1984) %>%
