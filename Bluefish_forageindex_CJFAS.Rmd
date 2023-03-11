@@ -470,7 +470,7 @@ The forage species list based on diet data was matched to survey species lists t
 
 ### Incorporation into stock assessment model
 
-Forage fish indices were explored as environmental covariates on the catchability ($q$) of NEFSC survey indices and the MRIP recreational CPUE index within the state-space assessment model framework  WHAM [@stock_woods_2021].  The forage fish index for the NEFSC survey was explored as a covariate assuming both random walk and auto-regressive process.  Standard error around the covariate was explored using both VAST standard errors as input standard error, or allowing WHAM to estimate the standard error of the covariate.  
+Forage fish indices were explored as environmental covariates on the catchability ($q$) of NEFSC survey indices and the Marine Recreational Information Program ([MRIP](https://www.fisheries.noaa.gov/recreational-fishing-data/about-marine-recreational-information-program)) recreational catch per unit effort (CPUE) index within the Woods Hole Assessment Model [@stock_woods_2021], a state-space assessment model framework (https://timjmiller.github.io/wham/).  The forage fish indices matching the spatial footprint of the NEFSC survey indices and the state waters recreational fishery were explored as covariates assuming both random walk and auto-regressive processes.  For each index, standard error around the covariate was explored using both VAST-estimated standard errors as input standard error, or allowing WHAM to estimate the standard error of the covariate.  For full stock assessment methods, please see the bluefish research track assessment report from December 2022 at [this link](https://apps-nefsc.fisheries.noaa.gov/saw/sasi_files.php?year=2022&species_id=32&stock_id=6&review_type_id=5&info_type_id=-1&map_type_id=&filename=Bluefish_SAW_SARC_2022_FINAL.pdf). 
 
 # Results  
 
@@ -1465,7 +1465,7 @@ Application of the forage fish index to the Bigelow survey had suitable converge
 
 The application of the forage fish index to the MRIP CPUE index was successful when implemented as an autoregressive process over the time-series with WHAM estimating the covariate standard error.  The inclusion of the forage fish index improved the fit of all models investigated.  The application of the forage fish index to MRIP CPUE resulted in a decreasing trend in catchability over time (Fig. \@ref(fig:WHAM)).  For the bluefish assessment, the MRIP CPUE index is important in scaling the biomass results, and the lower availability at the end of the time-series led to higher biomass estimates from the environmental model.
 
-```{r WHAM, fig.cap="Fall state waters forage index fit within the WHAM bluefish assessment model"}
+```{r WHAM, fig.cap="Fall state waters forage index fit as a catchabilty covariate within the bluefish assessment model"}
 
 knitr::include_graphics("images/ecov_comp2.png")
 
