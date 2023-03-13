@@ -159,6 +159,20 @@ blueprey <- preycount %>%
                          "MISCELLANEOUS", "OTHER")) %>%
   arrange(desc(BLUEFISH))
 
+NEAMAPblueprey <- read.csv(here("fhdat/Full Prey List_Common Names.csv")) %>%
+  filter(BLUEFISH > 9) %>%
+  filter(!SCIENTIFIC.NAME %in% c("Actinopterygii", "fish scales",
+                                 "Decapoda (megalope)", 
+                                 "unidentified material",
+                                 "Plantae",
+                                 "unidentified animal"))
+
+NEAMAPprey <- tolower(NEAMAPblueprey$SCIENTIFIC.NAME)
+
+NEFSCprey <- tolower(blueprey$pynam) 
+
+unionblueprey <- union(NEAMAPprey, NEFSCprey)
+
 # kableExtra::kable(blueprey[,c('pynam','BLUEFISH')],
 #                   col.names = c('Prey name', 'Bluefish stomachs (n)'),
 #                   caption = "Table 1. Prey identified in bluefish stomachs, NEFSC diet database, 1973-2020.")
