@@ -525,7 +525,7 @@ Forage fish indices were explored as environmental covariates on the catchabilit
 
 ## Input dataset overview 
 
-The list of bluefish prey derived from the most common identifiable prey items in NEFSC [and NEAMAP] diet databases (Table \@ref(tab:preylist)) includes the majority of bluefish diet composition by decade and season (Fig. \@ref(fig:seasondecade)). Colors in the plots show included prey, while gray sections represent "fish unidentified" and other categories not included in this analysis.  
+The list of bluefish prey derived from the most common identifiable prey items in NEFSC and NEAMAP diet databases (Table \@ref(tab:preylist)) includes the majority of bluefish diet composition by decade and season estimated by NEFSC stomach contents data (Fig. \@ref(fig:seasondecade)). Colors in the plots show included prey, while gray sections represent "fish unidentified" and other categories not included in this analysis.  
 
 ```{r seasondecade, fig.cap="Bluefish diet by season and decade, NEFSC bottom trawl surveys. Prey species are listed for those making up >3% of diet by weight in a decade/season. Light blue bars are prey included in the forage index, gray bars are not. Bar width indicates number of years with samples in the decade/season block. Full width bars had samples in all years."}
 source(here("get_diet.R"))
@@ -691,7 +691,7 @@ neamap_nbfpreytows <- neamap_bluepreyagg_stn %>%
 
 ```
 
-The full NEFSC diet database 1985-2021 contains `r ndietNEFSC` survey stations with diet collections. When including only piscivores feeding similarly to bluefish, the survey stations with diet collections in this time period is `r ndietpiscNEFSC`. Of these piscivore diet stations, `r nbfpreyNEFSC` included our defined bluefish prey, or `r round(nbfpreyNEFSC/ndietpiscNEFSC*100, 1)`%. For comparison, `r ndietbfNEFSC` stations have diet samples for bluefish alone, with `r ndietbfbfpreyNEFSC` or `r round(ndietbfbfpreyNEFSC/ndietbfNEFSC*100, 1)`% including our defined bluefish prey.
+The full NEFSC food habits database 1985-2021 contains `r ndietNEFSC` survey stations with stomach contents collections. When including only piscivores feeding similarly to bluefish, the survey stations with diet collections in this time period is `r ndietpiscNEFSC`. Of these piscivore diet stations, `r nbfpreyNEFSC` included our defined bluefish prey, or `r round(nbfpreyNEFSC/ndietpiscNEFSC*100, 1)`%. For comparison, `r ndietbfNEFSC` stations have diet samples for bluefish alone, with `r ndietbfbfpreyNEFSC` or `r round(ndietbfbfpreyNEFSC/ndietbfNEFSC*100, 1)`% including our defined bluefish prey.
 
 NEAMAP survey stations with diet collections for piscivores (n = `r neamap_npisctows`) had a higher proportion with our defined bluefish prey (n = `r neamap_nbfpreytows`, `r round((neamap_nbfpreytows/neamap_npisctows)*100, 1)`%). 
 
@@ -704,7 +704,7 @@ In the first round of model selection using REML, models including spatial and s
 
 ## Bias-corrected spatial forage indices  
 
-Forage density estimated within Fall, Spring, and Annual models was used to derive forage indices at multiple spatial scales. Here we focus on results for Fall models, which most closely match the timing of bluefish assessment inputs. Spring and Annual model outputs and diagnostics for Fall, Spring, and Annual models are available in Supplement 3. We also focus on results at the ecoregion and assessment scales as shown in Fig X.  
+Forage density estimated within Fall (Fig. \@ref(fig:falldens)), Spring, and Annual models was used to derive forage indices at multiple spatial scales. Here we focus on results for Fall models, which most closely match the timing of bluefish assessment inputs. Spring and Annual model outputs and all diagnostics for Fall, Spring, and Annual models are available in Supplement 3. We also focus on results at the ecoregion and assessment scales as shown in Fig. \@ref(fig:fallall).  
 
 ```{r}
 # strata.limits <- as.list(c("AllEPU" = allEPU2, 
@@ -768,7 +768,7 @@ knitr::include_graphics("pyindex/allagg_fall_500_lennosst_ALLsplit_biascorrect/l
 Quantile residual plots and residuals plotted in space showed no concerning patterns. Supplement 3 includes all basic VAST diagnostics: include maps of the spatial grid knot placement (“Data_and_knots”), maps of included station locations for each year (“Data_by_year”), residual plots (“quantile residuals”), maps of residuals for each station (“quantile_residuals_on_map”), an anisotropy plot indicating directional correlation (“Aniso”), and a plot of the estimated change in forage fish center of gravity over time (“center_of_gravity”).
 
 ### Fall Index
-The fall forage index shows more forage fish biomass distributed in the Mid Atlantic ecoregion relative to Georges Bank and Gulf of Maine, and more forage in state waters relative to bluefish survey index areas (Fig. \@ref(fig:fallall)).  Forage was highest in the mid-1980s in the Mid Atlantic ecoregion and  in the bluefish assessment areas, dropping to lower levels in the mid-1990s. 
+The fall forage index shows more forage fish biomass distributed in the Mid Atlantic ecoregion relative to Georges Bank and Gulf of Maine, and more forage in state waters relative to bluefish survey index areas (Fig. \@ref(fig:fallall)).  Forage was highest in the mid-1980s in the Mid Atlantic ecoregion and  in the bluefish assessment areas, dropping to lower levels in the mid-1990s. Indices at the smaller scale of the bluefish assessment areas show more interannual variability than those at the larger ecoregion scales. 
 
 ```{r fallall, fig.cap="Fall forage indices scaled to the maximum value (Mid Atlantic 1985) for ecoregions Georges Bank (GB), Gulf of Maine (GOM), Mid Atlantic Bight (MAB), and bluefish assessment index areas in state waters within 3 miles of shore (StateWaters) and bottom trawl survey index strata (SurveyBluefish)."}
 splitout <- read.csv("pyindex/allagg_fall_500_lennosst_ALLsplit_biascorrect/Index.csv")
@@ -788,7 +788,7 @@ ggplot(splitoutput, aes(x=Time, y=Estimate, colour=Region)) +
   geom_point()+
   geom_line()+
   facet_wrap(~fct_relevel(Type, "Ecoregion", "Bluefish"), scales = "free_y") +
-  scale_y_continuous(labels=function(x)round(x/foragemax, digits = 1))+
+  scale_y_continuous(labels=function(x)round(x/foragemax, digits = 2))+
   ylab("Relative forage biomass scaled to maximum")  
   
   #guides(colour = guide_legend(ncol=2)) +
@@ -1244,11 +1244,11 @@ menhaden <- data.frame(prey=c("BREVOORTIA",
                               
 menhaden$group <- "menhaden"
 
-otherflats <- data.frame(prey = c("PLEURONECTIFORMES"),
-                         preycol=c("#48beff"),
-                         mgtcol=c("#890058"))
+# otherflats <- data.frame(prey = c("PLEURONECTIFORMES"),
+#                          preycol=c("#48beff"),
+#                          mgtcol=c("#890058"))
 
-otherflats$group <- "otherflats"
+#otherflats$group <- "otherflats"
 
 preycolcode <- rbind(sandlances,
                      anchovies,
@@ -1260,8 +1260,9 @@ preycolcode <- rbind(sandlances,
                      mackerel,
                      scup,
                      weakfish,
-                     menhaden,
-                     otherflats)
+                     menhaden#,
+                     #otherflats
+                     )
 
 preycolcode <- preycolcode %>% 
   dplyr::mutate(managed = ifelse(mgtcol=="#afe5ff", TRUE, FALSE)) %>%
@@ -1421,7 +1422,7 @@ agggroups <- ggplot2::ggplot(aggprop,
 
 agggroups
 
-sliverhake <- ggplot2::ggplot(compgroup %>% dplyr::filter(group=="silverhake"), 
+psilverhake <- ggplot2::ggplot(compgroup %>% dplyr::filter(group=="silverhake"), 
                 aes(x=Time, y=proportion, colour=source)) +
   #ggplot2::geom_col() +
   ggplot2::geom_path() +
@@ -1432,7 +1433,7 @@ sliverhake <- ggplot2::ggplot(compgroup %>% dplyr::filter(group=="silverhake"),
   facet_grid(fct_relevel(EPU,  "GOM", "GB", "MAB")~
                fct_relevel(Season, "SPRING", "FALL")) 
 
-squids <- ggplot2::ggplot(compgroup %>% dplyr::filter(group=="squids"), 
+psquids <- ggplot2::ggplot(compgroup %>% dplyr::filter(group=="squids"), 
                 aes(x=Time, y=proportion, colour=source)) +
   #ggplot2::geom_col() +
   ggplot2::geom_path() +
@@ -1443,7 +1444,7 @@ squids <- ggplot2::ggplot(compgroup %>% dplyr::filter(group=="squids"),
   facet_grid(fct_relevel(EPU,  "GOM", "GB", "MAB")~
                fct_relevel(Season, "SPRING", "FALL")) 
 
-sandlances <- ggplot2::ggplot(compgroup %>% dplyr::filter(group=="sandlances"), 
+psandlances <- ggplot2::ggplot(compgroup %>% dplyr::filter(group=="sandlances"), 
                 aes(x=Time, y=proportion, colour=source)) +
   #ggplot2::geom_col() +
   ggplot2::geom_path() +
@@ -1455,7 +1456,7 @@ sandlances <- ggplot2::ggplot(compgroup %>% dplyr::filter(group=="sandlances"),
                fct_relevel(Season, "SPRING", "FALL")) 
 
 
-herrings <- ggplot2::ggplot(compgroup %>% dplyr::filter(group=="herrings"), 
+pherrings <- ggplot2::ggplot(compgroup %>% dplyr::filter(group=="herrings"), 
                 aes(x=Time, y=proportion, colour=source)) +
   #ggplot2::geom_col() +
   ggplot2::geom_path() +
@@ -1473,15 +1474,15 @@ Silver hake, which are roughly equally present in stomach contents and in survey
 
 ```{r silver, fig.cap="Proportion of silver hake in stomach contents data compared with survey biomass sampling over time by region and season."}
 
-silverhake
+psilverhake
 
 ```
 
 In contrast, sandlance species are found in much higher proportions in stomach contents than in survey trawls, and are found in higher proportions on Georges Bank and in the Mid-Atlantic Bight during Fall (Fig. \@ref(fig:sandlance)), when the forage indices are not correlated.
 
-```{r sandlance, fig.cap="Proportion of silver hake in stomach contents data compared with survey biomass sampling over time by region and season."}
+```{r sandlance, fig.cap="Proportion of sandlance species in stomach contents data compared with survey biomass sampling over time by region and season."}
 
-sandlances
+psandlances
 
 ```
 
