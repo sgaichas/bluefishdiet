@@ -188,9 +188,16 @@ blueprey <- NEFSCprey %>%
                 NEFSC = ifelse(is.na(NEFSC), 0, NEFSC),
                 total = NEFSC + NEAMAP,
                 PREY = ifelse(is.na(SCIENTIFIC.NAME), pynam, SCIENTIFIC.NAME),
-                COMMON = ifelse(is.na(COMMON.NAME), pycomnam2, COMMON.NAME)) %>%
+                COMMON = ifelse(is.na(COMMON.NAME), pycomnam2, COMMON.NAME),
+                pynam = ifelse(is.na(pynam), toupper(pynam2), pynam)) %>%
   dplyr::arrange(desc(total)) %>%
-  dplyr::filter(total>9)
+  dplyr::filter(total>20 | pynam=="SCOMBER SCOMBRUS") %>% # >20 leaves out mackerel
+  dplyr::mutate(COMMON = case_when(pynam=="ILLEX SP" ~ "Shortfin squids",
+                                   pynam2=="teuthida" ~ "Unidentified squids",
+                                   TRUE ~ COMMON)) %>%
+  dplyr::mutate(PREY = stringr::str_to_sentence(PREY),
+                COMMON = stringr::str_to_sentence(COMMON))
+
 
 flextable::flextable(blueprey[,c('PREY', 'COMMON', 'NEFSC', 'NEAMAP', 'total')]) %>%
   flextable::set_header_labels(PREY = "Prey",
@@ -587,6 +594,8 @@ p2 <-   ggplot(briansdecadeseason, aes(decade, relmsw, fill=blueprey)) +
 
 #ggiraph(code = print(p1)) 
 #p1
+
+p2
 
 ```
 

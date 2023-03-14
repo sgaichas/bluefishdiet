@@ -133,8 +133,8 @@ gencomlist <- allfh %>%
   select(pynam, gencom2) %>%
   distinct()
 
-blueprey <- preycount %>% 
-  filter(BLUEFISH > 9) %>%
+NEFSCblueprey <- preycount %>%
+  #filter(BLUEFISH > 9) %>%
   filter(!pynam %in% c("EMPTY", "BLOWN",
                        "FISH", "OSTEICHTHYES",
                        "ANIMAL REMAINS",
@@ -146,7 +146,50 @@ blueprey <- preycount %>%
                          "ECHINODERMATA", "WORMS",
                          "BRACHIOPODA", "COMB JELLIES",
                          "BRYOZOA", "SPONGES",
-                         "MISCELLANEOUS", "OTHER"))
+                         "MISCELLANEOUS", "OTHER")) %>%
+  arrange(desc(BLUEFISH))
+
+# March 2023, formally add NEAMAP to prey decisions
+NEAMAPblueprey <- read.csv(here("fhdat/Full Prey List_Common Names.csv")) %>%
+  #filter(BLUEFISH > 9) %>%
+  filter(!SCIENTIFIC.NAME %in% c("Actinopterygii", "fish scales",
+                                 "Decapoda (megalope)", 
+                                 "unidentified material",
+                                 "Plantae",
+                                 "unidentified animal"))
+
+NEAMAPprey <- NEAMAPblueprey %>%
+  dplyr::select(COMMON.NAME, SCIENTIFIC.NAME, BLUEFISH) %>%
+  dplyr::filter(!is.na(BLUEFISH)) %>%
+  dplyr::mutate(pynam2 = tolower(SCIENTIFIC.NAME),
+                pynam2 = stringr::str_replace(pynam2, "spp.", "sp")) %>%
+  dplyr::rename(NEAMAP = BLUEFISH)
+
+
+NEFSCprey <- NEFSCblueprey %>%
+  dplyr::select(pycomnam2, pynam, BLUEFISH) %>%
+  dplyr::filter(!is.na(BLUEFISH)) %>%
+  dplyr::mutate(pynam2 = tolower(pynam)) %>%
+  dplyr::rename(NEFSC = BLUEFISH)
+
+# new criteria March 2023, >20 observations NEAMAP+NEFSC, but keep mackerel
+# removes the flatfish order (too broad) and unid Urophycis previously in NEAMAP
+blueprey <- NEFSCprey %>% 
+  dplyr::full_join(NEAMAPprey) %>%
+  dplyr::mutate(NEAMAP = ifelse(is.na(NEAMAP), 0, NEAMAP),
+                NEFSC = ifelse(is.na(NEFSC), 0, NEFSC),
+                total = NEFSC + NEAMAP,
+                PREY = ifelse(is.na(SCIENTIFIC.NAME), pynam, SCIENTIFIC.NAME),
+                COMMON = ifelse(is.na(COMMON.NAME), pycomnam2, COMMON.NAME),
+                pynam = ifelse(is.na(pynam), toupper(pynam2), pynam)) %>%
+  dplyr::arrange(desc(total)) %>%
+  dplyr::filter(total>20 | pynam=="SCOMBER SCOMBRUS") %>% # >20 leaves out mackerel
+  dplyr::mutate(COMMON = case_when(pynam=="ILLEX SP" ~ "Shortfin squids",
+                                   pynam2=="teuthida" ~ "Unidentified squids",
+                                   TRUE ~ COMMON)) %>%
+  dplyr::mutate(PREY = stringr::str_to_sentence(PREY),
+                COMMON = stringr::str_to_sentence(COMMON))
+
 
 fh.nefsc.pisc.pisccomplete.blueprey <- fh.nefsc.pisc.pisccomplete %>%
   mutate(blueprey = case_when(pynam %in% blueprey$pynam ~ "blueprey",
