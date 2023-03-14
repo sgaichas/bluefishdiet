@@ -169,7 +169,7 @@ NEAMAPblueprey <- read.csv(here("fhdat/Full Prey List_Common Names.csv")) %>%
          #!COMMON.NAME %in% c("wrymouth"))
 
 NEAMAPprey <- NEAMAPblueprey %>%
-  dplyr::select(SCIENTIFIC.NAME, BLUEFISH) %>%
+  dplyr::select(COMMON.NAME, SCIENTIFIC.NAME, BLUEFISH) %>%
   dplyr::filter(!is.na(BLUEFISH)) %>%
   dplyr::mutate(pynam2 = tolower(SCIENTIFIC.NAME),
                 pynam2 = stringr::str_replace(pynam2, "spp.", "sp")) %>%
@@ -177,20 +177,25 @@ NEAMAPprey <- NEAMAPblueprey %>%
 
 
 NEFSCprey <- NEFSCblueprey %>%
-  dplyr::select(pynam, BLUEFISH) %>%
+  dplyr::select(pycomnam2, pynam, BLUEFISH) %>%
   dplyr::filter(!is.na(BLUEFISH)) %>%
   dplyr::mutate(pynam2 = tolower(pynam)) %>%
   dplyr::rename(NEFSC = BLUEFISH)
 
 blueprey <- NEFSCprey %>% 
-  dplyr::left_join(NEAMAPprey) %>%
+  dplyr::full_join(NEAMAPprey) %>%
   dplyr::mutate(NEAMAP = ifelse(is.na(NEAMAP), 0, NEAMAP),
-                total = NEFSC + NEAMAP) %>%
+                NEFSC = ifelse(is.na(NEFSC), 0, NEFSC),
+                total = NEFSC + NEAMAP,
+                PREY = ifelse(is.na(SCIENTIFIC.NAME), pynam, SCIENTIFIC.NAME),
+                COMMON = ifelse(is.na(COMMON.NAME), pycomnam2, COMMON.NAME)) %>%
   dplyr::arrange(desc(total)) %>%
   dplyr::filter(total>9)
 
-flextable::flextable(blueprey[,c('pynam', 'NEFSC', 'NEAMAP', 'total')]) %>%
-  flextable::set_header_labels(pynam = "Prey name",  total = "Bluefish stomachs (n)")
+flextable::flextable(blueprey[,c('PREY', 'COMMON', 'NEFSC', 'NEAMAP', 'total')]) %>%
+  flextable::set_header_labels(PREY = "Prey",
+                               COMMON = "Prey common name",
+                               total = "Bluefish stomachs (n)") %>%
   flextable::set_caption("Prey identified in bluefish stomachs, NEFSC (1973-2021) and NEAMAP (2007-2021) diet databases.") 
 
 
