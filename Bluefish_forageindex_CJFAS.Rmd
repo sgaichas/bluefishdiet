@@ -143,8 +143,8 @@ gencomlist <- allfh %>%
   select(pynam, pycomnam2, gencom2) %>%
   distinct()
 
-blueprey <- preycount %>%
-  filter(BLUEFISH > 9) %>%
+NEFSCblueprey <- preycount %>%
+  #filter(BLUEFISH > 9) %>%
   filter(!pynam %in% c("EMPTY", "BLOWN",
                        "FISH", "OSTEICHTHYES",
                        "ANIMAL REMAINS",
@@ -160,28 +160,51 @@ blueprey <- preycount %>%
   arrange(desc(BLUEFISH))
 
 NEAMAPblueprey <- read.csv(here("fhdat/Full Prey List_Common Names.csv")) %>%
-  filter(BLUEFISH > 9) %>%
+  #filter(BLUEFISH > 9) %>%
   filter(!SCIENTIFIC.NAME %in% c("Actinopterygii", "fish scales",
                                  "Decapoda (megalope)", 
                                  "unidentified material",
                                  "Plantae",
-                                 "unidentified animal"))
+                                 "unidentified animal"))#,
+         #!COMMON.NAME %in% c("wrymouth"))
 
-NEAMAPprey <- tolower(NEAMAPblueprey$SCIENTIFIC.NAME)
+NEAMAPprey <- NEAMAPblueprey %>%
+  dplyr::select(SCIENTIFIC.NAME, BLUEFISH) %>%
+  dplyr::filter(!is.na(BLUEFISH)) %>%
+  dplyr::mutate(pynam2 = tolower(SCIENTIFIC.NAME),
+                pynam2 = stringr::str_replace(pynam2, "spp.", "sp")) %>%
+  dplyr::rename(NEAMAP = BLUEFISH)
 
-NEFSCprey <- tolower(blueprey$pynam) 
 
-unionblueprey <- union(NEAMAPprey, NEFSCprey)
+NEFSCprey <- NEFSCblueprey %>%
+  dplyr::select(pynam, BLUEFISH) %>%
+  dplyr::filter(!is.na(BLUEFISH)) %>%
+  dplyr::mutate(pynam2 = tolower(pynam)) %>%
+  dplyr::rename(NEFSC = BLUEFISH)
+
+blueprey <- NEFSCprey %>% 
+  dplyr::left_join(NEAMAPprey) %>%
+  dplyr::mutate(NEAMAP = ifelse(is.na(NEAMAP), 0, NEAMAP),
+                total = NEFSC + NEAMAP) %>%
+  dplyr::arrange(desc(total)) %>%
+  dplyr::filter(total>9)
+
+flextable::flextable(blueprey[,c('pynam', 'NEFSC', 'NEAMAP', 'total')]) %>%
+  flextable::set_header_labels(pynam = "Prey name",  total = "Bluefish stomachs (n)")
+  flextable::set_caption("Prey identified in bluefish stomachs, NEFSC (1973-2021) and NEAMAP (2007-2021) diet databases.") 
+
+
+# unionblueprey <- union(NEAMAPprey, NEFSCprey)
 
 # kableExtra::kable(blueprey[,c('pynam','BLUEFISH')],
 #                   col.names = c('Prey name', 'Bluefish stomachs (n)'),
 #                   caption = "Table 1. Prey identified in bluefish stomachs, NEFSC diet database, 1973-2020.")
 
-flextable::flextable(blueprey[,c('pynam', 'pycomnam2','BLUEFISH')]) %>%
-  flextable::set_header_labels(pynam = "Prey name", pycomnam2 = "Prey common name", BLUEFISH = "Bluefish stomachs (n)") %>%
-  flextable::set_caption("Prey identified in bluefish stomachs, NEFSC diet database, 1973-2021.") %>%
-  #flextable::autofit()
-  flextable::width(width = c(2.5,3.5,0.5))
+# flextable::flextable(blueprey[,c('pynam', 'pycomnam2','BLUEFISH')]) %>%
+#   flextable::set_header_labels(pynam = "Prey name", pycomnam2 = "Prey common name", BLUEFISH = "Bluefish stomachs (n)") %>%
+#   flextable::set_caption("Prey identified in bluefish stomachs, NEFSC diet database, 1973-2021.") %>%
+#   #flextable::autofit()
+#   flextable::width(width = c(2.5,3.5,0.5))
 ```
 
 
