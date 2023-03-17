@@ -1274,7 +1274,9 @@ names(preycols) <- as.factor(preycolcode$prey)
 mgtcols <- preycolcode$mgtcol
 names(mgtcols) <- as.factor(preycolcode$prey)
 
-flextable::flextable(preycolcode %>% dplyr::select(bluepynam, group, managed)) %>%
+flextable::flextable(preycolcode %>% 
+                       dplyr::select(bluepynam, group, managed) %>%
+                       dplyr::mutate(bluepynam = stringr::str_to_sentence(bluepynam))) %>%
   flextable::set_header_labels(bluepynam = 'Prey name', 
                                group = "Prey group", 
                                managed = "Managed species?") %>%
