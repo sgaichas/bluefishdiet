@@ -509,7 +509,7 @@ ggplot(data = ecodata::coast) +
 ```
 
 
-Seasonal models were run using the script [`bluefishdiet/VASTunivariate_bfp_allsurvs_lencovSST_ALLinoffsplits.R`](https://github.com/sgaichas/bluefishdiet/blob/main/VASTunivariate_bfp_allsurvs_lencovSST_ALLinoffsplits.R), which contains all stratum definitions. The annual model was run using the script [`bluefishdiet/VASTunivariate_bfp_allsurvsANNUA:_lencovSST_ALLinoffsplits.R`](https://github.com/sgaichas/bluefishdiet/blob/main/VASTunivariate_bfp_allsurvsANNUAL_lencovSST_ALLinoffsplits.R). 
+Seasonal models were run using the script [`VASTunivariate_bfp_allsurvs_lencovSST_ALLinoffsplits.R`](https://github.com/sgaichas/bluefishdiet/blob/main/VASTunivariate_bfp_allsurvs_lencovSST_ALLinoffsplits.R), which contains all stratum definitions. The annual model was run using the script [`VASTunivariate_bfp_allsurvsANNUAL_lencovSST_ALLinoffsplits.R`](https://github.com/sgaichas/bluefishdiet/blob/main/VASTunivariate_bfp_allsurvsANNUAL_lencovSST_ALLinoffsplits.R). 
 
 The final model runs included all selected covariates, stratum definitions, and bias correction for the biomass index.  
 
@@ -700,7 +700,7 @@ The number of survey stations missing surface temperature data varied considerab
 
 ## VAST model selection  
 
-In the first round of model selection using REML, models including spatial and spatio-temporal random effects as well as anisotropy were best supported by the data. This was true for the spring dataset, the fall dataset, and the annual (seasons combined) dataset.  In the second round of model selection using maximum likelihood, catchability covariates were better supported by the data than vessel effects. These comparisons led us to the best model fit using mean predator length, number of predator species, and SST at a survey station as catchability covariates. Full results of model selection are available in Supplement 2. 
+In the first round of model selection using REML, models including spatial and spatio-temporal random effects as well as anisotropy were best supported by the data. This was true for the spring dataset, the fall dataset, and the annual (seasons combined) dataset.  This result was robust across several modifications to the datasets, inlcuding changes to the selected set of predators. In the second round of model selection using maximum likelihood, catchability covariates were better supported by the data than vessel effects. These comparisons led us to the best model fit using mean predator length, number of predator species, and SST at a survey station as catchability covariates. Full results of model selection are available in Supplement 2. 
 
 ## Bias-corrected spatial forage indices  
 
@@ -765,7 +765,7 @@ knitr::include_graphics("pyindex/allagg_fall_500_lennosst_ALLsplit_biascorrect/l
 ```
 
 ### Fall Diagnostics
-Quantile residual plots and residuals plotted in space showed no concerning patterns. Supplement 3 includes all basic VAST diagnostics: include maps of the spatial grid knot placement (“Data_and_knots”), maps of included station locations for each year (“Data_by_year”), residual plots (“quantile residuals”), maps of residuals for each station (“quantile_residuals_on_map”), an anisotropy plot indicating directional correlation (“Aniso”), and a plot of the estimated change in forage fish center of gravity over time (“center_of_gravity”).
+Quantile residual plots and residuals plotted in space showed no concerning patterns. Supplement 3 includes all basic VAST diagnostics: maps of the spatial grid knot placement (“Data_and_knots”), maps of included station locations for each year (“Data_by_year”), residual plots (“quantile residuals”), maps of residuals for each station (“quantile_residuals_on_map”), an anisotropy plot indicating directional correlation (“Aniso”), and a plot of the estimated change in forage fish center of gravity over time (“center_of_gravity”).
 
 ### Fall Index
 The fall forage index shows more forage fish biomass distributed in the Mid Atlantic ecoregion relative to Georges Bank and Gulf of Maine, and more forage in state waters relative to bluefish survey index areas (Fig. \@ref(fig:fallall)).  Forage was highest in the mid-1980s in the Mid Atlantic ecoregion and  in the bluefish assessment areas, dropping to lower levels in the mid-1990s. Indices at the smaller scale of the bluefish assessment areas show more interannual variability than those at the larger ecoregion scales. 
@@ -1103,9 +1103,9 @@ ggplot2::ggplot(compareforageagg, aes(x=stdForage, y=stdsurvForage)) +
   
 ```
 
-To determine what may drive some seasons and regions to have similar forage indices based on diet versus survey biomass, we examined patterns in the raw species composition over time in each dataset that were input to the VAST model and used to calculate the design based aggregate survey index, by region and season. We expected to find similar species compositions in Gulf of Maine during spring, and possibly a shared dominant species on Georges Bank during spring between the stomach contents and the survey sampling. 
+To determine what may drive some seasons and regions to have similar forage indices based on diet versus survey biomass, we examined patterns in the raw species composition over time in each dataset: the stomach contents data that were input to the VAST model and the trawl catch weight used to calculate the design based aggregate survey index, by region and season. Based on the correlations between the indices (Fig.\@ref(fig:corr)), we expected to find similar species compositions or a shared dominant species in Gulf of Maine during spring, and possibly on Georges Bank during spring between the stomach contents and the survey sampling. 
 
-We grouped prey into taxonomic groupings as well as management groupings (managed/unmanaged) to characterize similarities and differences between small pelagic forage composition in the forage index and the composition directly sampled by the survey. 
+We grouped prey into taxonomic groupings as well as management groupings (managed/unmanaged) to characterize similarities and differences between small pelagic forage composition in the forage index and the composition directly sampled by the survey (Table \@ref(tab:groups)). 
 
 ```{r}
 
@@ -1273,6 +1273,14 @@ names(preycols) <- as.factor(preycolcode$prey)
 
 mgtcols <- preycolcode$mgtcol
 names(mgtcols) <- as.factor(preycolcode$prey)
+
+flextable::flextable(preycolcode %>% dplyr::select(bluepynam, group, managed)) %>%
+  flextable::set_header_labels(bluepynam = 'Prey name', 
+                               group = "Prey group", 
+                               managed = "Managed species?") %>%
+  flextable::set_caption("Prey species in stomach contents and survey data mapped to groups and management categories.") %>%
+  #flextable::autofit()
+  flextable::width(width = c(3, 2, 1))
 
 ```
 
@@ -1525,7 +1533,7 @@ knitr::include_graphics("images/ecov_comp2.png")
 
 # Discussion
 
-Understandng forage fluctuations is important
+Understandng small pelagic forage fluctuations is important. Small pelagic forage species play a key role transferring energy within ecosystems. 
 
 This index includes unmanaged species not well sampled by regional trawl surveys and therefore the best representation of small pelagics in this ecosystem
 
