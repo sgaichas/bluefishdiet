@@ -1533,7 +1533,13 @@ knitr::include_graphics("images/ecov_comp2.png")
 
 # Discussion
 
-Understandng small pelagic forage fluctuations is important. Small pelagic forage species play a key role transferring energy within ecosystems. 
+The forage index based on stomach contents estimates similar trends to a survey design based index when the input data species composition is similar. 
+
+Differences between the indices are also revealing. 
+
+Stomach contents provide information on species the trawl survey does not effectively sample.
+
+Understandng small pelagic forage fluctuations is important. Small pelagic forage species play a key role transferring energy within ecosystems. index helps with assessing impact of overall forage base
 
 This index includes unmanaged species not well sampled by regional trawl surveys and therefore the best representation of small pelagics in this ecosystem
 
