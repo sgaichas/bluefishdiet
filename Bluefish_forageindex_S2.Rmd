@@ -1,27 +1,35 @@
 ---
-title: "Bluefish Forage Index Supplement 2"
-author: "Sarah Gaichas"
+title: "Assessing small pelagic fish trends in space and time using piscivore stomach contents: Supplement 2"
+author: "Sarah Gaichas, James Gartland, Brian Smith, Elizabeth Ng, Michael Celestino,
+  Anthony Wood, Katie Drew, Abigail Tyrell, and James Thorson"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output:
+  bookdown::pdf_document2:
+    includes: 
+       in_header: latex/header1.tex
+    keep_tex: true
   bookdown::html_document2: 
     toc: true
     toc_float: true
   bookdown::word_document2:
     toc: false
-  bookdown::pdf_document2:
-    includes: 
-       in_header: latex/header1.tex
-    keep_tex: true
 link-citations: yes
 csl: "canadian-journal-of-fisheries-and-aquatic-sciences.csl"
 bibliography: FishDiet_EcoIndicators.bib
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = FALSE, # no code blocks in word doc
+                      message = FALSE,
+                      warning = FALSE)
+
+library(tidyverse)
+theme_set(theme_bw())
+library(here)
+
 ```
 
-## VAST model selection  
+# VAST model selection {-}
 
 Comparisons of AIC are presented for both the first (spatial and spatio-temporal random effects, Table \@ref(tab:modsel1)) and second (catchability covariates, Table \@ref(tab:modsel2)) rounds of model selection. 
 
@@ -154,9 +162,16 @@ modselect <- modcompare %>%
          beta1, beta2, AIC, converged2) %>%
   dplyr::arrange(season, AIC)
 
-DT::datatable(modselect, rownames = FALSE, 
-              options= list(pageLength = 25, scrollX = TRUE),
-              caption = "Comparison of delta AIC values using Restricted Maxiumum Likelihood (REML) for alternative fixed and random effects model structures. See text for model descriptions.")
+# DT::datatable(modselect, rownames = FALSE, 
+#               options= list(pageLength = 25, scrollX = TRUE),
+#               caption = "Comparison of delta AIC values using Restricted Maxiumum Likelihood (REML) for alternative fixed and random effects model structures. See text for model descriptions.")
+
+flextable::flextable(modselect %>%
+                       dplyr::select(-c(use_anisotropy, 
+         omega1, omega2, epsilon1, epsilon2, 
+         beta1, beta2))) %>%
+  flextable::set_caption("Comparison of delta AIC values using Restricted Maxiumum Likelihood (REML) for alternative fixed and random effects model structures. See text for model descriptions.") %>%
+  flextable::autofit()
 ```
 
 Using REML, models including spatial and spatio-temporal random effects as well as anisotropy were best supported by the data. This was true for the spring dataset, the fall dataset, and the annual (seasons combined) dataset. 
@@ -203,12 +218,21 @@ modselect2 <- modcompare2 %>%
          beta1, beta2, AIC, converged2) %>%
   dplyr::arrange(season, AIC)
 
-DT::datatable(modselect2, rownames = FALSE, 
-              options= list(pageLength = 50, scrollX = TRUE),
-              caption = "Comparison of delta AIC values for alternative vessel effects and catchability covariates. See text for model descriptions.")
+# DT::datatable(modselect2, rownames = FALSE, 
+#               options= list(pageLength = 50, scrollX = TRUE),
+#               caption = "Comparison of delta AIC values for alternative vessel effects and catchability covariates. See text for model descriptions.")
+
+flextable::flextable(modselect2%>%
+                       dplyr::select(-c(use_anisotropy, 
+         omega1, omega2, epsilon1, epsilon2, 
+         beta1, beta2))) %>%
+  flextable::set_caption("Comparison of delta AIC values for alternative vessel effects and catchability covariates. See text for model descriptions.") %>%
+  flextable::autofit()
+
 
 ```
 
 
 Catchability covariates were better supported by the data than vessel effects. Model comparisons above and [here](https://sgaichas.github.io/bluefishdiet/VASTcovariates_updatedPreds_sst.html) led us to the best model fit using mean predator length, number of predator species, and SST at a survey station as catchability covariates. 
 
+# References
