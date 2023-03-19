@@ -1,5 +1,5 @@
 ---
-title: "Assessing small pelagic fish trends in space and time using piscivore stomach contents:  Supplement 3"
+title: "Assessing small pelagic fish trends in space and time using piscivore stomach contents:  Supplement 3, Model results"
 author: "Sarah Gaichas, James Gartland, Brian Smith, Elizabeth Ng, Michael Celestino,
   Anthony Wood, Katie Drew, Abigail Tyrell, and James Thorson"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
@@ -167,7 +167,7 @@ ggplot(splitoutput, aes(x=Time, y=Estimate, colour=Region)) +
 The VAST model predicts density of forage fish across the entire model domain for each year (Fig. \@ref(fig:annualdens)). 
 
 ```{r annualdens, fig.cap="Yearly maps of VAST model estimated annual forage fish density (months 1-12)."}
-knitr::include_graphics("pyindex/allagg_annual_500_lennosst_ALLsplit_biascorrect/ln_density-predicted.png")
+knitr::include_graphics("pyindex/2022/allagg_annual_500_lennosst_ALLsplit_biascorrect/ln_density-predicted.png")
 ```
 
 <!--![Annual density maps with covariates](pyindex/allagg_annual_500_lennosst_ALLsplit_biascorrect/ln_density-predicted.png)-->
@@ -190,7 +190,7 @@ for(p in diagplots){
     cat("  \n####",  as.character(p),"  \n")
     cat(paste0("![Annual diagnostics:",
                p,
-               "](pyindex/allagg_annual_500_lennosst_ALLsplit_biascorrect/",
+               "](pyindex/2022/allagg_annual_500_lennosst_ALLsplit_biascorrect/",
                       p,
                       ".png)")) 
     cat("  \n")   
@@ -206,7 +206,7 @@ for(p in diagplots){
 The Annual forage index uses data from all months each year (1-12). The same plots are presented as those above for Fall and Spring indices. Fig. \@ref(fig:annualall) shows all annual forage index time series with standard errors.
 
 ```{r annualall, fig.cap="All Annual forage indices"}
-splitoutput <- read.csv("pyindex/allagg_annual_500_lennosst_ALLsplit_biascorrect/Index.csv")
+splitoutput <- read.csv("pyindex/2022/allagg_annual_500_lennosst_ALLsplit_biascorrect/Index.csv")
 
 splitoutput <- splitout %>%
   dplyr::left_join(stratlook) %>%
