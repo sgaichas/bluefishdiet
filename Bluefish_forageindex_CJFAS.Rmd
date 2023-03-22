@@ -8,11 +8,11 @@ output:
     includes: 
        in_header: latex/header1.tex
     keep_tex: true
-  bookdown::word_document2:
-    toc: false
   bookdown::html_document2: 
     toc: true
     toc_float: true
+  bookdown::word_document2:
+    toc: false
 link-citations: yes
 csl: "canadian-journal-of-fisheries-and-aquatic-sciences.csl"
 bibliography: FishDiet_EcoIndicators.bib
