@@ -293,28 +293,6 @@ sizedefs <- allfh %>%
   group_by(pdcomnam, sizecat) %>% 
   summarize(minlen = min(pdlen), maxlen = max(pdlen))
 
-pisccompletedf <- data.frame("COMNAME" = toupper(str_remove(pisccomplete, "\\..*")),
-                              "SizeCat" = str_remove(str_extract(pisccomplete, "\\..*[:upper:]+"), "\\.."),
-                              "feedguild" = "pisccomplete") %>%
-  left_join(sizedefs, by=c("COMNAME" = "pdcomnam", 
-                          "SizeCat" = "sizecat")) %>%
-  arrange(COMNAME, minlen)
-
-  
-# kableExtra::kable(pisccompletedf[,-3],
-#                   col.names = c('Predator name', "Size category", "Minimum length (cm)", "Maximum length (cm)"),
-#                   caption = "Table 2. Predators with highest diet similarity to Bluefish, NEFSC diet database, 1973-2020.",
-#                   align = "rccc")  
-
-flextable::flextable(pisccompletedf[,-3]) %>%
-  flextable::set_header_labels(COMNAME = 'Predator name', 
-                               SizeCat = "Size category", 
-                               minlen = "Minimum length (cm)",
-                               maxlen = "Maximum length (cm)") %>%
-  flextable::set_caption("Predators with highest diet similarity to Bluefish, NEFSC diet database, 1973-2020.") %>%
-  #flextable::autofit()
-  flextable::width(width = c(3, 1, 1, 1))
-
 # add these in as a NEAMAP column
 # +  Summer Flounder 21-70 cm
 # +  Silver Hake 21-76 cm
@@ -326,6 +304,60 @@ flextable::flextable(pisccompletedf[,-3]) %>%
 # +  Spotted Sea Trout 15.5 – 34 cm 
 # +  Spiny Dogfish 36 – 117 cm
 # +  Goosefish 5 – 124 cm  
+
+NEAMAPpisc <- data.frame("comname" = c("Summer Flounder",
+                                       "Silver Hake", 
+                                       "Weakfish", 
+                                       "Atlantic Cod", 
+                                       "Bluefish", 
+                                       "Striped Bass", 
+                                       "Spanish Mackerel", 
+                                       "Spotted Sea Trout", 
+                                       "Spiny Dogfish", 
+                                       "Goosefish"),
+                         "mincm" = c(21, 21, 26, 81, 3, 31, 10, 15.5, 36, 5),
+                         "maxcm" = c(70, 76, 50, 150, 118, 120, 33.5, 34, 117, 124)
+                         ) %>%
+  dplyr::mutate(comname = stringr::str_to_sentence(comname),
+                NEAMAP = TRUE)
+
+
+pisccompletedf <- data.frame("COMNAME" = toupper(str_remove(pisccomplete, "\\..*")),
+                              "SizeCat" = str_remove(str_extract(pisccomplete, "\\..*[:upper:]+"), "\\.."),
+                              "feedguild" = "pisccomplete") %>%
+  left_join(sizedefs, by=c("COMNAME" = "pdcomnam", 
+                          "SizeCat" = "sizecat")) %>%
+  arrange(COMNAME, minlen)
+
+piscall <- pisccompletedf %>%
+  dplyr::mutate(comname = stringr::str_to_sentence(COMNAME)) %>%
+  dplyr::group_by(comname) %>%
+  dplyr::summarise(mincm = min(minlen),
+                   maxcm = max(maxlen),
+                   NEFSC = TRUE) %>%
+  dplyr::full_join(NEAMAPpisc) %>%
+  dplyr::mutate(survey = dplyr::case_when(NEFSC & NEAMAP ~ "Both",
+                                          NEFSC ~ "NEFSC",
+                                          NEAMAP ~ "NEAMAP")) %>%
+  dplyr::arrange(comname)
+
+  
+# kableExtra::kable(pisccompletedf[,-3],
+#                   col.names = c('Predator name', "Size category", "Minimum length (cm)", "Maximum length (cm)"),
+#                   caption = "Table 2. Predators with highest diet similarity to Bluefish, NEFSC diet database, 1973-2020.",
+#                   align = "rccc")  
+
+
+flextable::flextable(piscall %>% dplyr::select(-c(NEFSC, NEAMAP))) %>%
+  flextable::set_header_labels(comname = 'Predator name', 
+                               #SizeCat = "Size category", 
+                               mincm = "Minimum length (cm)",
+                               maxcm = "Maximum length (cm)",
+                               survey = "Survey") %>%
+  flextable::set_caption("Predators with highest diet similarity to Bluefish, NEFSC and NEAMAP diet databases") %>%
+  #flextable::autofit()
+  flextable::width(width = c(3, 1, 1, 1))
+
   
 ```
 
