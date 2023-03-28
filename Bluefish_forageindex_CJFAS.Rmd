@@ -84,6 +84,7 @@ library(forcats)
 
 ```
 
+
 S.K. Gaichas (corresponding author): NOAA Fisheries, Northeast Fisheries Science Center. 166 Water St. Woods Hole MA. 02543.  https://orcid.org/0000-0002-5788-3073 Sarah.Gaichas@noaa.gov tel: (508) 495-2016 
 <!---Oh god this is such a hack! -->
 
@@ -103,6 +104,7 @@ Abigail S. Tyrell: Ocean Associates Inc, Arlington, VA, USA https://orcid.org/00
 
 James T. Thorson: Resource Ecology and Fisheries Management, Alaska Fisheries Science Center, National Marine Fisheries Service, NOAA, https://orcid.org/0000-0001-7415-1010
 
+\newpage
   
 # Abstract {-}
 
