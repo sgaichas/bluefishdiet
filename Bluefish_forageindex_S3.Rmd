@@ -167,7 +167,7 @@ ggplot(splitoutput, aes(x=Time, y=Estimate, colour=Region)) +
 The VAST model predicts density of forage fish across the entire model domain for each year (Fig. \@ref(fig:annualdens)). 
 
 ```{r annualdens, fig.cap="Yearly maps of VAST model estimated annual forage fish density (months 1-12)."}
-knitr::include_graphics("pyindex/2022/allagg_annual_500_lennosst_ALLsplit_biascorrect/ln_density-predicted.png")
+knitr::include_graphics("pyindex/allagg_annual_500_lennosst_ALLsplit_biascorrect/ln_density-predicted.png")
 ```
 
 <!--![Annual density maps with covariates](pyindex/allagg_annual_500_lennosst_ALLsplit_biascorrect/ln_density-predicted.png)-->
@@ -190,7 +190,7 @@ for(p in diagplots){
     cat("  \n####",  as.character(p),"  \n")
     cat(paste0("![Annual diagnostics:",
                p,
-               "](pyindex/2022/allagg_annual_500_lennosst_ALLsplit_biascorrect/",
+               "](pyindex/allagg_annual_500_lennosst_ALLsplit_biascorrect/",
                       p,
                       ".png)")) 
     cat("  \n")   
@@ -206,7 +206,7 @@ for(p in diagplots){
 The Annual forage index uses data from all months each year (1-12). The same plots are presented as those above for Fall and Spring indices. Fig. \@ref(fig:annualall) shows all annual forage index time series with standard errors.
 
 ```{r annualall, fig.cap="All Annual forage indices"}
-splitoutput <- read.csv("pyindex/2022/allagg_annual_500_lennosst_ALLsplit_biascorrect/Index.csv")
+splitoutput <- read.csv("pyindex/allagg_annual_500_lennosst_ALLsplit_biascorrect/Index.csv")
 
 splitoutput <- splitout %>%
   dplyr::left_join(stratlook) %>%
@@ -229,5 +229,5 @@ ggplot(splitoutput, aes(x=Time, y=Estimate, colour=Region)) +
 ```
 
 
-The full results of all models are archived on [google drive](https://drive.google.com/drive/folders/1PsEk5hhQ7fR0Gq4NnYPvU4V59d4nIR8E).
+The full results of all models are archived on [google drive](https://drive.google.com/drive/folders/1S-G7QBPq6sUT6dbbf3u9k6k2K46ehDOM?usp=share_link).
 

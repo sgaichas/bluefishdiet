@@ -171,6 +171,7 @@ flextable::flextable(modselect %>%
          omega1, omega2, epsilon1, epsilon2, 
          beta1, beta2))) %>%
   flextable::set_caption("Comparison of delta AIC values using Restricted Maxiumum Likelihood (REML) for alternative fixed and random effects model structures. See text for model descriptions.") %>%
+  flextable::fontsize(size = 9, part = "all") %>%
   flextable::autofit()
 ```
 
@@ -227,6 +228,7 @@ flextable::flextable(modselect2%>%
          omega1, omega2, epsilon1, epsilon2, 
          beta1, beta2))) %>%
   flextable::set_caption("Comparison of delta AIC values for alternative vessel effects and catchability covariates. See text for model descriptions.") %>%
+  flextable::fontsize(size = 9, part = "all") %>%
   flextable::autofit()
 
 
