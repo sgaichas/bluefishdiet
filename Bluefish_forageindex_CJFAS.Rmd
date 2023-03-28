@@ -1,13 +1,12 @@
 ---
 title: Assessing small pelagic fish trends in space and time using piscivore stomach contents
-author: "Sarah Gaichas, James Gartland, Brian E. Smith, Elizabeth L. Ng, Michael Celestino,
-  Anthony D. Wood, Katie Drew, Abigail S. Tyrell, and James T. Thorson"
-date: "`r format(Sys.time(), '%d %B, %Y')`"
 output:
   bookdown::pdf_document2:
     includes: 
        in_header: latex/header1.tex
     keep_tex: true
+    toc: false
+    number_sections: false
   bookdown::html_document2: 
     toc: true
     toc_float: true
@@ -53,6 +52,10 @@ library(forcats)
 
 #library(ecodata)
 #library(VAST)
+
+#author: "Sarah Gaichas, James Gartland, Brian E. Smith, Elizabeth L. Ng, Michael Celestino,
+#  Anthony D. Wood, Katie Drew, Abigail S. Tyrell, and James T. Thorson"
+#date: "`r format(Sys.time(), '%d %B, %Y')`"
 
 # try to put affiliations in the yaml header later
 # author:
