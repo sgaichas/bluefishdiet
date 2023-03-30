@@ -87,7 +87,7 @@ library(forcats)
 
 ```
 
-S.K. Gaichas (corresponding author): NOAA Fisheries, Northeast Fisheries Science Center. 166 Water St. Woods Hole MA. 02543. USA.  https://orcid.org/0000-0002-5788-3073 Sarah.Gaichas@noaa.gov tel: (508) 495-2016 
+S.K. Gaichas (corresponding author): NOAA Fisheries, Northeast Fisheries Science Center. 166 Water St. Woods Hole MA. 02543. USA.  https://orcid.org/0000-0002-5788-3073 Sarah.Gaichas@noaa.gov; tel: (508) 495-2016 
 <!---Oh god this is such a hack! -->
 
 James Gartland: Virginia Institute of Marine Science, William & Mary, Gloucester Point, VA, USA. https://orcid.org/000-0003-1436-2291 jgartlan@vims.edu; tel: (804) 684-7546
@@ -102,7 +102,7 @@ Anthony D. Wood: NOAA Fisheries, Northeast Fisheries Science Center. 166 Water S
 
 Katie Drew: Atlantic States Marine Fisheries Commission, 1050 N. Highland St., Arlington, VA 22201, kdrew@asmfc.org, tel: (703) 842-0740
 
-Abigail S. Tyrell: IBSS Corporation, 1110 Bonifant St Suite 501, Silver Spring, MD 20910 https://orcid.org/0000-0002-6656-8470 abigail.tyrell@noaa.gov tel: ‪(508) 645-6483
+Abigail S. Tyrell: IBSS Corporation, 1110 Bonifant St Suite 501, Silver Spring, MD, 20910, USA. https://orcid.org/0000-0002-6656-8470  abigail.tyrell@noaa.gov; tel: (508) 645-6483
 
 James T. Thorson: Resource Ecology and Fisheries Management, Alaska Fisheries Science Center, National Marine Fisheries Service, NOAA, Seattle, WA, USA. https://orcid.org/0000-0001-7415-1010
 
