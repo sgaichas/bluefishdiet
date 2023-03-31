@@ -15,6 +15,7 @@ output:
 link-citations: yes
 csl: "canadian-journal-of-fisheries-and-aquatic-sciences.csl"
 bibliography: FishDiet_EcoIndicators.bib
+urlcolor: blue
 ---
 
 ```{r setup, include=FALSE}
@@ -86,7 +87,6 @@ library(forcats)
 #   code: group6
 
 ```
-
 S.K. Gaichas (corresponding author): NOAA Fisheries, Northeast Fisheries Science Center. 166 Water St. Woods Hole MA. 02543. USA.  https://orcid.org/0000-0002-5788-3073 Sarah.Gaichas@noaa.gov; tel: (508) 495-2016 
 <!---Oh god this is such a hack! -->
 
@@ -106,7 +106,7 @@ Abigail S. Tyrell: IBSS Corporation, 1110 Bonifant St Suite 501, Silver Spring, 
 
 James T. Thorson: Resource Ecology and Fisheries Management, Alaska Fisheries Science Center, National Marine Fisheries Service, NOAA, Seattle, WA, USA. https://orcid.org/0000-0001-7415-1010
 
-“Competing interests: The authors declare there are no competing interests.”
+**Competing interests:** The authors declare there are no competing interests.
 
 \newpage
   
@@ -687,7 +687,7 @@ bfinshore2area <- coast3nmbuffst %>%
 
 ```
 
-The fall forage index shows more forage fish biomass distributed in the Mid Atlantic ecoregion relative to Georges Bank and Gulf of Maine, and more forage in state waters relative to bluefish survey index areas (Fig. \@ref(fig:fallall)). This ranking roughly corresponds to the area of each region in square kilometers (MAB = `r MABarea`; GOM = `r GOMarea`; GB = `r GBarea`; state waters = `r MABGBstatearea`; bluefish survey area = `r bfinshore2area`). Forage was highest in the mid-1980s in the Mid Atlantic ecoregion and in the bluefish assessment areas, dropping to lower levels in the mid-1990s. Indices at the smaller scale of the bluefish assessment areas show more interannual variability than those at the larger ecoregion scales, as might be expected for mobile pelagic species. 
+The fall forage index shows more forage fish biomass distributed in the Mid Atlantic ecoregion relative to Georges Bank and Gulf of Maine, and more forage in state waters relative to bluefish survey index areas (Fig. \@ref(fig:fallall)). This ranking roughly corresponds to the area of each region in square kilometers (MAB = `r round(MABarea, 0)`; GOM = `r round(GOMarea,0)`; GB = `r round(GBarea,0)`; state waters = `r round(MABGBstatearea,0)`; bluefish survey area = `r round(bfinshore2area,0)`). Forage was highest in the mid-1980s in the Mid Atlantic ecoregion and in the bluefish assessment areas, dropping to lower levels in the mid-1990s. Indices at the smaller scale of the bluefish assessment areas show more interannual variability than those at the larger ecoregion scales, as might be expected for mobile pelagic species. 
 
 
 ## Comparisons with design-based survey biomass
@@ -754,20 +754,20 @@ The authors are grateful for the support of the Bluefish Research Track Stock As
 
 \newpage  
 # Tables 
-```{r preylist}
+```{r preylist, ft.arraystretch = 1}
 
 flextable::flextable(blueprey[,c('PREY', 'COMMON', 'NEFSC', 'NEAMAP', 'total')]) %>%
   flextable::set_header_labels(PREY = "Prey",
                                COMMON = "Prey common name",
                                total = "Bluefish stomachs (n)") %>%
   flextable::set_caption("Prey identified in bluefish stomachs, NEFSC (1973-2021) and NEAMAP (2007-2021) diet databases.") %>%
-  flextable::width(width=c(2,2,1,1,1))
+  flextable::width(width=c(1.5,1.5,1,1,1))
 
 
 ```
 
 \newpage  
-```{r pisclist}
+```{r pisclist, ft.arraystretch = 1}
 
 
 flextable::flextable(piscall %>% dplyr::select(-c(NEFSC, NEAMAP))) %>%
@@ -777,13 +777,14 @@ flextable::flextable(piscall %>% dplyr::select(-c(NEFSC, NEAMAP))) %>%
                                maxcm = "Maximum length (cm)",
                                survey = "Survey") %>%
   flextable::set_caption("Predators with highest diet similarity to Bluefish, NEFSC and NEAMAP diet databases") %>%
+  #flextable::align_text_col(j=survey, align = "right", header = TRUE, footer = TRUE) %>%
   #flextable::autofit()
   flextable::width(width = c(3, 1, 1, 1))
 
 ```
 
 \newpage  
-```{r groups}
+```{r groups, ft.arraystretch = 1}
 
 #  unique(forageindex$SCINAME)
 #  [1] ENGRAULIDAE           LOLIGO PLEI           CLUPEA HARENGUS       SCOMBER SCOMBRUS     
@@ -956,7 +957,7 @@ flextable::flextable(preycolcode %>%
   flextable::set_header_labels(bluepynam = 'Prey name', 
                                group = "Prey group", 
                                managed = "Managed species?") %>%
-  flextable::set_caption("Prey species in stomach contents and survey data mapped to groups and management categories.") %>%
+  flextable::set_caption("Prey species names in NEFSC stomach contents and survey data mapped to groups and management categories.") %>%
   #flextable::autofit()
   flextable::width(width = c(3, 2, 1))
 
@@ -1684,7 +1685,7 @@ survforagemanagedprop <- foragesurv %>%
 ```
 
 
-```{r sppprop, fig.cap="Overall proportion of prey groups in stomach contents data compared with survey biomass sampling, 1985-2021, all regions and seasons."}
+```{r sppprop, fig.cap="Overall proportion of prey groups in stomach contents data (red) compared with survey biomass sampling (black), 1985-2021, all regions and seasons."}
 
 compgroup <- foragegroupprop %>%
   dplyr::filter(year > 1984) %>%
@@ -1759,21 +1760,21 @@ pherrings <- ggplot2::ggplot(compgroup %>% dplyr::filter(group=="herrings"),
 ```
 
 
-```{r silver, fig.cap="Proportion of silver hake in stomach contents data compared with survey biomass sampling over time by region and season."}
+```{r silver, fig.cap="Proportion of silver hake in stomach contents data (red) compared with survey biomass sampling (black) over time by region and season."}
 
 psilverhake
 
 ```
 
 
-```{r sandlance, fig.cap="Proportion of sandlance species in stomach contents data compared with survey biomass sampling over time by region and season."}
+```{r sandlance, fig.cap="Proportion of sandlance species in stomach contents data (red) compared with survey biomass sampling (black) over time by region and season."}
 
 psandlances
 
 ```
 
 
-```{r unmanagedprop, fig.cap="Proportion of unmanaged forage species in stomach contents data compared with survey biomass sampling over time by region and season."}
+```{r unmanagedprop, fig.cap="Proportion of unmanaged forage species in stomach contents data (red) compared with survey biomass sampling (black) over time by region and season."}
 
 compmanaged <- foragemanagedprop %>%
   dplyr::filter(year > 1984) %>%
