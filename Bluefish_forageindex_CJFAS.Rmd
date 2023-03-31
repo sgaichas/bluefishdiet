@@ -556,19 +556,149 @@ The VAST model predicts density of forage fish across the entire model domain fo
 Quantile residual plots and residuals plotted in space showed no concerning patterns. Supplement 3 includes all basic VAST diagnostics: maps of the spatial grid knot placement (“Data_and_knots”), maps of included station locations for each year (“Data_by_year”), residual plots (“quantile residuals”), maps of residuals for each station (“quantile_residuals_on_map”), an anisotropy plot indicating directional correlation (“Aniso”), and a plot of the estimated change in forage fish center of gravity over time (“center_of_gravity”).
 
 ### Fall Index
-The fall forage index shows more forage fish biomass distributed in the Mid Atlantic ecoregion relative to Georges Bank and Gulf of Maine, and more forage in state waters relative to bluefish survey index areas (Fig. \@ref(fig:fallall)).  Forage was highest in the mid-1980s in the Mid Atlantic ecoregion and  in the bluefish assessment areas, dropping to lower levels in the mid-1990s. Indices at the smaller scale of the bluefish assessment areas show more interannual variability than those at the larger ecoregion scales. 
+```{r areas}
+bfinshore <- c(3020, 3050, 3080, 3110, 3140, 3170, 3200, 3230, 
+              3260, 3290, 3320, 3350, 3380, 3410, 3440, 3450, 3460)
+
+bfoffshore <- c(1010, 1730, 1690, 1650, 1050, 1060, 1090, 1100, 1250, 1200, 1190, 1610)
+
+MAB <- c(1010:1080, 1100:1120, 1600:1750, 3010:3450, 3470, 3500, 3510)
+GB  <- c(1090, 1130:1210, 1230, 1250, 3460, 3480, 3490, 3520:3550)
+GOM <- c(1220, 1240, 1260:1290, 1360:1400, 3560:3830)
+SS  <- c(1300:1352, 3840:3990)
+
+MABGBinshore <- c(3010:3450, 3460, 3470, 3480, 3490, 3500, 3510, 3520:3550)
+
+MABGBoffshore <- c(1010:1080, 1090, 1100:1120,1130:1210, 1230, 1250, 1600:1750)
+
+coast3nmbuffst <- readRDS(here::here("spatialdat/coast3nmbuffst.rds"))
+
+MAB2 <- coast3nmbuffst %>% 
+  dplyr::filter(stratum_number %in% MAB) %>%
+  dplyr::select(stratum_number2) %>%
+  dplyr::distinct()
+
+#MAB area
+MABarea <- coast3nmbuffst %>% 
+  dplyr::filter(stratum_number %in% MAB) %>%
+  dplyr::summarise(area = sum(Area_in_survey_km2)) 
+
+# MAB state waters
+MAB2state <- MAB2 %>%
+  dplyr::filter(stratum_number2 %% 10 == 1) 
+
+# MAB federal waters
+MAB2fed <- MAB2 %>%
+  dplyr::filter(stratum_number2 %% 10 == 2) 
+
+# Georges Bank EPU
+GB2 <- coast3nmbuffst %>% 
+  dplyr::filter(stratum_number %in% GB) %>%
+  dplyr::select(stratum_number2) %>%
+  dplyr::distinct()
+
+# GB area
+GBarea <- coast3nmbuffst %>% 
+  dplyr::filter(stratum_number %in% GB) %>%
+  dplyr::summarise(area = sum(Area_in_survey_km2))
+
+# GB state waters
+GB2state <- GB2 %>%
+  dplyr::filter(stratum_number2 %% 10 == 1) 
+
+#GB federal waters
+GB2fed <- GB2 %>%
+  dplyr::filter(stratum_number2 %% 10 == 2) 
+
+# whole bluefish domain MABG
+MABGB2 <- dplyr::bind_rows(MAB2, GB2)
+
+# MABGB state waters
+MABGBstate <- dplyr::bind_rows(MAB2state, GB2state)
+
+# statewaters area
+MABGBstatearea <- coast3nmbuffst %>% 
+  dplyr::filter(stratum_number2 %in% MABGBstate$stratum_number2) %>%
+  dplyr::summarise(area = sum(Area_in_survey_km2))
+
+# MABGB federal waters
+#MABGBfed <- dplyr::bind_rows(MAB2fed, GB2fed)
+
+# gulf of maine EPU (for SOE)
+GOM2 <- coast3nmbuffst %>%
+  dplyr::filter(stratum_number %in% GOM) %>%
+  dplyr::select(stratum_number2) %>%
+  dplyr::distinct()
+
+#GOMarea
+GOMarea <- coast3nmbuffst %>%
+  dplyr::filter(stratum_number %in% GOM) %>%
+  dplyr::summarise(area = sum(Area_in_survey_km2))
+
+# # scotian shelf EPU (for SOE)
+# SS2 <- coast3nmbuffst %>%
+#   dplyr::filter(stratum_number %in% SS) %>%
+#   dplyr::select(stratum_number2) %>%
+#   dplyr::distinct()
+
+# previous bluefish strata
+bfinshore2 <- coast3nmbuffst %>%
+  dplyr::filter(stratum_number %in% bfinshore) %>%
+  dplyr::select(stratum_number2) %>%
+  dplyr::distinct()
+
+# bfstrata area
+bfinshore2area <- coast3nmbuffst %>%
+  dplyr::filter(stratum_number %in% bfinshore) %>%
+  dplyr::summarise(area = sum(Area_in_survey_km2))
+
+# # additional new bluefish strata 2022
+# bfoffshore2 <- coast3nmbuffst %>%
+#   dplyr::filter(stratum_number %in% bfoffshore) %>%
+#   dplyr::select(stratum_number2) %>%
+#   dplyr::distinct()
+# 
+# # all bluefish strata
+# bfall2 <- dplyr::bind_rows(bfinshore2, bfoffshore2)
+# 
+# # albatross inshore strata
+# albinshore2 <- coast3nmbuffst %>%
+#   dplyr::filter(stratum_number %in% setdiff(MABGBinshore, bfinshore)) %>%
+#   dplyr::select(stratum_number2) %>%
+#   dplyr::distinct()
+# 
+# # offshore of all bluefish survey strata
+# MABGBothoffshore2 <- coast3nmbuffst %>%
+#   dplyr::filter(stratum_number %in% setdiff(MABGBoffshore, bfoffshore)) %>%
+#   dplyr::select(stratum_number2) %>%
+#   dplyr::distinct()
+# 
+# # needed to cover the whole northwest atlantic grid
+# allother2 <- coast3nmbuffst %>%
+#   dplyr::filter(!stratum_number %in% c(MAB, GB, GOM, SS)) %>%
+#   dplyr::select(stratum_number2) %>%
+#   dplyr::distinct()
+# 
+# # all epus
+# allEPU2 <- coast3nmbuffst %>%
+#   dplyr::filter(stratum_number %in% c(MAB, GB, GOM, SS)) %>%
+#   dplyr::select(stratum_number2) %>%
+#   dplyr::distinct()
+
+```
+
+The fall forage index shows more forage fish biomass distributed in the Mid Atlantic ecoregion relative to Georges Bank and Gulf of Maine, and more forage in state waters relative to bluefish survey index areas (Fig. \@ref(fig:fallall)). This ranking roughly corresponds to the area of each region in square kilometers (MAB = `r MABarea`; GOM = `r GOMarea`; GB = `r GBarea`; state waters = `r MABGBstatearea`; bluefish survey area = `r bfinshore2area`). Forage was highest in the mid-1980s in the Mid Atlantic ecoregion and in the bluefish assessment areas, dropping to lower levels in the mid-1990s. Indices at the smaller scale of the bluefish assessment areas show more interannual variability than those at the larger ecoregion scales, as might be expected for mobile pelagic species. 
 
 
 ## Comparisons with design-based survey biomass
 
 The standardized diet based forage index and survey biomass based index trends compared well in some seasons and regions, but differed in others (Fig. \@ref(fig:tscomp)). The indices were well correlated in the Gulf of Maine during spring, weakly correlated on Georges Bank during spring, and uncorrelated during fall in all regions and in both seasons in the Mid-Atlantic (Fig. \@ref(fig:corr)). 
 
-To determine what may drive some seasons and regions to have similar forage indices based on diet versus survey biomass, we examined patterns in the raw species composition over time in each dataset: the stomach contents data that were input to the VAST model and the trawl catch weight used to calculate the design based aggregate survey index, by region and season. Based on the correlations between the indices (Fig.\@ref(fig:corr)), we expected to find similar species compositions or a shared dominant species in Gulf of Maine during spring, and possibly on Georges Bank during spring between the stomach contents and the survey sampling. 
+To determine what may drive some seasons and regions to have similar forage indices based on diet versus survey biomass, we examined patterns in the raw species composition over time in each dataset: the stomach contents data that were input to the VAST model and the trawl catch weight used to calculate the design based aggregate survey index, by region and season. Based on the correlations between the indices (Fig. \@ref(fig:corr)), we expected to find similar species compositions or a shared dominant species in Gulf of Maine during spring, and possibly on Georges Bank during spring between the stomach contents and the survey sampling. 
 
 We grouped prey into taxonomic groupings as well as management groupings (managed/unmanaged) to characterize similarities and differences between small pelagic forage composition in the forage index and the composition directly sampled by the survey (Table \@ref(tab:groups)). 
 
-  
-When aggregated across years, seasons, and regions, it is clear that some small pelagic forage species groups are roughly equally sampled by piscivores and the trawl survey, while others are sampled differently. Anchovies, herrings, menhaden, and sandlances had higher proportions in stomach contents than in trawl surveys, while butterfish, mackerel, scup, and weakfish had higher proportions in trawl surveys than in stomach contents (Fig. \@ref(fig:sppprop)). Silver hake and squids were rougly equally "seen" by both methods.
+When aggregated across years, seasons, and regions, it is clear that some small pelagic forage species groups are roughly equally sampled by piscivores and the trawl survey, while others are sampled differently. Anchovies, herrings, menhaden, and sandlances had higher proportions in stomach contents than in trawl surveys, while butterfish, mackerel, scup, and weakfish had higher proportions in trawl surveys than in stomach contents (Fig. \@ref(fig:sppprop)). Silver hake and squids were roughly equally sampled by both methods.
 
 Silver hake, which are roughly equally present in stomach contents and in survey trawls (Fig. \@ref(fig:sppprop)), dominate the proportion input to the forage indices GOM spring in both datasets (Fig. \@ref(fig:silver)). Silver hake also represent a large proportion in both datasets for GB in spring. The diet and survey based indices are highly correlated when the species composition is similar for the Gulf of Maine in spring, suggesting that the diet based index is at least as reliable as a survey biomass based index, given similar inputs. 
 
@@ -579,9 +709,9 @@ We see a higher proportion of unmanaged forage species in the diet based raw dat
 
 ## Incorporation into stock assessment model
 
-Application of the forage fish index to the Bigelow survey had suitable convergence properties and model diagnostics when the forage fish index was fit assuming a random walk over the time-series, with a single estimated standard error for the covariate.  However, while all models converged with the covariate applied, these models did not have an improved fit  according to AIC when compared to the base model with no catchability covariate.
+Application of the forage fish index as a catchability covariate for the NEFSC Bigelow survey index had suitable convergence properties and model diagnostics when the forage fish index was fit assuming a random walk over the time-series, with a single estimated standard error for the covariate.  However, while all models converged with the covariate applied, these models did not have an improved fit  according to AIC when compared to the base model with no catchability covariate.
 
-The application of the forage fish index to the MRIP CPUE index was successful when implemented as an autoregressive process over the time-series with WHAM estimating the covariate standard error.  The inclusion of the forage fish index improved the fit of all models investigated.  The application of the forage fish index to MRIP CPUE resulted in a decreasing trend in catchability over time (Fig. \@ref(fig:WHAM)).  For the bluefish assessment, the MRIP CPUE index is important in scaling the biomass results, and the lower availability at the end of the time-series led to higher biomass estimates from the model including the forage fish index.
+The application of the forage fish index as a catchability covariate for the MRIP CPUE index was successful when implemented as an autoregressive process over the time-series with WHAM estimating the covariate standard error.  The inclusion of the forage fish index improved the fit of all models investigated.  The application of the forage fish index to MRIP CPUE resulted in a decreasing trend in catchability over time (Fig. \@ref(fig:WHAM)).  For the bluefish assessment, the MRIP CPUE index is important in scaling the biomass results, and the lower availability at the end of the time-series led to higher biomass estimates from the model including the forage fish index.
 
 For full assessment results, please see the bluefish research track assessment report from December 2022 at [this link](https://apps-nefsc.fisheries.noaa.gov/saw/sasi_files.php?year=2022&species_id=32&stock_id=6&review_type_id=5&info_type_id=-1&map_type_id=&filename=Bluefish_SAW_SARC_2022_FINAL.pdf).
 
@@ -1130,7 +1260,7 @@ ggplot(splitoutput, aes(x=Time, y=Estimate, colour=Region)) +
 ```
 
 
-```{r tscomp, fig.cap="Time series of diet based forage index (red) compared with survey based index (black) by season and region (GOM = Gulf of Maine, GB = Georges Bank, MAB = Mid Atlantic Bight)."}
+```{r tscomp, fig.cap="Time series of VAST stomach contents based forage index (red) compared with survey based index (black) by season and region (GOM = Gulf of Maine, GB = Georges Bank, MAB = Mid Atlantic Bight)."}
 
 ## Survey index I calculated in CompareVASTforageSOE.Rmd 
 
@@ -1391,7 +1521,7 @@ p9<-survforage %>%
 ```
 
 
-```{r corr, fig.cap="Diet based forage index (stdForage) compared with survey based index (stdsurvForage) by season and region (GOM = Gulf of Maine, GB = Georges Bank, MAB = Mid Atlantic Bight). Pearson correlation coefficients (*R*) and correlation significance (*p*) are shown for each season/region."}
+```{r corr, fig.cap="VAST stomach contents based forage index (VASTForage) compared with survey based index (SurvForage) by season and region (GOM = Gulf of Maine, GB = Georges Bank, MAB = Mid Atlantic Bight). Pearson correlation coefficients (*R*) and correlation significance (*p*) are shown for each season/region."}
 
 
 # compare them
@@ -1413,6 +1543,8 @@ ggplot2::ggplot(compareforageagg, aes(x=stdForage, y=stdsurvForage)) +
   geom_abline(intercept = 0, slope = 1, lty=3) +
   geom_smooth(method=lm) +
   stat_cor(method="pearson") +
+  ggplot2::ylab(expression("Standardized SurvForage Index")) +
+  ggplot2::xlab(expression("Standardized VASTForage Index")) +
   ecodata::theme_facet() +
   facet_grid(fct_relevel(EPU,  "GOM", "GB", "MAB")~
                fct_relevel(Season, "Spring", "Fall")) 
@@ -1573,7 +1705,8 @@ agggroups <- ggplot2::ggplot(aggprop,
                 aes(group, newprop, fill=source)) +
   ggplot2::geom_bar(stat = "identity", position = 'dodge') +
   ggplot2::scale_fill_manual(values = c("indianred", "black"), aesthetics = "fill")+
-  ggplot2::ylab(expression("Proportion forage group")) 
+  ggplot2::ylab(expression("Proportion forage group")) +
+  guides(x=guide_axis(angle = 45))
 
 agggroups
 
