@@ -94,11 +94,11 @@ James Gartland: Virginia Institute of Marine Science, William & Mary, Gloucester
 
 Brian E. Smith: NOAA Fisheries, Northeast Fisheries Science Center. 166 Water St. Woods Hole MA. 02543. USA. https://orcid.org/0000-0002-7792-520X brian.smith@noaa.gov; tel: (508) 495-2020
 
-Elizabeth L. Ng: Four Peaks Environmental Science & Data Solutions, Wenatchee, WA USA. https://orcid.org/0000-0002-5833-4914
+Anthony D. Wood: NOAA Fisheries, Northeast Fisheries Science Center. 166 Water St. Woods Hole MA. 02543 USA.
+
+Elizabeth L. Ng: Four Peaks Environmental Science & Data Solutions, Wenatchee, WA USA. https://orcid.org/0000-0002-5833-4914 
 
 Michael Celestino: New Jersey Department of Environmental Protection, Port Republic, NJ USA.
-  
-Anthony D. Wood: NOAA Fisheries, Northeast Fisheries Science Center. 166 Water St. Woods Hole MA. 02543 USA.
 
 Katie Drew: Atlantic States Marine Fisheries Commission, 1050 N. Highland St., Arlington, VA 22201, kdrew@asmfc.org, tel: (703) 842-0740
 
@@ -744,9 +744,9 @@ Finally, while aggregate indices of forage fish should in theory be inherently m
 # Acknowledgements
 The authors are grateful for the support of the Bluefish Research Track Stock Assessment working group during the development of this index. Working group members included four of the authors (MC, ADW, KD, AST) as well as Karson Cisneros (Mid-Atlantic Fishery Management Council), Sam Truesdell (Massachusetts Department of Marine Fisheries), Jessica Valenti (NMFS NEFSC and Rutgers University), and Samantha Werner (NMFS NEFSC). 
 
-# Author contribution statement
+# Data availability statement
 
-
+Data generated or analyzed during this study are available in the public forageindex github repository, https://github.com/NOAA-EDAB/forageindex.
 
 # References
 

@@ -4,15 +4,15 @@ author: "Sarah Gaichas, James Gartland, Brian Smith, Elizabeth Ng, Michael Celes
   Anthony Wood, Katie Drew, Abigail Tyrell, and James Thorson"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output:
-  bookdown::word_document2:
-    toc: false
-  bookdown::html_document2: 
-    toc: true
-    toc_float: true
   bookdown::pdf_document2:
     includes: 
        in_header: latex/header1.tex
     keep_tex: true
+  bookdown::html_document2: 
+    toc: true
+    toc_float: true
+  bookdown::word_document2:
+    toc: false
 link-citations: yes
 csl: "canadian-journal-of-fisheries-and-aquatic-sciences.csl"
 bibliography: FishDiet_EcoIndicators.bib

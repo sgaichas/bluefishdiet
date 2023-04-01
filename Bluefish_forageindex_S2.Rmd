@@ -235,6 +235,6 @@ flextable::flextable(modselect2%>%
 ```
 
 
-Catchability covariates were better supported by the data than vessel effects. Model comparisons above and [here](https://sgaichas.github.io/bluefishdiet/VASTcovariates_updatedPreds_sst.html) led us to the best model fit using mean predator length, number of predator species, and SST at a survey station as catchability covariates. 
+Catchability covariates were better supported by the data than vessel effects. Model comparisons above led us to the best model fit using mean predator length, number of predator species, and SST at a survey station as catchability covariates. 
 
 # References
